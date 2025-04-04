@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recursos - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/section-editor.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Recursos Educativos</h1>
+                <p class="text-center lead mb-5">Explora nuestra colección de recursos interactivos</p>
+                
+                <div class="filter-container mb-4">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="courseFilter" class="form-label">Filtrar por Curso</label>
+                                <select class="form-select" id="courseFilter" onchange="filterResources()">
+                                    <option value="">Todos los cursos</option>
+                                    <!-- Las opciones se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="topicFilter" class="form-label">Filtrar por Tema</label>
+                                <select class="form-select" id="topicFilter" onchange="filterResources()">
+                                    <option value="">Todos los temas</option>
+                                    <!-- Las opciones se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="typeFilter" class="form-label">Filtrar por Tipo</label>
+                                <select class="form-select" id="typeFilter" onchange="filterResources()">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="text">Texto</option>
+                                    <option value="youtube">Video</option>
+                                    <option value="geogebra">GeoGebra</option>
+                                    <option value="image">Imagen</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="activity">Actividad</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="resources-grid" id="resourcesList">
+                    <!-- Los recursos se cargarán dinámicamente -->
+                    <div class="text-center w-100">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script>
+        // Variables globales
+        let allCourses = [];
+        let allTopics = [];
+        let allSections = [];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+            
+            // Cargar datos
+            loadData();
+        });
+        
+        function loadData() {
+            // Obtener cursos
+            allCourses = DataManager.getCourses();
+            
+            // Obtener temas
+            allTopics = DataManager.getTopics();
+            
+            // Extraer todas las secciones
+            allSections = [];
+            allTopics.forEach(topic => {
+                if (topic.sections && topic.sections.length > 0) {
+                    topic.sections.forEach(section => {
+                        // Agregar información del tema y curso a la sección
+                        const course = allCourses.find(c => c.id === topic.courseId);
+                        allSections.push({
+                            ...section,
+                            topicId: topic.id,
+                            topicTitle: topic.title,
+                            courseId: topic.courseId,
+                            courseTitle: course ? course.title : 'Curso desconocido'
+                        });
+                    });
+                }
+            });
+            
+            // Cargar filtros
+            loadFilters();
+            
+            // Cargar recursos
+            filterResources();
+        }
+        
+        function loadFilters() {
+            // Cargar filtro de cursos
+            const courseFilter = document.getElementById('courseFilter');
+            courseFilter.innerHTML = '<option value="">Todos los cursos</option>';
+            
+            allCourses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = course.title;
+                courseFilter.appendChild(option);
+            });
+            
+            // Cargar filtro de temas
+            const topicFilter = document.getElementById('topicFilter');
+            topicFilter.innerHTML = '<option value="">Todos los temas</option>';
+            
+            allTopics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic.id;
+                option.textContent = topic.title;
+                topicFilter.appendChild(option);
+            });
+        }
+        
+        function filterResources() {
+            const courseId = document.getElementById('courseFilter').value;
+            const topicId = document.getElementById('topicFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            
+            // Filtrar secciones
+            let filteredSections = [...allSections];
+            
+            if (courseId) {
+                filteredSections = filteredSections.filter(section => section.courseId == courseId);
+            }
+            
+            if (topicId) {
+                filteredSections = filteredSections.filter(section => section.topicId == topicId);
+            }
+            
+            if (type) {
+                filteredSections = filteredSections.filter(section => section.type === type);
+            }
+            
+            // Mostrar resultados
+            displayResources(filteredSections);
+        }
+        
+        function displayResources(sections) {
+            const resourcesList = document.getElementById('resourcesList');
+            
+            if (sections.length === 0) {
+                resourcesList.innerHTML = `
+                    <div class="text-center w-100">
+                        <i class="fas fa-info-circle fa-3x mb-3"></i>
+                        <p>No se encontraron recursos con los filtros seleccionados.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            resourcesList.innerHTML = sections.map(section => {
+                return `
+                <div class="resource-card resource-type-${section.type}">
+                    <div class="resource-icon">
+                        <i class="${getSectionIcon(section.type)}"></i>
+                    </div>
+                    <div class="resource-content">
+                        <h3>${section.title}</h3>
+                        <div class="resource-meta">
+                            <span class="resource-course">
+                                <i class="fas fa-book"></i> ${section.courseTitle}
+                            </span>
+                            <span class="resource-topic">
+                                <i class="fas fa-bookmark"></i> ${section.topicTitle}
+                            </span>
+                            <span class="resource-type">
+                                <i class="fas fa-file"></i> ${getTypeName(section.type)}
+                            </span>
+                        </div>
+                        <a href="view.html?id=${section.id}&topicId=${section.topicId}" class="btn btn-primary mt-3">
+                            Ver recurso
+                        </a>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+        
+        function getSectionIcon(type) {
+            switch (type) {
+                case 'text':
+                    return 'fas fa-align-left';
+                case 'youtube':
+                    return 'fab fa-youtube';
+                case 'geogebra':
+                    return 'fas fa-calculator';
+                case 'image':
+                    return 'fas fa-image';
+                case 'pdf':
+                    return 'fas fa-file-pdf';
+                case 'activity':
+                    return 'fas fa-tasks';
+                default:
+                    return 'fas fa-file';
+            }
+        }
+        
+        function getTypeName(type) {
+            switch (type) {
+                case 'text':
+                    return 'Texto';
+                case 'youtube':
+                    return 'Video';
+                case 'geogebra':
+                    return 'GeoGebra';
+                case 'image':
+                    return 'Imagen';
+                case 'pdf':
+                    return 'PDF';
+                case 'activity':
+                    return 'Actividad';
+                default:
+                    return 'Desconocido';
+            }
+        }
+    </script>
+</body>
+</html>

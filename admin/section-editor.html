@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Secciones - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">Panel de Administración</a></li>
+                        <li class="breadcrumb-item"><a href="topic-editor.html">Temas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Editor de Secciones</li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Editor de Secciones</h1>
+                    <div class="d-flex">
+                        <a href="../index.html" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-home"></i> Inicio
+                        </a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sectionModal">
+                            <i class="fas fa-plus"></i> Nueva Sección
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Información del tema -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Información del Tema</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h3 id="topicTitle">Cargando...</h3>
+                                <p id="topicDescription" class="text-muted">Cargando descripción...</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="topic-editor.html" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a Temas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de secciones -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Secciones del Tema</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="sectionsList" class="sections-list">
+                            <!-- Las secciones se cargarán dinámicamente -->
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                                <p>Cargando secciones...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para crear/editar sección -->
+    <div class="modal fade" id="sectionModal" tabindex="-1" aria-labelledby="sectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sectionModalLabel">Nueva Sección</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="sectionForm">
+                        <input type="hidden" id="sectionId">
+                        <div class="mb-3">
+                            <label for="sectionTitle" class="form-label">Título de la Sección</label>
+                            <input type="text" class="form-control" id="sectionTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionType" class="form-label">Tipo de Contenido</label>
+                            <select class="form-select" id="sectionType" onchange="showContentFields()" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="text">Texto</option>
+                                <option value="youtube">Video de YouTube</option>
+                                <option value="geogebra">Applet de GeoGebra</option>
+                                <option value="image">Imagen</option>
+                                <option value="pdf">Archivo PDF</option>
+                                <option value="html">HTML</option>
+                                <option value="activity">Actividad</option>
+                            </select>
+                        </div>
+
+                        <!-- Campos específicos para cada tipo de contenido -->
+                        <div id="contentFields" class="mb-3">
+                            <!-- Los campos se cargarán dinámicamente según el tipo seleccionado -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveSectionBtn" onclick="saveSection()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para seleccionar actividad -->
+    <div class="modal fade" id="activitySelectorModal" tabindex="-1" aria-labelledby="activitySelectorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activitySelectorModalLabel">Seleccionar Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="activitySearch" placeholder="Buscar actividad...">
+                    </div>
+                    <div class="activity-grid" id="activityList">
+                        <!-- Las actividades se cargarán aquí -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="activity-creator.html" class="btn btn-primary">Crear Nueva Actividad</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sample-data.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/topic-editor.js"></script>
+    <script src="../js/section-editor.js"></script>
+</body>
+</html>

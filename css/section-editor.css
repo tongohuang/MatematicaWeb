@@ -1,0 +1,421 @@
+/* Estilos para el editor de secciones */
+
+/* Lista de secciones */
+.sections-list {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.section-item {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    background-color: white;
+    transition: background-color 0.2s;
+}
+
+.section-item:last-child {
+    border-bottom: none;
+}
+
+.section-item:hover {
+    background-color: #f8f9fa;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.section-content-preview {
+    margin-left: 40px;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #ddd;
+}
+
+/* Estilos específicos para cada tipo de sección */
+.section-type-text .section-content-preview {
+    border-left-color: #28a745;
+}
+
+.section-type-youtube .section-content-preview {
+    border-left-color: #dc3545;
+}
+
+.section-type-geogebra .section-content-preview {
+    border-left-color: #007bff;
+}
+
+.section-type-image .section-content-preview {
+    border-left-color: #6610f2;
+}
+
+.section-type-pdf .section-content-preview {
+    border-left-color: #fd7e14;
+}
+
+.section-type-activity .section-content-preview {
+    border-left-color: #17a2b8;
+}
+
+.section-type-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    color: #007bff;
+    font-size: 1.2rem;
+}
+
+.section-title {
+    flex-grow: 1;
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+
+.section-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* Estilos para los tipos de secciones */
+.section-type-text .section-type-icon {
+    color: #28a745;
+}
+
+.section-type-youtube .section-type-icon {
+    color: #dc3545;
+}
+
+.section-type-geogebra .section-type-icon {
+    color: #007bff;
+}
+
+.section-type-image .section-type-icon {
+    color: #6610f2;
+}
+
+.section-type-pdf .section-type-icon {
+    color: #fd7e14;
+}
+
+.section-type-activity .section-type-icon {
+    color: #17a2b8;
+}
+
+/* Estilos para la vista previa de secciones */
+.section-preview {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.section-preview-header {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+}
+
+.section-preview-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.section-preview-title {
+    font-weight: 500;
+    margin: 0;
+}
+
+.section-preview-content {
+    padding: 20px;
+}
+
+/* Estilos para los diferentes tipos de contenido */
+.text-content {
+    line-height: 1.6;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.youtube-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.youtube-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+.geogebra-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 75%; /* 4:3 Aspect Ratio for GeoGebra */
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.geogebra-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+.image-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.image-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.pdf-container {
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.pdf-container a {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.pdf-container a i {
+    margin-right: 8px;
+}
+
+.html-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    overflow: hidden;
+}
+
+.html-container iframe {
+    border: none;
+    border-radius: 8px;
+    width: 100%;
+    min-height: 500px;
+}
+
+.activity-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 75%; /* 4:3 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.activity-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+/* Estilos para el selector de actividades */
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Estilos para la página de recursos */
+.filter-container {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.resource-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+}
+
+.resource-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.resource-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    font-size: 1.5rem;
+}
+
+.resource-content {
+    flex-grow: 1;
+}
+
+.resource-content h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.resource-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Estilos específicos para cada tipo de recurso */
+.resource-type-text .resource-icon {
+    color: #28a745;
+}
+
+.resource-type-youtube .resource-icon {
+    color: #dc3545;
+}
+
+.resource-type-geogebra .resource-icon {
+    color: #007bff;
+}
+
+.resource-type-image .resource-icon {
+    color: #6610f2;
+}
+
+.resource-type-pdf .resource-icon {
+    color: #fd7e14;
+}
+
+.resource-type-activity .resource-icon {
+    color: #17a2b8;
+}
+
+.activity-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: white;
+}
+
+.activity-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.activity-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.activity-card-icon {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.activity-card-title {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.activity-card-type {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+
+.activity-card-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Estilos para drag and drop */
+.draggable {
+    cursor: move;
+}
+
+.drag-over {
+    background-color: #e9ecef;
+    border: 2px dashed #007bff;
+}
+
+.drag-placeholder {
+    height: 40px;
+    background-color: #e9ecef;
+    border: 2px dashed #007bff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}

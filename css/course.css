@@ -1,0 +1,62 @@
+.course-section {
+    margin-bottom: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.course-section h3 {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #007bff;
+}
+
+.lesson-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.lesson-item:last-child {
+    border-bottom: none;
+}
+
+.lesson-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.lesson-link:hover {
+    color: #007bff;
+}
+
+.lesson-link i {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.course-sidebar {
+    position: sticky;
+    top: 20px;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.progress-card {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.course-info ul li {
+    margin-bottom: 0.5rem;
+}
+
+.course-info i {
+    width: 20px;
+    color: #007bff;
+    margin-right: 10px;
+}

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tema - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/section-editor.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div id="topicContent">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="#" id="courseLink">Curso</a></li>
+                    <li class="breadcrumb-item active" id="topicTitle">Tema</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h1 id="topicTitleHeader">Cargando...</h1>
+                        <div class="navigation-buttons">
+                            <a href="#" id="backToCourseBtn" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-arrow-left"></i> Volver al curso
+                            </a>
+                            <a href="../index.html" class="btn btn-outline-secondary">
+                                <i class="fas fa-home"></i> Inicio
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="section-controls mb-4">
+                        <button id="expandAllBtn" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="fas fa-expand-alt"></i> Expandir todo
+                        </button>
+                        <button id="collapseAllBtn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-compress-alt"></i> Colapsar todo
+                        </button>
+                    </div>
+
+                    <div class="topic-description mb-4" id="topicDescription">
+                        <p class="lead">Cargando descripción...</p>
+                    </div>
+
+                    <div class="sections-container" id="sectionsContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-3">Cargando secciones...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="topic-sidebar">
+                        <div class="course-info">
+                            <h4>Información del Curso</h4>
+                            <div id="courseInfo">
+                                <p class="text-muted">Cargando información del curso...</p>
+                            </div>
+                        </div>
+
+                        <div class="topic-navigation mt-4">
+                            <h4>Temas del Curso</h4>
+                            <div id="topicsNavigation">
+                                <p class="text-muted">Cargando temas...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sample-data.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        // Variables globales
+        let currentTopicId = null;
+        let currentTopic = null;
+        let currentCourseId = null;
+        let currentCourse = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+
+            // Obtener los IDs de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            currentTopicId = parseInt(urlParams.get('id'));
+            currentCourseId = parseInt(urlParams.get('courseId'));
+
+            if (!currentTopicId || !currentCourseId) {
+                showError('Parámetros incorrectos', 'No se pudo cargar el tema porque faltan parámetros.');
+                return;
+            }
+
+            // Cargar los datos
+            loadData();
+        });
+
+        function loadData() {
+            try {
+                // Obtener el curso
+                currentCourse = DataManager.getCourseById(currentCourseId);
+                if (!currentCourse) {
+                    showError('Curso no encontrado', 'El curso solicitado no existe.');
+                    return;
+                }
+
+                // Obtener el tema
+                currentTopic = DataManager.getTopicById(currentTopicId);
+                if (!currentTopic) {
+                    showError('Tema no encontrado', 'El tema solicitado no existe.');
+                    return;
+                }
+
+                // Actualizar la navegación
+                document.title = `${currentTopic.title} - MatemáticaWeb`;
+                document.getElementById('topicTitle').textContent = currentTopic.title;
+                document.getElementById('topicTitleHeader').textContent = currentTopic.title;
+                document.getElementById('topicDescription').innerHTML = `<p class="lead">${currentTopic.description}</p>`;
+
+                const courseLink = document.getElementById('courseLink');
+                courseLink.textContent = currentCourse.title;
+                courseLink.href = `../courses/view.html?id=${currentCourse.id}`;
+
+                // Configurar el botón para volver al curso
+                const backToCourseBtn = document.getElementById('backToCourseBtn');
+                backToCourseBtn.href = `../courses/view.html?id=${currentCourse.id}`;
+
+                // Mostrar información del curso
+                document.getElementById('courseInfo').innerHTML = `
+                    <div class="course-info-card">
+                        <div class="course-info-icon" style="background-color: ${currentCourse.color || '#6c757d'}">
+                            <i class="${currentCourse.icon || 'fas fa-book'}"></i>
+                        </div>
+                        <div class="course-info-content">
+                            <h5>${currentCourse.title}</h5>
+                            <p class="small">${currentCourse.description}</p>
+                            <a href="../courses/view.html?id=${currentCourse.id}" class="btn btn-sm btn-outline-primary">
+                                Ver todos los temas
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                // Mostrar navegación de temas
+                loadTopicsNavigation();
+
+                // Cargar las secciones del tema
+                loadSections();
+            } catch (error) {
+                console.error('Error al cargar los datos:', error);
+                showError('Error', 'Ocurrió un error al cargar el contenido.');
+            }
+        }
+
+        function loadTopicsNavigation() {
+            // Obtener todos los temas del curso
+            const topics = DataManager.getTopicsByCourse(currentCourseId);
+
+            if (topics.length === 0) {
+                document.getElementById('topicsNavigation').innerHTML = '<p class="text-muted">Este curso no tiene temas.</p>';
+                return;
+            }
+
+            // Crear la lista de temas
+            const topicsHtml = topics.map(topic => {
+                const isActive = topic.id === currentTopicId;
+                return `
+                    <div class="topic-nav-item ${isActive ? 'active' : ''}">
+                        <a href="view.html?id=${topic.id}&courseId=${currentCourseId}" class="topic-nav-link">
+                            <div class="topic-nav-icon">
+                                <i class="${topic.icon || 'fas fa-book'}"></i>
+                            </div>
+                            <div class="topic-nav-title">${topic.title}</div>
+                        </a>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('topicsNavigation').innerHTML = topicsHtml;
+        }
+
+        function loadSections() {
+            const sectionsContainer = document.getElementById('sectionsContainer');
+
+            // Verificar si el tema tiene secciones
+            if (!currentTopic.sections || currentTopic.sections.length === 0) {
+                sectionsContainer.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Este tema aún no tiene secciones.
+                    </div>
+                `;
+                return;
+            }
+
+            // Crear el contenido para cada sección
+            let sectionsHtml = '';
+
+            currentTopic.sections.forEach((section, index) => {
+                // Crear el encabezado de la sección
+                sectionsHtml += `
+                    <div class="section-block" id="section-${section.id}">
+                        <div class="section-header" role="button" onclick="toggleSection(${section.id})">
+                            <div class="section-number">${index + 1}</div>
+                            <h2 class="section-title">${section.title}</h2>
+                            <div class="section-controls">
+                                <div class="section-type-badge">
+                                    <i class="${getSectionIcon(section.type)}"></i> ${getTypeName(section.type)}
+                                </div>
+                                <button class="btn btn-sm btn-link section-toggle" aria-label="Expandir/Colapsar sección">
+                                    <i class="fas fa-chevron-down" id="toggle-icon-${section.id}"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="section-content" id="section-content-${section.id}" style="display: none;">
+                            ${renderSectionContent(section)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            sectionsContainer.innerHTML = sectionsHtml;
+
+            // Configurar los botones de expandir/colapsar todo
+            document.getElementById('expandAllBtn').addEventListener('click', expandAllSections);
+            document.getElementById('collapseAllBtn').addEventListener('click', collapseAllSections);
+        }
+
+        function renderSectionContent(section) {
+            let contentHtml = '';
+
+            switch (section.type) {
+                case 'text':
+                    contentHtml = `
+                        <div class="text-content">
+                            ${section.content}
+                        </div>
+                    `;
+                    break;
+
+                case 'youtube':
+                    contentHtml = `
+                        <div class="youtube-container">
+                            <iframe src="https://www.youtube.com/embed/${section.content}"
+                                    frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    `;
+                    break;
+
+                case 'geogebra':
+                    contentHtml = `
+                        <div class="geogebra-container">
+                            <iframe src="https://www.geogebra.org/material/iframe/id/${section.content}"
+                                    frameborder="0"></iframe>
+                        </div>
+                    `;
+                    break;
+
+                case 'image':
+                    contentHtml = `
+                        <div class="image-container">
+                            <img src="${section.content}" alt="${section.title}">
+                        </div>
+                    `;
+                    break;
+
+                case 'pdf':
+                    contentHtml = `
+                        <div class="pdf-container">
+                            <a href="${section.content}" target="_blank" download>
+                                <i class="fas fa-file-pdf"></i> Descargar PDF
+                            </a>
+                        </div>
+                    `;
+                    break;
+
+                case 'html':
+                    contentHtml = `
+                        <div class="html-container">
+                            <iframe src="../activities/html/${section.content}"
+                                    frameborder="0" style="width:100%; height:500px;"></iframe>
+                        </div>
+                    `;
+                    break;
+
+                case 'activity':
+                    contentHtml = `
+                        <div class="activity-container">
+                            <iframe src="../activities/templates/${section.content}"
+                                    frameborder="0"></iframe>
+                        </div>
+                    `;
+                    break;
+
+                default:
+                    contentHtml = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Tipo de contenido no soportado.
+                        </div>
+                    `;
+            }
+
+            return contentHtml;
+        }
+
+        function showError(title, message) {
+            document.getElementById('sectionsContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <h4>${title}</h4>
+                    <p>${message}</p>
+                    <a href="../index.html" class="btn btn-outline-primary mt-3">
+                        <i class="fas fa-home"></i> Volver al inicio
+                    </a>
+                </div>
+            `;
+
+            document.getElementById('courseInfo').innerHTML = `
+                <p class="text-muted">Información no disponible</p>
+            `;
+
+            document.getElementById('topicsNavigation').innerHTML = `
+                <p class="text-muted">Información no disponible</p>
+            `;
+        }
+
+        // Función para expandir/colapsar una sección
+        function toggleSection(sectionId) {
+            const contentElement = document.getElementById(`section-content-${sectionId}`);
+            const iconElement = document.getElementById(`toggle-icon-${sectionId}`);
+
+            if (contentElement.style.display === 'none') {
+                // Expandir
+                contentElement.style.display = 'block';
+                iconElement.classList.remove('fa-chevron-down');
+                iconElement.classList.add('fa-chevron-up');
+            } else {
+                // Colapsar
+                contentElement.style.display = 'none';
+                iconElement.classList.remove('fa-chevron-up');
+                iconElement.classList.add('fa-chevron-down');
+            }
+        }
+
+        // Función para expandir todas las secciones
+        function expandAllSections() {
+            if (!currentTopic || !currentTopic.sections) return;
+
+            currentTopic.sections.forEach(section => {
+                const contentElement = document.getElementById(`section-content-${section.id}`);
+                const iconElement = document.getElementById(`toggle-icon-${section.id}`);
+
+                if (contentElement && iconElement) {
+                    contentElement.style.display = 'block';
+                    iconElement.classList.remove('fa-chevron-down');
+                    iconElement.classList.add('fa-chevron-up');
+                }
+            });
+        }
+
+        // Función para colapsar todas las secciones
+        function collapseAllSections() {
+            if (!currentTopic || !currentTopic.sections) return;
+
+            currentTopic.sections.forEach(section => {
+                const contentElement = document.getElementById(`section-content-${section.id}`);
+                const iconElement = document.getElementById(`toggle-icon-${section.id}`);
+
+                if (contentElement && iconElement) {
+                    contentElement.style.display = 'none';
+                    iconElement.classList.remove('fa-chevron-up');
+                    iconElement.classList.add('fa-chevron-down');
+                }
+            });
+        }
+
+        function getSectionIcon(type) {
+            switch (type) {
+                case 'text':
+                    return 'fas fa-align-left';
+                case 'youtube':
+                    return 'fab fa-youtube';
+                case 'geogebra':
+                    return 'fas fa-calculator';
+                case 'image':
+                    return 'fas fa-image';
+                case 'pdf':
+                    return 'fas fa-file-pdf';
+                case 'html':
+                    return 'fab fa-html5';
+                case 'activity':
+                    return 'fas fa-tasks';
+                default:
+                    return 'fas fa-file';
+            }
+        }
+
+        function getTypeName(type) {
+            switch (type) {
+                case 'text':
+                    return 'Texto';
+                case 'youtube':
+                    return 'Video';
+                case 'geogebra':
+                    return 'GeoGebra';
+                case 'image':
+                    return 'Imagen';
+                case 'pdf':
+                    return 'PDF';
+                case 'html':
+                    return 'HTML';
+                case 'activity':
+                    return 'Actividad';
+                default:
+                    return 'Desconocido';
+            }
+        }
+    </script>
+</body>
+</html>

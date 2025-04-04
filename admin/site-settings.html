@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración del Sitio - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">Panel de Administración</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Configuración del Sitio</li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Configuración del Sitio</h1>
+                    <div class="d-flex">
+                        <a href="../index.html" class="btn btn-outline-primary">
+                            <i class="fas fa-home"></i> Inicio
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Configuración General -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-cog me-2"></i> Configuración General</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="generalSettingsForm">
+                                    <div class="mb-3">
+                                        <label for="siteName" class="form-label">Nombre del Sitio</label>
+                                        <input type="text" class="form-control" id="siteName" value="MatemáticaWeb" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="siteDescription" class="form-label">Descripción del Sitio</label>
+                                        <textarea class="form-control" id="siteDescription" rows="3">Plataforma educativa para el aprendizaje de matemáticas</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="primaryColor" class="form-label">Color Principal</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">#</span>
+                                            <input type="text" class="form-control" id="primaryColor" value="0d6efd" maxlength="6" pattern="[0-9A-Fa-f]{6}">
+                                            <button class="btn btn-outline-secondary" type="button" id="previewColorBtn">
+                                                <i class="fas fa-eye"></i> Vista Previa
+                                            </button>
+                                        </div>
+                                        <div class="form-text">Código hexadecimal del color principal (sin #)</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fontFamily" class="form-label">Fuente Principal</label>
+                                        <select class="form-select" id="fontFamily">
+                                            <option value="'Roboto', sans-serif">Roboto</option>
+                                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                                            <option value="'Lato', sans-serif">Lato</option>
+                                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                                            <option value="'Poppins', sans-serif">Poppins</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Configuración del Logo -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-image me-2"></i> Logo del Sitio</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="logoSettingsForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Logo Actual</label>
+                                        <div class="current-logo-container p-3 bg-light text-center rounded mb-3">
+                                            <img src="#" id="currentLogo" alt="Logo actual" class="img-fluid" style="max-height: 100px; display: none;">
+                                            <div id="defaultLogo" class="d-flex align-items-center justify-content-center" style="height: 100px;">
+                                                <i class="fas fa-square-root-alt fa-3x text-primary"></i>
+                                                <span class="h3 ms-2 mb-0">MatemáticaWeb</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="logoFile" class="form-label">Subir Nuevo Logo</label>
+                                        <input type="file" class="form-control" id="logoFile" accept="image/*">
+                                        <div class="form-text">Formatos recomendados: PNG o SVG con fondo transparente. Tamaño máximo: 1MB.</div>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="useLogo" checked>
+                                        <label class="form-check-label" for="useLogo">Mostrar logo en lugar del texto</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Guardar Logo</button>
+                                    <button type="button" class="btn btn-outline-danger" id="resetLogoBtn">Restablecer Logo Predeterminado</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <!-- Vista Previa -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-eye me-2"></i> Vista Previa</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="preview-container">
+                                    <div class="preview-header" id="previewHeader">
+                                        <div class="preview-logo" id="previewLogo">
+                                            <i class="fas fa-square-root-alt"></i>
+                                            <span id="previewSiteName">MatemáticaWeb</span>
+                                        </div>
+                                        <div class="preview-nav">
+                                            <div class="preview-nav-item active"></div>
+                                            <div class="preview-nav-item"></div>
+                                            <div class="preview-nav-item"></div>
+                                        </div>
+                                    </div>
+                                    <div class="preview-content">
+                                        <div class="preview-title" id="previewTitle">Título de Ejemplo</div>
+                                        <div class="preview-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.</div>
+                                        <div class="preview-button" id="previewButton">Botón de Ejemplo</div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <small class="text-muted">Esta es una vista previa simplificada. Los cambios se aplicarán al guardar.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Herramientas Adicionales -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Herramientas Adicionales</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <a href="#" class="list-group-item list-group-item-action" id="clearCacheBtn">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Limpiar Caché</h6>
+                                            <i class="fas fa-broom"></i>
+                                        </div>
+                                        <small>Eliminar datos temporales almacenados</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action" id="exportDataBtn">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Exportar Datos</h6>
+                                            <i class="fas fa-file-export"></i>
+                                        </div>
+                                        <small>Descargar copia de seguridad de los datos</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action" id="importDataBtn">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Importar Datos</h6>
+                                            <i class="fas fa-file-import"></i>
+                                        </div>
+                                        <small>Restaurar datos desde una copia de seguridad</small>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action text-danger" id="resetDataBtn">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">Reiniciar Datos</h6>
+                                            <i class="fas fa-trash-alt"></i>
+                                        </div>
+                                        <small>Eliminar todos los datos y volver a los valores predeterminados</small>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <!-- Modal de Importación -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Importar Datos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm">
+                        <div class="mb-3">
+                            <label for="importFile" class="form-label">Archivo de Datos</label>
+                            <input type="file" class="form-control" id="importFile" accept=".json" required>
+                            <div class="form-text">Seleccione un archivo JSON exportado previamente</div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="backupBeforeImport" checked>
+                            <label class="form-check-label" for="backupBeforeImport">
+                                Crear copia de seguridad antes de importar
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmImportBtn">Importar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sample-data.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+            
+            // Verificar si el usuario está autenticado y es administrador
+            if (!auth.isAdmin()) {
+                window.location.href = '../login.html';
+                return;
+            }
+            
+            // Configurar eventos
+            setupEventListeners();
+            
+            // Actualizar vista previa
+            updatePreview();
+        });
+        
+        function setupEventListeners() {
+            // Formulario de configuración general
+            document.getElementById('generalSettingsForm').addEventListener('submit', saveGeneralSettings);
+            
+            // Formulario de logo
+            document.getElementById('logoSettingsForm').addEventListener('submit', saveLogo);
+            
+            // Botón de vista previa de color
+            document.getElementById('previewColorBtn').addEventListener('click', updatePreview);
+            
+            // Botón de restablecer logo
+            document.getElementById('resetLogoBtn').addEventListener('click', resetLogo);
+            
+            // Eventos para cambios en tiempo real
+            document.getElementById('siteName').addEventListener('input', updatePreview);
+            document.getElementById('primaryColor').addEventListener('input', updatePreview);
+            document.getElementById('fontFamily').addEventListener('change', updatePreview);
+            
+            // Herramientas adicionales
+            document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
+            document.getElementById('exportDataBtn').addEventListener('click', exportData);
+            document.getElementById('importDataBtn').addEventListener('click', showImportModal);
+            document.getElementById('resetDataBtn').addEventListener('click', resetData);
+            
+            // Modal de importación
+            document.getElementById('confirmImportBtn').addEventListener('click', importData);
+        }
+        
+        function saveGeneralSettings(event) {
+            event.preventDefault();
+            
+            const siteName = document.getElementById('siteName').value;
+            const siteDescription = document.getElementById('siteDescription').value;
+            const primaryColor = document.getElementById('primaryColor').value;
+            const fontFamily = document.getElementById('fontFamily').value;
+            
+            // En una aplicación real, aquí se guardarían los datos en el servidor
+            // Para esta demo, simulamos el guardado
+            
+            // Guardar en localStorage
+            localStorage.setItem('site_name', siteName);
+            localStorage.setItem('site_description', siteDescription);
+            localStorage.setItem('primary_color', primaryColor);
+            localStorage.setItem('font_family', fontFamily);
+            
+            alert('Configuración guardada correctamente');
+        }
+        
+        function saveLogo(event) {
+            event.preventDefault();
+            
+            const logoFile = document.getElementById('logoFile').files[0];
+            const useLogo = document.getElementById('useLogo').checked;
+            
+            if (logoFile) {
+                // En una aplicación real, aquí se subiría el archivo al servidor
+                // Para esta demo, simulamos la subida
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Guardar en localStorage
+                    localStorage.setItem('site_logo', e.target.result);
+                    localStorage.setItem('use_logo', useLogo);
+                    
+                    // Actualizar la vista previa
+                    document.getElementById('currentLogo').src = e.target.result;
+                    document.getElementById('currentLogo').style.display = 'inline-block';
+                    document.getElementById('defaultLogo').style.display = 'none';
+                    
+                    alert('Logo guardado correctamente');
+                };
+                reader.readAsDataURL(logoFile);
+            } else {
+                // Solo guardar la preferencia de uso de logo
+                localStorage.setItem('use_logo', useLogo);
+                alert('Preferencias guardadas correctamente');
+            }
+        }
+        
+        function resetLogo() {
+            if (confirm('¿Estás seguro de que deseas restablecer el logo predeterminado?')) {
+                // Eliminar el logo personalizado
+                localStorage.removeItem('site_logo');
+                
+                // Actualizar la vista previa
+                document.getElementById('currentLogo').style.display = 'none';
+                document.getElementById('defaultLogo').style.display = 'flex';
+                
+                alert('Logo restablecido correctamente');
+            }
+        }
+        
+        function updatePreview() {
+            const siteName = document.getElementById('siteName').value;
+            const primaryColor = '#' + document.getElementById('primaryColor').value;
+            const fontFamily = document.getElementById('fontFamily').value;
+            
+            // Actualizar nombre del sitio
+            document.getElementById('previewSiteName').textContent = siteName;
+            
+            // Actualizar colores
+            document.getElementById('previewHeader').style.backgroundColor = primaryColor;
+            document.getElementById('previewButton').style.backgroundColor = primaryColor;
+            
+            // Actualizar fuente
+            document.querySelector('.preview-container').style.fontFamily = fontFamily;
+        }
+        
+        function clearCache() {
+            if (confirm('¿Estás seguro de que deseas limpiar la caché? Esto no afectará a tus datos guardados.')) {
+                // En una aplicación real, aquí se limpiaría la caché del navegador
+                // Para esta demo, simulamos la limpieza
+                
+                // Limpiar caché de localStorage excepto los datos importantes
+                const keysToKeep = [
+                    DataManager.COURSES_KEY,
+                    DataManager.TOPICS_KEY,
+                    'auth_token',
+                    'site_name',
+                    'site_description',
+                    'primary_color',
+                    'font_family',
+                    'site_logo',
+                    'use_logo'
+                ];
+                
+                Object.keys(localStorage).forEach(key => {
+                    if (!keysToKeep.includes(key)) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                
+                alert('Caché limpiada correctamente');
+            }
+        }
+        
+        function exportData() {
+            // Obtener todos los datos
+            const exportData = {
+                courses: DataManager.getCourses(),
+                topics: DataManager.getTopics(),
+                settings: {
+                    siteName: localStorage.getItem('site_name') || 'MatemáticaWeb',
+                    siteDescription: localStorage.getItem('site_description') || 'Plataforma educativa para el aprendizaje de matemáticas',
+                    primaryColor: localStorage.getItem('primary_color') || '0d6efd',
+                    fontFamily: localStorage.getItem('font_family') || "'Roboto', sans-serif",
+                    siteLogo: localStorage.getItem('site_logo') || '',
+                    useLogo: localStorage.getItem('use_logo') === 'true'
+                }
+            };
+            
+            // Convertir a JSON
+            const jsonData = JSON.stringify(exportData, null, 2);
+            
+            // Crear un blob y descargar
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'matematicaweb_backup_' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function showImportModal() {
+            const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+            importModal.show();
+        }
+        
+        function importData() {
+            const importFile = document.getElementById('importFile').files[0];
+            const backupBeforeImport = document.getElementById('backupBeforeImport').checked;
+            
+            if (!importFile) {
+                alert('Por favor seleccione un archivo para importar');
+                return;
+            }
+            
+            // Crear copia de seguridad si es necesario
+            if (backupBeforeImport) {
+                exportData();
+            }
+            
+            // Leer el archivo
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validar los datos
+                    if (!importedData.courses || !importedData.topics) {
+                        throw new Error('El archivo no contiene datos válidos');
+                    }
+                    
+                    // Importar los datos
+                    DataManager.saveCourses(importedData.courses);
+                    DataManager.saveTopics(importedData.topics);
+                    
+                    // Importar configuración
+                    if (importedData.settings) {
+                        localStorage.setItem('site_name', importedData.settings.siteName || 'MatemáticaWeb');
+                        localStorage.setItem('site_description', importedData.settings.siteDescription || 'Plataforma educativa para el aprendizaje de matemáticas');
+                        localStorage.setItem('primary_color', importedData.settings.primaryColor || '0d6efd');
+                        localStorage.setItem('font_family', importedData.settings.fontFamily || "'Roboto', sans-serif");
+                        
+                        if (importedData.settings.siteLogo) {
+                            localStorage.setItem('site_logo', importedData.settings.siteLogo);
+                        }
+                        
+                        localStorage.setItem('use_logo', importedData.settings.useLogo || false);
+                    }
+                    
+                    // Cerrar el modal
+                    bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                    
+                    alert('Datos importados correctamente. La página se recargará para aplicar los cambios.');
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Error al importar datos:', error);
+                    alert('Error al importar datos: ' + error.message);
+                }
+            };
+            reader.readAsText(importFile);
+        }
+        
+        function resetData() {
+            if (confirm('¿Estás seguro de que deseas reiniciar todos los datos? Esta acción no se puede deshacer.')) {
+                if (confirm('Esta acción eliminará todos los cursos, temas y secciones. ¿Deseas continuar?')) {
+                    // Reiniciar datos
+                    DataManager.resetData();
+                    
+                    // Reiniciar configuración
+                    localStorage.removeItem('site_name');
+                    localStorage.removeItem('site_description');
+                    localStorage.removeItem('primary_color');
+                    localStorage.removeItem('font_family');
+                    localStorage.removeItem('site_logo');
+                    localStorage.removeItem('use_logo');
+                    
+                    alert('Todos los datos han sido reiniciados. La página se recargará para aplicar los cambios.');
+                    window.location.reload();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Curso - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/course-editor.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container-fluid mt-4">
+        <div class="row">
+            <!-- Barra lateral con la estructura del curso -->
+            <div class="col-md-3">
+                <div class="card course-structure-sidebar">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Estructura del Curso</h5>
+                        <button class="btn btn-sm btn-primary" id="addTopicBtn">
+                            <i class="fas fa-plus"></i> Tema
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="course-structure-tree" id="courseStructure">
+                            <!-- La estructura del curso se cargará aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área principal de edición -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="editorTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="courseTab" data-bs-toggle="tab" href="#courseContent">Información del Curso</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="topicsTab" data-bs-toggle="tab" href="#topicsContent">Temas</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="previewTab" data-bs-toggle="tab" href="#previewContent">Vista Previa</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- Pestaña de información del curso -->
+                            <div class="tab-pane fade show active" id="courseContent">
+                                <h3 id="courseTitle">Cargando...</h3>
+                                <form id="courseForm">
+                                    <div class="mb-3">
+                                        <label for="courseTitleInput" class="form-label">Título del Curso</label>
+                                        <input type="text" class="form-control" id="courseTitleInput" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="courseDescriptionInput" class="form-label">Descripción</label>
+                                        <textarea class="form-control" id="courseDescriptionInput" rows="3" required></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="courseColorInput" class="form-label">Color (Hexadecimal)</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">#</span>
+                                                    <input type="text" class="form-control" id="courseColorInput" placeholder="4CAF50" pattern="[0-9A-Fa-f]{6}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="courseIconInput" class="form-label">Icono (Clase Font Awesome)</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-icons"></i></span>
+                                                    <input type="text" class="form-control" id="courseIconInput" placeholder="fas fa-book">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="courseImageInput" class="form-label">Imagen (Opcional)</label>
+                                        <input type="file" class="form-control" id="courseImageInput" accept="image/*">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                </form>
+                            </div>
+
+                            <!-- Pestaña de temas -->
+                            <div class="tab-pane fade" id="topicsContent">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h3>Temas del Curso</h3>
+                                    <button class="btn btn-primary" id="addNewTopicBtn">
+                                        <i class="fas fa-plus"></i> Nuevo Tema
+                                    </button>
+                                </div>
+                                <div class="topics-container" id="topicsList">
+                                    <!-- Los temas se cargarán aquí -->
+                                </div>
+                            </div>
+
+                            <!-- Pestaña de vista previa -->
+                            <div class="tab-pane fade" id="previewContent">
+                                <h3>Vista Previa del Curso</h3>
+                                <div class="course-preview-container">
+                                    <div class="course-header-preview">
+                                        <h2 id="previewCourseTitle">Título del Curso</h2>
+                                        <p id="previewCourseDescription">Descripción del curso</p>
+                                    </div>
+                                    <div class="topics-preview" id="previewTopics">
+                                        <!-- Vista previa de los temas -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para editar tema -->
+    <div class="modal fade" id="topicModal" tabindex="-1" aria-labelledby="topicModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="topicModalLabel">Editar Tema</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="topicForm">
+                        <input type="hidden" id="topicId">
+                        <div class="mb-3">
+                            <label for="topicTitle" class="form-label">Título del Tema</label>
+                            <input type="text" class="form-control" id="topicTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="topicDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="topicDescription" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="topicIcon" class="form-label">Icono (Clase Font Awesome)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-icons"></i></span>
+                                <input type="text" class="form-control" id="topicIcon" placeholder="fas fa-book">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Secciones</label>
+                            <div class="sections-container" id="topicSections">
+                                <!-- Las secciones se cargarán aquí -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary mt-2" id="addSectionBtn">
+                                <i class="fas fa-plus"></i> Agregar Sección
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveTopicBtn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar sección -->
+    <div class="modal fade" id="sectionModal" tabindex="-1" aria-labelledby="sectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sectionModalLabel">Agregar Sección</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="sectionForm">
+                        <input type="hidden" id="sectionId">
+                        <div class="mb-3">
+                            <label for="sectionTitle" class="form-label">Título de la Sección</label>
+                            <input type="text" class="form-control" id="sectionTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionType" class="form-label">Tipo de Contenido</label>
+                            <select class="form-select" id="sectionType" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="text">Texto</option>
+                                <option value="youtube">Video de YouTube</option>
+                                <option value="geogebra">Applet de GeoGebra</option>
+                                <option value="image">Imagen</option>
+                                <option value="pdf">Archivo PDF</option>
+                                <option value="activity">Actividad</option>
+                            </select>
+                        </div>
+
+                        <!-- Campos específicos para cada tipo de contenido -->
+                        <div id="contentFields">
+                            <!-- Los campos se cargarán dinámicamente según el tipo seleccionado -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveSectionBtn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para seleccionar actividad -->
+    <div class="modal fade" id="activitySelectorModal" tabindex="-1" aria-labelledby="activitySelectorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activitySelectorModalLabel">Seleccionar Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="activitySearch" placeholder="Buscar actividad...">
+                    </div>
+                    <div class="activity-grid" id="activityList">
+                        <!-- Las actividades se cargarán aquí -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="activities.html" class="btn btn-primary">Crear Nueva Actividad</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/course-editor.js"></script>
+</body>
+</html>

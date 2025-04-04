@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Panel de Administración</h1>
+                    <a href="../index.html" class="btn btn-outline-primary">
+                        <i class="fas fa-home"></i> Volver al inicio
+                    </a>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="stats-value" id="coursesCount">0</div>
+                            <div class="stats-label">Cursos</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div class="stats-value" id="topicsCount">0</div>
+                            <div class="stats-label">Temas</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-card">
+                            <div class="stats-icon">
+                                <i class="fas fa-puzzle-piece"></i>
+                            </div>
+                            <div class="stats-value" id="sectionsCount">0</div>
+                            <div class="stats-label">Secciones</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Cursos Recientes</h5>
+                                <a href="courses.html" class="btn btn-sm btn-primary">Ver Todos</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Título</th>
+                                                <th>Secciones</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recentCoursesList">
+                                            <!-- Los cursos recientes se cargarán aquí -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Actividades Recientes</h5>
+                                <a href="activities.html" class="btn btn-sm btn-primary">Ver Todas</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Título</th>
+                                                <th>Tipo</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recentActivitiesList">
+                                            <!-- Las actividades recientes se cargarán aquí -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Acciones Rápidas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-4">
+                                    <h6 class="text-muted mb-3">Gestión de Contenidos</h6>
+                                    <div class="col-md-3">
+                                        <a href="course-editor.html" class="btn btn-primary w-100 mb-3">
+                                            <i class="fas fa-edit me-2"></i> Editor de Cursos
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <a href="topic-editor.html" class="btn btn-success w-100 mb-3">
+                                            <i class="fas fa-book-open me-2"></i> Editor de Temas
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <a href="section-editor.html" class="btn btn-info w-100 mb-3">
+                                            <i class="fas fa-puzzle-piece me-2"></i> Editor de Secciones
+                                        </a>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <a href="resource-manager.html" class="btn btn-warning w-100 mb-3">
+                                            <i class="fas fa-file me-2"></i> Gestor de Recursos
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <h6 class="text-muted mb-3">Herramientas Adicionales</h6>
+                                    <div class="col-md-6">
+                                        <a href="site-settings.html" class="btn btn-primary w-100 mb-3">
+                                            <i class="fas fa-cog me-2"></i> Configuración del Sitio
+                                        </a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <a href="#" onclick="DataManager.resetData(); return false;" class="btn btn-danger w-100 mb-3">
+                                            <i class="fas fa-trash me-2"></i> Reiniciar Datos
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sample-data.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+
+            // Verificar si el usuario está autenticado y es administrador
+            if (!auth.isAdmin()) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            // Cargar estadísticas
+            loadStats();
+
+            // Cargar listas recientes
+            loadRecentCourses();
+            loadRecentActivities();
+        });
+
+        function loadStats() {
+            // Obtener datos reales usando DataManager
+            const courses = DataManager.getCourses();
+            const topics = DataManager.getTopics();
+
+            // Contar secciones
+            let sectionsCount = 0;
+            topics.forEach(topic => {
+                if (topic.sections) {
+                    sectionsCount += topic.sections.length;
+                }
+            });
+
+            // Mostrar estadísticas
+            document.getElementById('coursesCount').textContent = courses.length;
+            document.getElementById('topicsCount').textContent = topics.length;
+            document.getElementById('sectionsCount').textContent = sectionsCount;
+        }
+
+        function loadRecentCourses() {
+            const recentCoursesList = document.getElementById('recentCoursesList');
+            // Obtener cursos usando DataManager
+            const courses = DataManager.getCourses();
+            // Mostrar solo los 3 cursos más recientes (en este caso, los últimos del array)
+            const recentCourses = courses.slice(-3).reverse();
+
+            if (recentCourses.length === 0) {
+                recentCoursesList.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center">No hay cursos disponibles</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            recentCoursesList.innerHTML = recentCourses.map(course => {
+                // Obtener temas del curso
+                const topics = DataManager.getTopicsByCourse(course.id);
+
+                return `
+                <tr>
+                    <td>${course.title}</td>
+                    <td>${topics.length}</td>
+                    <td>
+                        <a href="course-editor.html?id=${course.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function loadRecentActivities() {
+            // Cambiar el título de la sección
+            const cardHeaders = document.querySelectorAll('.card-header h5');
+            for (let header of cardHeaders) {
+                if (header.textContent.includes('Actividades Recientes')) {
+                    header.textContent = 'Temas Recientes';
+                    break;
+                }
+            }
+
+            const cardLinks = document.querySelectorAll('.card-header a');
+            for (let link of cardLinks) {
+                if (link.getAttribute('href') === 'activities.html') {
+                    link.textContent = 'Ver Todos';
+                    link.href = 'topic-editor.html';
+                    break;
+                }
+            }
+
+            // Cambiar los encabezados de la tabla
+            const tableHeaders = document.querySelector('#recentActivitiesList').closest('table').querySelector('thead tr');
+            tableHeaders.innerHTML = `
+                <th>Título</th>
+                <th>Curso</th>
+                <th>Acciones</th>
+            `;
+
+            // Obtener temas usando DataManager
+            const topics = DataManager.getTopics();
+            // Mostrar solo los 3 temas más recientes
+            const recentTopics = topics.slice(-3).reverse();
+
+            const recentActivitiesList = document.getElementById('recentActivitiesList');
+
+            if (recentTopics.length === 0) {
+                recentActivitiesList.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center">No hay temas disponibles</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            recentActivitiesList.innerHTML = recentTopics.map(topic => {
+                // Obtener el curso al que pertenece el tema
+                const course = DataManager.getCourseById(topic.courseId);
+                const courseName = course ? course.title : 'Curso desconocido';
+
+                return `
+                <tr>
+                    <td>${topic.title}</td>
+                    <td>${courseName}</td>
+                    <td>
+                        <a href="section-editor.html?topicId=${topic.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

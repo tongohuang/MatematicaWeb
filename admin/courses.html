@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Cursos - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Administrar Cursos</h1>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal">
+                        <i class="fas fa-plus"></i> Nuevo Curso
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Título</th>
+                                        <th>Secciones</th>
+                                        <th>Lecciones</th>
+                                        <th>Color</th>
+                                        <th>Icono</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="coursesList">
+                                    <!-- Los cursos se cargarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para crear/editar cursos -->
+    <div class="modal fade" id="courseModal" tabindex="-1" aria-labelledby="courseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="courseModalLabel">Nuevo Curso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="courseForm">
+                        <input type="hidden" id="courseId">
+                        <div class="mb-3">
+                            <label for="courseTitle" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="courseTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="courseDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="courseDescription" rows="3" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="courseColor" class="form-label">Color (Hexadecimal)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">#</span>
+                                        <input type="text" class="form-control" id="courseColor" placeholder="4CAF50" pattern="[0-9A-Fa-f]{6}">
+                                    </div>
+                                    <div class="form-text">Si no se especifica, se usará un color predeterminado</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="courseIcon" class="form-label">Icono (Clase Font Awesome)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-icons"></i></span>
+                                        <input type="text" class="form-control" id="courseIcon" placeholder="fas fa-book">
+                                    </div>
+                                    <div class="form-text">Si no se especifica, se usará un icono predeterminado</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="courseImage" class="form-label">Imagen (Opcional)</label>
+                            <input type="file" class="form-control" id="courseImage" accept="image/*">
+                            <div class="form-text">Si no se sube una imagen, se usará el icono con el color de fondo</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Vista previa</label>
+                            <div class="course-preview">
+                                <div class="course-card">
+                                    <div class="course-header" id="previewHeader">
+                                        <div class="course-icon" id="previewIcon">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                    </div>
+                                    <div class="course-content">
+                                        <h3 id="previewTitle">Título del Curso</h3>
+                                        <p id="previewDescription">Descripción del curso</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveCourseBtn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+            
+            // Verificar si el usuario está autenticado y es administrador
+            if (!auth.isAdmin()) {
+                window.location.href = '../login.html';
+                return;
+            }
+            
+            // Cargar lista de cursos
+            loadCoursesList();
+            
+            // Configurar eventos
+            document.getElementById('saveCourseBtn').addEventListener('click', saveCourse);
+            
+            // Configurar vista previa en tiempo real
+            document.getElementById('courseTitle').addEventListener('input', updatePreview);
+            document.getElementById('courseDescription').addEventListener('input', updatePreview);
+            document.getElementById('courseColor').addEventListener('input', updatePreview);
+            document.getElementById('courseIcon').addEventListener('input', updatePreview);
+            document.getElementById('courseImage').addEventListener('change', handleImageUpload);
+        });
+        
+        function loadCoursesList() {
+            const coursesList = document.getElementById('coursesList');
+            coursesList.innerHTML = SAMPLE_COURSES.map(course => `
+                <tr>
+                    <td>${course.id}</td>
+                    <td>${course.title}</td>
+                    <td>${course.sections.length}</td>
+                    <td>${course.sections.reduce((acc, section) => acc + section.lessons.length, 0)}</td>
+                    <td>
+                        <span class="color-preview" style="background-color: ${course.color || '#6c757d'}"></span>
+                        ${course.color || '-'}
+                    </td>
+                    <td><i class="${course.icon || 'fas fa-book'}"></i> ${course.icon || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editCourse(${course.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCourse(${course.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function editCourse(courseId) {
+            const course = SAMPLE_COURSES.find(c => c.id === courseId);
+            if (!course) return;
+            
+            document.getElementById('courseId').value = course.id;
+            document.getElementById('courseTitle').value = course.title;
+            document.getElementById('courseDescription').value = course.description;
+            document.getElementById('courseColor').value = course.color ? course.color.replace('#', '') : '';
+            document.getElementById('courseIcon').value = course.icon || '';
+            
+            updatePreview();
+            
+            document.getElementById('courseModalLabel').textContent = 'Editar Curso';
+            const courseModal = new bootstrap.Modal(document.getElementById('courseModal'));
+            courseModal.show();
+        }
+        
+        function saveCourse() {
+            // En una aplicación real, aquí se enviarían los datos al servidor
+            // Para esta demo, simplemente mostraremos un mensaje
+            alert('Curso guardado correctamente (simulación)');
+            
+            // Cerrar el modal
+            const courseModal = bootstrap.Modal.getInstance(document.getElementById('courseModal'));
+            courseModal.hide();
+        }
+        
+        function deleteCourse(courseId) {
+            if (confirm('¿Estás seguro de que deseas eliminar este curso?')) {
+                // En una aplicación real, aquí se enviaría la solicitud al servidor
+                alert('Curso eliminado correctamente (simulación)');
+            }
+        }
+        
+        function updatePreview() {
+            const title = document.getElementById('courseTitle').value || 'Título del Curso';
+            const description = document.getElementById('courseDescription').value || 'Descripción del curso';
+            const color = document.getElementById('courseColor').value ? `#${document.getElementById('courseColor').value}` : '#6c757d';
+            const icon = document.getElementById('courseIcon').value || 'fas fa-book';
+            
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewDescription').textContent = description;
+            document.getElementById('previewHeader').style.backgroundColor = color;
+            document.getElementById('previewIcon').innerHTML = `<i class="${icon}"></i>`;
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewHeader = document.getElementById('previewHeader');
+                    previewHeader.innerHTML = `
+                        <img src="${e.target.result}" alt="Vista previa" class="course-image">
+                        <div class="course-icon" style="display: none;">
+                            <i class="${document.getElementById('courseIcon').value || 'fas fa-book'}"></i>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                updatePreview();
+            }
+        }
+    </script>
+</body>
+</html>

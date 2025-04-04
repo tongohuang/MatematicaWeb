@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="form-container">
+            <h2 class="text-center mb-4">Iniciar Sesión</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="remember">
+                        <label class="form-check-label" for="remember">Recordarme</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                <div class="text-center mt-3">
+                    <a href="forgot-password.html">¿Olvidaste tu contraseña?</a>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <small><i class="fas fa-info-circle"></i> Credenciales de administrador: admin@matematicaweb.com / admin123</small>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', 'components/header.html');
+            loadComponent('footer', 'components/footer.html');
+        });
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                if (await auth.login(email, password)) {
+                    // Redirigir al panel de administración si es admin, o al index si es usuario normal
+                    if (auth.isAdmin()) {
+                        window.location.href = 'admin/index.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    alert('Credenciales incorrectas. Usa admin@matematicaweb.com / admin123');
+                }
+            } catch (error) {
+                console.error('Error al iniciar sesión:', error);
+                alert('Error al iniciar sesión. Intenta con admin@matematicaweb.com / admin123');
+            }
+        }
+    </script>
+</body>
+</html>

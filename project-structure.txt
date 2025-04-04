@@ -1,0 +1,25 @@
+/matematica-web
+  ├── index.html
+  ├── css/
+  │   ├── main.css
+  │   ├── admin.css
+  │   └── components.css      # Estilos de componentes reutilizables
+  ├── js/
+  │   ├── main.js
+  │   ├── auth.js
+  │   ├── courses.js
+  │   ├── admin.js
+  │   ├── activities.js       # Gestión de actividades
+  │   └── utils.js           # Funciones auxiliares
+  ├── admin/
+  │   ├── index.html
+  │   ├── courses.html       # Gestión de cursos
+  │   └── activities.html    # Gestión de actividades
+  ├── activities/            # Carpeta para actividades HTML personalizadas
+  │   ├── index.json        # Registro de actividades disponibles
+  │   └── templates/        # Actividades HTML personalizadas
+  ├── courses/
+  │   └── view.html
+  └── components/           # Componentes reutilizables
+      ├── header.html
+      └── footer.html

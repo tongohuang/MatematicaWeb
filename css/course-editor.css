@@ -1,0 +1,343 @@
+/* Estilos para el editor de cursos */
+
+/* Barra lateral con la estructura del curso */
+.course-structure-sidebar {
+    height: calc(100vh - 150px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+}
+
+.course-structure-tree {
+    padding: 10px;
+}
+
+/* Árbol de estructura */
+.tree-item {
+    margin-bottom: 5px;
+}
+
+.tree-item-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.tree-item-header:hover {
+    background-color: #f8f9fa;
+}
+
+.tree-item-header.active {
+    background-color: #e9ecef;
+    font-weight: 500;
+}
+
+.tree-item-icon {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
+.tree-item-title {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tree-item-actions {
+    display: none;
+    margin-left: 8px;
+}
+
+.tree-item-header:hover .tree-item-actions {
+    display: flex;
+}
+
+.tree-item-action {
+    color: #6c757d;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 0.9rem;
+}
+
+.tree-item-action:hover {
+    color: #007bff;
+}
+
+.tree-children {
+    margin-left: 20px;
+    padding-left: 10px;
+    border-left: 1px dashed #ddd;
+}
+
+/* Contenedor de temas */
+.topics-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.topic-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.topic-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.topic-header {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+}
+
+.topic-icon {
+    font-size: 1.5rem;
+    margin-right: 10px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #007bff;
+}
+
+.topic-title {
+    margin: 0;
+    font-size: 1.2rem;
+    flex-grow: 1;
+}
+
+.topic-content {
+    padding: 15px;
+}
+
+.topic-description {
+    color: #6c757d;
+    margin-bottom: 15px;
+}
+
+.topic-stats {
+    display: flex;
+    justify-content: space-between;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.topic-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Contenedor de secciones */
+.sections-container {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.section-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+}
+
+.section-item:last-child {
+    border-bottom: none;
+}
+
+.section-type-icon {
+    margin-right: 10px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+.section-title {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+.section-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* Estilos para la vista previa */
+.course-preview-container {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.course-header-preview {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+.course-header-preview h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.topics-preview {
+    padding: 20px;
+}
+
+.topic-preview {
+    margin-bottom: 30px;
+}
+
+.topic-preview-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.topic-preview-icon {
+    font-size: 1.5rem;
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.topic-preview-title {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.sections-preview {
+    margin-left: 35px;
+}
+
+.section-preview {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.section-preview-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.section-preview-icon {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.section-preview-title {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.section-preview-content {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Estilos para el selector de actividades */
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.activity-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.activity-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.activity-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.activity-card-icon {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.activity-card-title {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.activity-card-type {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+
+.activity-card-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Estilos para los campos de contenido */
+.content-field {
+    margin-bottom: 15px;
+}
+
+.content-field-label {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.content-preview {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+/* Estilos para drag and drop */
+.draggable {
+    cursor: move;
+}
+
+.drag-over {
+    background-color: #e9ecef;
+    border: 2px dashed #007bff;
+}
+
+.drag-placeholder {
+    height: 40px;
+    background-color: #e9ecef;
+    border: 2px dashed #007bff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
