@@ -1,0 +1,39 @@
+# REGISTRO DE CAMBIOS DEL PROYECTO WEBMATEMATICA
+
+Este archivo contiene un registro detallado de todos los cambios significativos realizados en el proyecto WebMatematica.
+
+## Formato
+
+[YYYY-MM-DD] - Descripción del cambio realizado
+
+## Cambios
+
+[2023-10-15] - Creación del archivo CHANGELOG_PROYECTO_IMPORTANTE.txt para seguimiento de cambios
+
+[2023-10-15] - Mejora en el editor de texto: Añadido estado activo de botones en barra de herramientas y soporte mejorado para modo oscuro
+
+[2023-10-15] - Corrección de problemas de LaTeX: Mejorada la implementación de ecuaciones para mantener el color correcto y evitar fondo oscuro
+
+[2023-10-15] - Implementación de restricciones para el drag and drop: Modificado el código para evitar que los elementos arrastrados se salgan del área de trabajo
+
+[2023-10-15] - Agregada funcionalidad de desintegración automática de grupos cuando queda una sola sección
+
+[2023-10-15] - Mejora en la navegación lateral: Implementada barra de navegación jerárquica con soporte para mostrar cursos, temas y secciones
+
+[2023-10-15] - Corrección en la página de administración de cursos: Arreglado el botón de Nuevo Curso para redireccionar correctamente a course-editor.html
+
+[2023-10-15] - Optimización de la carga de cursos: Mejorado el método loadCoursesList para usar DataManager y mostrar correctamente los cursos disponibles
+
+[2023-10-15] - Mejora significativa en el editor de ecuaciones LaTeX: Añadidas plantillas predefinidas, modo oscuro y funcionalidad de copia al portapapeles 
+
+[2024-04-04] - Corrección en la página de cursos: Modificada la función loadCoursesList para mostrar correctamente todos los cursos disponibles y cambiado el botón "Nuevo Curso" para direccionar a course-editor.html
+
+[2024-04-04] - Mejora en el editor de texto: Corregida la funcionalidad de la barra de herramientas al agregar secciones de tipo "Texto" y agregado un selector de ecuaciones LaTeX predefinidas 
+
+[2024-04-04] - Corrección de error en el editor de texto: Solucionado problema que impedía el funcionamiento de las herramientas para agregar ecuaciones y colores de texto en nuevas secciones 
+
+[2024-04-05] - Solución definitiva para el editor de texto: Reimplementado el sistema de eventos para garantizar que todas las herramientas (colores, ecuaciones LaTeX y plantillas) funcionen correctamente en secciones nuevas 
+
+[2024-04-05] - Corrección del renderizado de ecuaciones: Solucionado problema con el renderizado de ecuaciones para que se visualicen correctamente, fondo claro en el editor, funcionalidad para continuar escribiendo después de ecuaciones y mejorada visibilidad del selector de color 
+
+[2024-04-06] - Implementación completa de un nuevo editor matemático: Reemplazado el editor anterior por una nueva versión basada en MathQuill y MathJax, con soporte mejorado para ecuaciones LaTeX, selector de color funcional, inserción de símbolos matemáticos y una interfaz más limpia y moderna. Soluciona problemas con fondos oscuros, posicionamiento de ecuaciones y visibilidad de elementos.

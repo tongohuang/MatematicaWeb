@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Sección - WebMatematica</title>
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/text-editor.css">
+    <link rel="stylesheet" href="../css/equation-editor.css">
+    <link rel="stylesheet" href="../css/math-editor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- MathJax para ecuaciones - Usando CDN alternativa -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['\\(', '\\)'], ['$', '$']],
+            displayMath: [['\\[', '\\]'], ['$$', '$$']],
+            processEscapes: true,
+            processEnvironments: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        },
+        chtml: {
+            scale: 1,
+            minScale: 0.5,
+            mtextInheritFont: true,
+            matchFontHeight: true
+        },
+        svg: {
+            scale: 1,
+            minScale: 0.5,
+            mtextInheritFont: true,
+            matchFontHeight: true
+        }
+    };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <header class="bg-primary text-white py-3">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>WebMatematica - Editor de Sección</h1>
+                <a href="../admin/" class="btn btn-outline-light">Volver al Panel</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-4">
+        <div class="card">
+            <div class="card-header">
+                <h2 id="sectionTitle" class="mb-0">Editar Sección</h2>
+            </div>
+            <div class="card-body">
+                <form id="sectionForm">
+                    <div class="mb-3">
+                        <label for="titleInput" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="titleInput" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="textContent" class="form-label">Contenido</label>
+                        <div id="textEditorContainer">
+                            <textarea class="form-control" id="textContent" rows="10"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="topicSelect" class="form-label">Tema</label>
+                        <select class="form-control" id="topicSelect" required>
+                            <option value="">Seleccione un tema</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="orderInput" class="form-label">Orden</label>
+                        <input type="number" class="form-control" id="orderInput" min="1" required>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-3 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2023 WebMatematica. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.css">
+    <script src="../js/equation-editor.js"></script>
+    <script src="../js/text-editor.js"></script>
+    <script src="../js/math-editor.js"></script>
+    <script>
+        // Variables para almacenar datos
+        let topics = [];
+        let sectionId = null;
+
+        // Función para cargar datos al cargar la página
+        $(document).ready(function() {
+            // Inicializar el editor de texto con el nuevo editor si está disponible
+            if (typeof initNewMathEditor === 'function') {
+                initNewMathEditor('textContent');
+            } else {
+                initTextEditor();
+            }
+            
+            // Comprobar si hay ID de sección en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            sectionId = urlParams.get('id');
+            
+            // Cargar los temas disponibles
+            loadTopics();
+            
+            // Si hay ID, cargar los datos de la sección
+            if (sectionId) {
+                loadSectionData(sectionId);
+                document.getElementById('sectionTitle').textContent = 'Editar Sección';
+            } else {
+                document.getElementById('sectionTitle').textContent = 'Nueva Sección';
+                // Valor predeterminado para el orden
+                document.getElementById('orderInput').value = 1;
+            }
+            
+            // Configurar el envío del formulario
+            $('#sectionForm').on('submit', function(e) {
+                e.preventDefault();
+                saveSection();
+            });
+        });
+
+        // Función para cargar los temas disponibles
+        function loadTopics() {
+            // Simular carga de temas desde el servidor
+            // En un entorno real, esto sería una llamada AJAX
+            setTimeout(function() {
+                topics = [
+                    { id: 1, title: 'Álgebra Básica' },
+                    { id: 2, title: 'Cálculo Diferencial' },
+                    { id: 3, title: 'Estadística Descriptiva' },
+                    { id: 4, title: 'Geometría Euclidiana' }
+                ];
+                
+                // Actualizar el select de temas
+                const topicSelect = document.getElementById('topicSelect');
+                topics.forEach(topic => {
+                    const option = document.createElement('option');
+                    option.value = topic.id;
+                    option.textContent = topic.title;
+                    topicSelect.appendChild(option);
+                });
+            }, 300);
+        }
+
+        // Función para cargar los datos de una sección existente
+        function loadSectionData(id) {
+            // Simular carga de datos desde el servidor
+            // En un entorno real, esto sería una llamada AJAX
+            setTimeout(function() {
+                // Datos simulados de una sección
+                const sectionData = {
+                    id: id,
+                    title: 'Resolución de Ecuaciones Cuadráticas',
+                    content: '<p>Una ecuación cuadrática se puede resolver mediante la fórmula:</p>' +
+                              '<span class="math-tex" data-latex="x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}">\\(x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\)</span>' + 
+                              '<p>Donde el discriminante <span class="math-tex" data-latex="\\Delta = b^2 - 4ac">\\(\\Delta = b^2 - 4ac\\)</span> nos indica el tipo de soluciones:</p>' +
+                              '<ul>' +
+                              '<li>Si <span class="math-tex" data-latex="\\Delta > 0">\\(\\Delta > 0\\)</span>, hay dos soluciones reales distintas.</li>' +
+                              '<li>Si <span class="math-tex" data-latex="\\Delta = 0">\\(\\Delta = 0\\)</span>, hay una solución real (raíz doble).</li>' +
+                              '<li>Si <span class="math-tex" data-latex="\\Delta < 0">\\(\\Delta < 0\\)</span>, hay dos soluciones complejas conjugadas.</li>' +
+                              '</ul>',
+                    topicId: 1,
+                    order: 2
+                };
+                
+                // Actualizar el formulario con los datos
+                document.getElementById('titleInput').value = sectionData.title;
+                document.getElementById('textContent').value = sectionData.content;
+                document.getElementById('topicSelect').value = sectionData.topicId;
+                document.getElementById('orderInput').value = sectionData.order;
+                
+                // Actualizar el editor visual si está inicializado
+                const editorContent = document.getElementById('textEditorContent') || document.getElementById('mathEditorContent');
+                if (editorContent) {
+                    editorContent.innerHTML = sectionData.content;
+                    
+                    // Procesar las ecuaciones existentes para renderizarlas
+                    if (typeof MathJax !== 'undefined') {
+                        MathJax.typeset();
+                    }
+                }
+            }, 500);
+        }
+
+        // Función para guardar los datos de la sección
+        function saveSection() {
+            // Intentar obtener el contenido del textarea o del editor
+            let contentValue = '';
+            const textContentElem = document.getElementById('textContent');
+            const mathEditorContent = document.getElementById('mathEditorContent');
+            
+            if (textContentElem && textContentElem.value) {
+                contentValue = textContentElem.value;
+            } else if (mathEditorContent) {
+                contentValue = mathEditorContent.innerHTML;
+            }
+            
+            // Recoger datos del formulario
+            const sectionData = {
+                id: sectionId,
+                title: document.getElementById('titleInput').value,
+                content: contentValue,
+                topicId: document.getElementById('topicSelect').value,
+                order: document.getElementById('orderInput').value
+            };
+            
+            // Simular guardado en el servidor
+            // En un entorno real, esto sería una llamada AJAX
+            console.log('Guardando sección:', sectionData);
+            
+            // Redirigir al editor de temas
+            setTimeout(function() {
+                alert('Sección guardada correctamente.');
+                // Redireccionar al editor de temas con el ID del tema
+                const topicId = document.getElementById('topicSelect').value;
+                if (topicId) {
+                    window.location.href = `../admin/topic-editor.html?topicId=${topicId}`;
+                } else {
+                    // Fallback a la página principal de administración
+                    window.location.href = '../admin/index.html';
+                }
+            }, 1000); // Aumentado a 1000ms para asegurar que todo se procese
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,262 @@
+/**
+ * Estilos para el Editor de Ecuaciones Matemáticas de WebMatematica
+ */
+
+.equation-editor {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #fff;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+/* Barra de herramientas */
+.equation-editor-toolbar {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.equation-toolbar-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.equation-toolbar-btn {
+    min-width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.equation-toolbar-btn:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+.equation-toolbar-btn:active {
+    background-color: #e2e6ea;
+    transform: translateY(1px);
+}
+
+/* Área de contenido */
+.equation-editor-content {
+    padding: 15px;
+}
+
+.equation-editor-input {
+    min-height: 60px;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 18px;
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.equation-editor-input:focus-within {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Estilo para el cursor de MathQuill */
+.mq-cursor {
+    border-left: 2px solid #2c3e50 !important;
+}
+
+/* Área de salida */
+.equation-editor-output {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.equation-editor-preview,
+.equation-editor-latex {
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.equation-preview-title,
+.equation-latex-title {
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.equation-preview-content {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 4px;
+    font-size: 18px;
+}
+
+.equation-latex-content {
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+    overflow-x: auto;
+    word-break: break-all;
+}
+
+/* Mensaje cuando está cargando dependencias */
+.equation-editor-loading {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.equation-editor-loading .spinner {
+    margin-bottom: 10px;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .equation-toolbar-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 14px;
+        padding: 0 6px;
+    }
+    
+    .equation-editor-toolbar {
+        gap: 5px;
+    }
+    
+    .equation-toolbar-group {
+        gap: 3px;
+        padding: 3px;
+    }
+}
+
+/* Vista simplificada para cuando se usa como campo en un formulario */
+.equation-editor-simple {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.equation-editor-simple .equation-editor-toolbar {
+    padding: 5px;
+    gap: 5px;
+}
+
+.equation-editor-simple .equation-toolbar-group {
+    padding: 3px;
+    gap: 3px;
+}
+
+.equation-editor-simple .equation-toolbar-btn {
+    min-width: 30px;
+    height: 30px;
+    font-size: 14px;
+    padding: 0 5px;
+}
+
+.equation-editor-simple .equation-editor-content {
+    padding: 8px;
+}
+
+.equation-editor-simple .equation-editor-input {
+    min-height: 40px;
+    margin-bottom: 0;
+}
+
+/* Animaciones */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+.equation-editor-input:focus-within {
+    animation: pulse 1.5s infinite;
+}
+
+/* Soporte para tema oscuro */
+.dark-mode .equation-editor {
+    background-color: #343a40;
+    border-color: #495057;
+}
+
+.dark-mode .equation-editor-toolbar {
+    background-color: #2c3034;
+    border-color: #495057;
+}
+
+.dark-mode .equation-toolbar-group {
+    background-color: #212529;
+    border-color: #495057;
+}
+
+.dark-mode .equation-toolbar-btn {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+.dark-mode .equation-toolbar-btn:hover {
+    background-color: #495057;
+}
+
+.dark-mode .equation-editor-input,
+.dark-mode .equation-preview-content,
+.dark-mode .equation-latex-content {
+    background-color: #212529;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+.dark-mode .equation-editor-preview,
+.dark-mode .equation-editor-latex {
+    background-color: #343a40;
+    border-color: #495057;
+}
+
+.dark-mode .mq-cursor {
+    border-left: 2px solid #f8f9fa !important;
+}
+
+.dark-mode .equation-preview-title,
+.dark-mode .equation-latex-title {
+    color: #ced4da;
+}
+
+/* Estilos de override para MathQuill en tema oscuro */
+.dark-mode .mq-editable-field,
+.dark-mode .mq-math-mode {
+    color: #f8f9fa;
+} 

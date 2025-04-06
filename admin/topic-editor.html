@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/selectors.css">
 </head>
 <body>
     <div id="header"></div>
@@ -88,10 +89,10 @@
                             <textarea class="form-control" id="topicDescription" rows="3" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="topicIcon" class="form-label">Icono (Clase Font Awesome)</label>
+                            <label for="topicIcon" class="form-label">Icono</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-icons"></i></span>
-                                <input type="text" class="form-control" id="topicIcon" placeholder="fas fa-book">
+                                <span class="input-group-text"><div id="topicIconPreview" class="icon-input-preview"><i class="fas fa-icons"></i></div></span>
+                                <input type="text" class="form-control" id="topicIcon" placeholder="fas fa-book" data-selector="icon" data-preview="topicIconPreview">
                             </div>
                             <div class="form-text">Si no se especifica, se usará un icono predeterminado</div>
                         </div>
@@ -113,6 +114,7 @@
     <script src="../js/sample-data.js"></script>
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
+    <script src="../js/selectors.js"></script>
     <script src="../js/topic-editor.js"></script>
 </body>
 </html>

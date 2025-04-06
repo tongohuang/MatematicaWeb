@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .activity-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .activity-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .activity-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .activity-description {
+            color: #666;
+            margin-bottom: 0;
+        }
+        
+        .question-container {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        .question-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .question-number {
+            width: 30px;
+            height: 30px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .question-text {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .options-container {
+            margin-left: 40px;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .option-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .option-item.selected {
+            background-color: #e3f2fd;
+        }
+        
+        .option-marker {
+            width: 25px;
+            height: 25px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .option-text {
+            flex: 1;
+        }
+        
+        .true-false-options {
+            display: flex;
+            margin-left: 40px;
+            gap: 10px;
+        }
+        
+        .true-false-option {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .true-false-option:hover {
+            background-color: #e9ecef;
+        }
+        
+        .true-false-option.selected {
+            background-color: #e3f2fd;
+        }
+        
+        .true-option {
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+        
+        .false-option {
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+        
+        .short-answer-container {
+            margin-left: 40px;
+        }
+        
+        .feedback-container {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        
+        .feedback-correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .feedback-incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .activity-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .error-container {
+            text-align: center;
+            padding: 30px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+    <!-- MathJax para ecuaciones -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="activity-container">
+        <div id="activityContent">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Cargando actividad...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Obtener el ID de la actividad de la URL
+        function getActivityId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+        
+        // Cargar la actividad desde localStorage
+        function loadActivity() {
+            const activityId = getActivityId();
+            
+            if (!activityId) {
+                showError('No se especificó un ID de actividad');
+                return;
+            }
+            
+            // Intentar cargar la actividad desde localStorage
+            const activityData = localStorage.getItem(activityId);
+            
+            if (!activityData) {
+                showError('No se encontró la actividad especificada');
+                return;
+            }
+            
+            try {
+                const activity = JSON.parse(activityData);
+                renderActivity(activity);
+            } catch (error) {
+                console.error('Error al cargar la actividad:', error);
+                showError('Error al cargar la actividad');
+            }
+        }
+        
+        // Mostrar un mensaje de error
+        function showError(message) {
+            document.getElementById('activityContent').innerHTML = `
+                <div class="error-container">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        // Renderizar la actividad
+        function renderActivity(activity) {
+            // Seleccionar una pregunta aleatoria si está habilitada la aleatorización
+            let questions = activity.questions;
+            if (activity.settings.randomizeQuestions && questions.length > 0) {
+                const randomIndex = Math.floor(Math.random() * questions.length);
+                questions = [questions[randomIndex]];
+            }
+            
+            // Crear el HTML de la actividad
+            const activityHtml = `
+                <div class="activity-header">
+                    <h1 class="activity-title">${activity.title}</h1>
+                    <p class="activity-description">${activity.description || ''}</p>
+                </div>
+                
+                <div class="questions-container">
+                    ${questions.map((question, index) => renderQuestion(question, index)).join('')}
+                </div>
+                
+                <div class="activity-footer">
+                    <button id="checkAnswersBtn" class="btn btn-primary">Verificar Respuestas</button>
+                </div>
+            `;
+            
+            document.getElementById('activityContent').innerHTML = activityHtml;
+            
+            // Configurar eventos
+            setupEvents(activity);
+            
+            // Renderizar ecuaciones matemáticas
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+        
+        // Renderizar una pregunta
+        function renderQuestion(question, index) {
+            let optionsHtml = '';
+            
+            switch (question.type) {
+                case 'multiple-choice':
+                    optionsHtml = `
+                        <div class="options-container" data-question-id="${question.id}">
+                            ${question.options.map((option, i) => `
+                                <div class="option-item" data-option-index="${i}">
+                                    <div class="option-marker">${String.fromCharCode(65 + i)}</div>
+                                    <div class="option-text">${option}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    break;
+                    
+                case 'true-false':
+                    optionsHtml = `
+                        <div class="true-false-options" data-question-id="${question.id}">
+                            <div class="true-false-option true-option" data-value="true">Verdadero</div>
+                            <div class="true-false-option false-option" data-value="false">Falso</div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'short-answer':
+                    optionsHtml = `
+                        <div class="short-answer-container">
+                            <input type="text" class="form-control" data-question-id="${question.id}" placeholder="Escribe tu respuesta aquí">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            return `
+                <div class="question-container" data-question-id="${question.id}">
+                    <div class="question-header">
+                        <div class="question-number">${index + 1}</div>
+                        <div class="question-text">${question.text}</div>
+                    </div>
+                    ${optionsHtml}
+                    <div class="feedback-container" style="display: none;"></div>
+                </div>
+            `;
+        }
+        
+        // Configurar eventos
+        function setupEvents(activity) {
+            // Eventos para opciones múltiples
+            document.querySelectorAll('.option-item').forEach(option => {
+                option.addEventListener('click', function() {
+                    const questionId = this.closest('.options-container').getAttribute('data-question-id');
+                    
+                    // Deseleccionar todas las opciones de esta pregunta
+                    document.querySelectorAll(`.options-container[data-question-id="${questionId}"] .option-item`).forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Seleccionar esta opción
+                    this.classList.add('selected');
+                });
+            });
+            
+            // Eventos para verdadero/falso
+            document.querySelectorAll('.true-false-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const questionId = this.closest('.true-false-options').getAttribute('data-question-id');
+                    
+                    // Deseleccionar todas las opciones de esta pregunta
+                    document.querySelectorAll(`.true-false-options[data-question-id="${questionId}"] .true-false-option`).forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Seleccionar esta opción
+                    this.classList.add('selected');
+                });
+            });
+            
+            // Evento para verificar respuestas
+            document.getElementById('checkAnswersBtn').addEventListener('click', function() {
+                checkAnswers(activity);
+            });
+        }
+        
+        // Verificar respuestas
+        function checkAnswers(activity) {
+            let correctCount = 0;
+            const totalQuestions = document.querySelectorAll('.question-container').length;
+            
+            // Verificar cada pregunta
+            activity.questions.forEach(question => {
+                const questionContainer = document.querySelector(`.question-container[data-question-id="${question.id}"]`);
+                if (!questionContainer) return;
+                
+                const feedbackContainer = questionContainer.querySelector('.feedback-container');
+                let isCorrect = false;
+                let userAnswer = null;
+                
+                switch (question.type) {
+                    case 'multiple-choice':
+                        const selectedOption = questionContainer.querySelector('.option-item.selected');
+                        if (selectedOption) {
+                            const selectedIndex = parseInt(selectedOption.getAttribute('data-option-index'));
+                            userAnswer = selectedIndex;
+                            isCorrect = selectedIndex === question.correctOption;
+                        }
+                        break;
+                        
+                    case 'true-false':
+                        const selectedTrueFalse = questionContainer.querySelector('.true-false-option.selected');
+                        if (selectedTrueFalse) {
+                            const selectedValue = selectedTrueFalse.getAttribute('data-value') === 'true';
+                            userAnswer = selectedValue;
+                            isCorrect = selectedValue === question.correctAnswer;
+                        }
+                        break;
+                        
+                    case 'short-answer':
+                        const answerInput = questionContainer.querySelector('input');
+                        if (answerInput && answerInput.value.trim()) {
+                            userAnswer = answerInput.value.trim();
+                            isCorrect = question.correctAnswers.some(answer => 
+                                userAnswer.toLowerCase() === answer.toLowerCase()
+                            );
+                        }
+                        break;
+                }
+                
+                // Mostrar retroalimentación si está habilitada
+                if (activity.settings.showFeedback && feedbackContainer) {
+                    feedbackContainer.style.display = 'block';
+                    
+                    if (isCorrect) {
+                        feedbackContainer.className = 'feedback-container feedback-correct';
+                        feedbackContainer.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>
+                            ${activity.settings.correctFeedback || '¡Correcto!'}
+                        `;
+                        correctCount++;
+                    } else if (userAnswer !== null) {
+                        feedbackContainer.className = 'feedback-container feedback-incorrect';
+                        feedbackContainer.innerHTML = `
+                            <i class="fas fa-times-circle me-2"></i>
+                            ${activity.settings.incorrectFeedback || 'Incorrecto. Intenta de nuevo.'}
+                        `;
+                    } else {
+                        feedbackContainer.className = 'feedback-container feedback-incorrect';
+                        feedbackContainer.innerHTML = `
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Por favor, selecciona una respuesta.
+                        `;
+                    }
+                } else if (isCorrect) {
+                    correctCount++;
+                }
+            });
+            
+            // Mostrar resultado final
+            const score = Math.round((correctCount / totalQuestions) * 100);
+            alert(`Puntuación: ${correctCount}/${totalQuestions} (${score}%)`);
+            
+            // Renderizar ecuaciones matemáticas en la retroalimentación
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+        
+        // Cargar la actividad al cargar la página
+        document.addEventListener('DOMContentLoaded', loadActivity);
+    </script>
+</body>
+</html>

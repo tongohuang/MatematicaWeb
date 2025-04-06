@@ -18,7 +18,7 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1>Administrar Cursos</h1>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#courseModal">
+                    <button class="btn btn-primary" onclick="window.location.href='course-editor.html'">
                         <i class="fas fa-plus"></i> Nuevo Curso
                     </button>
                 </div>
@@ -124,6 +124,7 @@
     <div id="footer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/sample-data.js"></script>
     <script src="../js/utils.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/main.js"></script>
@@ -154,21 +155,31 @@
         
         function loadCoursesList() {
             const coursesList = document.getElementById('coursesList');
-            coursesList.innerHTML = SAMPLE_COURSES.map(course => `
+            
+            // Obtener los cursos usando SAMPLE_COURSES
+            const courses = SAMPLE_COURSES;
+            
+            if (courses.length === 0) {
+                coursesList.innerHTML = '<tr><td colspan="7" class="text-center">No hay cursos disponibles</td></tr>';
+                return;
+            }
+            
+            coursesList.innerHTML = courses.map(course => `
                 <tr>
                     <td>${course.id}</td>
                     <td>${course.title}</td>
-                    <td>${course.sections.length}</td>
-                    <td>${course.sections.reduce((acc, section) => acc + section.lessons.length, 0)}</td>
+                    <td>${SAMPLE_TOPICS.filter(topic => topic.courseId === course.id).length}</td>
+                    <td>${SAMPLE_TOPICS.filter(topic => topic.courseId === course.id)
+                        .reduce((acc, topic) => acc + (topic.sections ? topic.sections.length : 0), 0)}</td>
                     <td>
                         <span class="color-preview" style="background-color: ${course.color || '#6c757d'}"></span>
                         ${course.color || '-'}
                     </td>
                     <td><i class="${course.icon || 'fas fa-book'}"></i> ${course.icon || '-'}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editCourse(${course.id})">
+                        <a href="course-editor.html?id=${course.id}" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-edit"></i>
-                        </button>
+                        </a>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteCourse(${course.id})">
                             <i class="fas fa-trash"></i>
                         </button>

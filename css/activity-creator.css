@@ -1,5 +1,61 @@
 /* Estilos para el creador de actividades */
 
+/* Selector de tipo de actividad */
+.activity-type-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.activity-type-option {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 100%;
+}
+
+.activity-type-option:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.activity-type-option.selected {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+.activity-type-icon {
+    font-size: 2rem;
+    color: #0d6efd;
+    margin-bottom: 15px;
+}
+
+.activity-type-option h4 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.activity-type-option p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* Tarjetas de pasos */
+.card.completed .card-header {
+    background-color: #d1e7dd;
+    border-bottom-color: #a3cfbb;
+}
+
+/* Editor de ecuaciones */
+.equation-editor-toolbar {
+    display: flex;
+    gap: 5px;
+}
+
 /* Lista de preguntas */
 .questions-list {
     border: 1px solid #ddd;

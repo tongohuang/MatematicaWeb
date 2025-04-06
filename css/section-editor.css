@@ -161,20 +161,16 @@
 .youtube-container {
     position: relative;
     width: 100%;
-    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-    height: 0;
-    overflow: hidden;
     margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     border-radius: 8px;
+    overflow: hidden;
 }
 
 .youtube-container iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: block;
     width: 100%;
-    height: 100%;
+    min-height: 400px;
     border: none;
     border-radius: 8px;
 }
@@ -182,20 +178,16 @@
 .geogebra-container {
     position: relative;
     width: 100%;
-    padding-bottom: 75%; /* 4:3 Aspect Ratio for GeoGebra */
-    height: 0;
-    overflow: hidden;
     margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     border-radius: 8px;
+    overflow: hidden;
 }
 
 .geogebra-container iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: block;
     width: 100%;
-    height: 100%;
+    min-height: 500px;
     border: none;
     border-radius: 8px;
 }
@@ -418,4 +410,54 @@
     border: 2px dashed #007bff;
     border-radius: 4px;
     margin-bottom: 10px;
+}
+
+/* Estilos para grupos de secciones */
+.section-group .section-header {
+    background-color: #f0f4f8;
+    border-left: 4px solid #5a67d8;
+}
+
+.section-group .section-content {
+    padding: 0;
+}
+
+.section-group .section-title {
+    font-weight: 600;
+    color: #4c51bf;
+}
+
+.section-group .section-type-badge {
+    background-color: #ebf4ff;
+    color: #4c51bf;
+    border: 1px solid #c3dafe;
+}
+
+/* Estilos para contenido dentro de un grupo */
+.section-group .section-content > .text-content,
+.section-group .section-content > .youtube-container,
+.section-group .section-content > .geogebra-container,
+.section-group .section-content > .image-container,
+.section-group .section-content > .pdf-container,
+.section-group .section-content > .html-container,
+.section-group .section-content > .activity-container {
+    margin-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+}
+
+.section-group .section-content > *:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+
+/* Espaciado especial para contenedores multimedia en grupos */
+.section-group .section-content > .youtube-container + .activity-container,
+.section-group .section-content > .geogebra-container + .activity-container,
+.section-group .section-content > .image-container + .text-content,
+.section-group .section-content > .text-content + .activity-container {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #cbd5e0;
 }

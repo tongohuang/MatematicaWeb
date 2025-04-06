@@ -1,0 +1,242 @@
+/* Estilos para el editor matemático */
+.math-editor-container {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  background-color: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.math-editor-toolbar {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ced4da;
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.math-editor-toolbar-group {
+  display: flex;
+  border-right: 1px solid #dee2e6;
+  padding-right: 5px;
+  margin-right: 5px;
+}
+
+.math-editor-toolbar-group:last-child {
+  border-right: none;
+}
+
+.math-editor-btn {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.math-editor-btn:hover {
+  background-color: #e9ecef;
+}
+
+.math-editor-btn.active {
+  background-color: #e9ecef;
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+
+.math-editor-btn img {
+  width: 16px;
+  height: 16px;
+}
+
+.math-editor-content {
+  padding: 10px;
+  min-height: 200px;
+  flex-grow: 1;
+  background-color: #fff;
+  color: #212529;
+  overflow-y: auto;
+}
+
+.math-editor-content:focus {
+  outline: none;
+}
+
+/* Color picker */
+.color-palette {
+  display: none;
+  position: fixed !important;
+  background-color: #fff;
+  border: 2px solid #007bff !important;
+  padding: 12px;
+  border-radius: 6px;
+  z-index: 99999 !important; /* Z-index muy alto para estar sobre cualquier otro elemento */
+  width: 220px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  transition: opacity 0.2s ease;
+  opacity: 0;
+  transform: translateY(0);
+  animation: colorPalettePopup 0.2s ease-out forwards;
+}
+
+@keyframes colorPalettePopup {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.color-palette.show {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.color-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #dee2e6;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.color-option:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+/* Equation buttons section */
+.math-dropdown {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  padding: 8px;
+  border-radius: 4px;
+  z-index: 1000;
+  width: 300px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.math-dropdown.show {
+  display: block;
+}
+
+.math-dropdown-tabs {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 10px;
+}
+
+.math-dropdown-tab {
+  padding: 5px 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 14px;
+}
+
+.math-dropdown-tab.active {
+  border-bottom: 2px solid #0d6efd;
+  color: #0d6efd;
+}
+
+.math-symbols-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.math-symbol {
+  width: auto;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.math-symbol:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+/* MathQuill styling */
+.mq-editable-field {
+  background-color: #fff !important;
+  color: #212529 !important;
+  box-shadow: none !important;
+  border: none !important;
+  font-size: 16px !important;
+}
+
+.mq-math-mode {
+  color: #212529 !important;
+}
+
+/* Estilos para las ecuaciones insertadas */
+.math-equation {
+  display: inline-block;
+  margin: 4px;
+  padding: 2px 5px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 2px;
+}
+
+.math-content-tab {
+  display: none;
+}
+
+.math-content-tab.active {
+  display: block;
+}
+
+/* Mejorar visualización de selección */
+#mathEditorContent::selection {
+    background-color: rgba(0, 123, 255, 0.3);
+    border: 1px solid #007bff;
+}
+
+/* Mensaje de ayuda en la paleta de colores */
+.color-picker-message {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #333;
+    font-size: 12px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+} 

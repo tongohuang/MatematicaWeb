@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/course-editor.css">
+    <link rel="stylesheet" href="../css/selectors.css">
 </head>
 <body>
     <div id="header"></div>
@@ -37,6 +38,17 @@
             <div class="col-md-9">
                 <div class="card">
                     <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Editor de Curso</h5>
+                            <div>
+                                <a href="index.html" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-arrow-left"></i> Volver al Panel
+                                </a>
+                                <a href="../index.html" class="btn btn-outline-primary">
+                                    <i class="fas fa-home"></i> Inicio
+                                </a>
+                            </div>
+                        </div>
                         <ul class="nav nav-tabs card-header-tabs" id="editorTabs">
                             <li class="nav-item">
                                 <a class="nav-link active" id="courseTab" data-bs-toggle="tab" href="#courseContent">Información del Curso</a>
@@ -66,19 +78,20 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label for="courseColorInput" class="form-label">Color (Hexadecimal)</label>
+                                                <label for="courseColorInput" class="form-label">Color</label>
                                                 <div class="input-group">
                                                     <span class="input-group-text">#</span>
-                                                    <input type="text" class="form-control" id="courseColorInput" placeholder="4CAF50" pattern="[0-9A-Fa-f]{6}">
+                                                    <input type="text" class="form-control" id="courseColorInput" placeholder="4CAF50" pattern="[0-9A-Fa-f]{6}" data-selector="color" data-preview="courseColorPreview">
+                                                    <span class="input-group-text"><div id="courseColorPreview" class="color-input-preview"></div></span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label for="courseIconInput" class="form-label">Icono (Clase Font Awesome)</label>
+                                                <label for="courseIconInput" class="form-label">Icono</label>
                                                 <div class="input-group">
-                                                    <span class="input-group-text"><i class="fas fa-icons"></i></span>
-                                                    <input type="text" class="form-control" id="courseIconInput" placeholder="fas fa-book">
+                                                    <span class="input-group-text"><div id="courseIconPreview" class="icon-input-preview"><i class="fas fa-icons"></i></div></span>
+                                                    <input type="text" class="form-control" id="courseIconInput" placeholder="fas fa-book" data-selector="icon" data-preview="courseIconPreview">
                                                 </div>
                                             </div>
                                         </div>
@@ -144,10 +157,10 @@
                             <textarea class="form-control" id="topicDescription" rows="3" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="topicIcon" class="form-label">Icono (Clase Font Awesome)</label>
+                            <label for="topicIcon" class="form-label">Icono</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-icons"></i></span>
-                                <input type="text" class="form-control" id="topicIcon" placeholder="fas fa-book">
+                                <span class="input-group-text"><div id="topicIconPreview" class="icon-input-preview"><i class="fas fa-icons"></i></div></span>
+                                <input type="text" class="form-control" id="topicIcon" placeholder="fas fa-book" data-selector="icon" data-preview="topicIconPreview">
                             </div>
                         </div>
                         <div class="mb-3">
@@ -242,6 +255,7 @@
     <script src="../js/auth.js"></script>
     <script src="../js/main.js"></script>
     <script src="../js/data-manager.js"></script>
+    <script src="../js/selectors.js"></script>
     <script src="../js/course-editor.js"></script>
 </body>
 </html>

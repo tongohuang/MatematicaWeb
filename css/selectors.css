@@ -1,0 +1,180 @@
+/* Estilos para selectores visuales de iconos y colores */
+
+/* Selector de iconos */
+.icon-selector-container {
+    position: relative;
+}
+
+.icon-selector-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 10px;
+    width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.icon-selector-dropdown.show {
+    display: block;
+}
+
+.icon-selector-search {
+    margin-bottom: 10px;
+}
+
+.icon-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+.icon-selector-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.icon-selector-item:hover {
+    background-color: #e9ecef;
+    transform: scale(1.1);
+}
+
+.icon-selector-item i {
+    font-size: 18px;
+    color: #495057;
+}
+
+.icon-selector-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.icon-selector-category {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-selector-category:hover,
+.icon-selector-category.active {
+    background-color: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+/* Selector de colores */
+.color-selector-container {
+    position: relative;
+}
+
+.color-selector-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 10px;
+    width: 250px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.color-selector-dropdown.show {
+    display: block;
+}
+
+.color-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.color-selector-item {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.color-selector-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.color-selector-custom {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #dee2e6;
+}
+
+.color-selector-custom-input {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.color-selector-preview {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+/* Estilos para el input de color */
+.color-input-container {
+    display: flex;
+    align-items: center;
+}
+
+.color-input-preview {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* Estilos para el input de icono */
+.icon-input-container {
+    display: flex;
+    align-items: center;
+}
+
+.icon-input-preview {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.icon-input-preview i {
+    font-size: 16px;
+}

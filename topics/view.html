@@ -213,28 +213,86 @@
 
             // Crear el contenido para cada sección
             let sectionsHtml = '';
+            let sectionCounter = 1;
 
+            // Objeto para agrupar las secciones por su groupId
+            const groupedSections = {};
+            
+            // Primero identificar todos los grupos
+            currentTopic.sections.forEach(section => {
+                if (section.groupId) {
+                    // Si la sección pertenece a un grupo
+                    if (!groupedSections[section.groupId]) {
+                        groupedSections[section.groupId] = {
+                            name: section.groupName || 'Grupo sin nombre',
+                            sections: []
+                        };
+                    }
+                    groupedSections[section.groupId].sections.push(section);
+                }
+            });
+
+            // Ahora procesar todas las secciones
             currentTopic.sections.forEach((section, index) => {
-                // Crear el encabezado de la sección
-                sectionsHtml += `
-                    <div class="section-block" id="section-${section.id}">
-                        <div class="section-header" role="button" onclick="toggleSection(${section.id})">
-                            <div class="section-number">${index + 1}</div>
-                            <h2 class="section-title">${section.title}</h2>
-                            <div class="section-controls">
-                                <div class="section-type-badge">
-                                    <i class="${getSectionIcon(section.type)}"></i> ${getTypeName(section.type)}
+                // Si la sección ya está procesada como parte de un grupo, la saltamos
+                if (section.groupId && section._processed) return;
+                
+                if (section.groupId && groupedSections[section.groupId]) {
+                    // Es parte de un grupo, mostrar el grupo
+                    const group = groupedSections[section.groupId];
+                    
+                    // Crear el encabezado del grupo
+                    sectionsHtml += `
+                        <div class="section-block section-group" id="section-group-${section.groupId}">
+                            <div class="section-header" role="button" onclick="toggleSection('group-${section.groupId}')">
+                                <div class="section-number">${sectionCounter++}</div>
+                                <h2 class="section-title">${group.name}</h2>
+                                <div class="section-controls">
+                                    <div class="section-type-badge">
+                                        <i class="fas fa-layer-group"></i> Grupo
+                                    </div>
+                                    <button class="btn btn-sm btn-link section-toggle" aria-label="Expandir/Colapsar grupo">
+                                        <i class="fas fa-chevron-down" id="toggle-icon-group-${section.groupId}"></i>
+                                    </button>
                                 </div>
-                                <button class="btn btn-sm btn-link section-toggle" aria-label="Expandir/Colapsar sección">
-                                    <i class="fas fa-chevron-down" id="toggle-icon-${section.id}"></i>
-                                </button>
+                            </div>
+                            <div class="section-content" id="section-content-group-${section.groupId}" style="display: none;">
+                    `;
+                    
+                    // Agregar el contenido de todas las secciones del grupo
+                    group.sections.forEach(groupSection => {
+                        sectionsHtml += renderSectionContent(groupSection);
+                        // Marcar la sección como procesada
+                        groupSection._processed = true;
+                    });
+                    
+                    // Cerrar el div del grupo
+                    sectionsHtml += `
                             </div>
                         </div>
-                        <div class="section-content" id="section-content-${section.id}" style="display: none;">
-                            ${renderSectionContent(section)}
+                    `;
+                } else {
+                    // Sección individual normal
+                    sectionsHtml += `
+                        <div class="section-block" id="section-${section.id}">
+                            <div class="section-header" role="button" onclick="toggleSection(${section.id})">
+                                <div class="section-number">${sectionCounter++}</div>
+                                <h2 class="section-title">${section.title}</h2>
+                                <div class="section-controls">
+                                    <div class="section-type-badge">
+                                        <i class="${getSectionIcon(section.type).class} ${getSectionIcon(section.type).icon}" style="color: ${getSectionIcon(section.type).color};"></i> ${getTypeName(section.type)}
+                                    </div>
+                                    <button class="btn btn-sm btn-link section-toggle" aria-label="Expandir/Colapsar sección">
+                                        <i class="fas fa-chevron-down" id="toggle-icon-${section.id}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="section-content" id="section-content-${section.id}" style="display: none;">
+                                ${renderSectionContent(section)}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             });
 
             sectionsContainer.innerHTML = sectionsHtml;
@@ -260,7 +318,7 @@
                     contentHtml = `
                         <div class="youtube-container">
                             <iframe src="https://www.youtube.com/embed/${section.content}"
-                                    frameborder="0" allowfullscreen></iframe>
+                                    frameborder="0" allowfullscreen style="width:100%; height:400px;"></iframe>
                         </div>
                     `;
                     break;
@@ -269,7 +327,7 @@
                     contentHtml = `
                         <div class="geogebra-container">
                             <iframe src="https://www.geogebra.org/material/iframe/id/${section.content}"
-                                    frameborder="0"></iframe>
+                                    frameborder="0" style="width:100%; height:500px;"></iframe>
                         </div>
                     `;
                     break;
@@ -305,7 +363,7 @@
                     contentHtml = `
                         <div class="activity-container">
                             <iframe src="../activities/templates/${section.content}"
-                                    frameborder="0"></iframe>
+                                    frameborder="0" style="width:100%; height:600px;"></iframe>
                         </div>
                     `;
                     break;
@@ -344,8 +402,13 @@
 
         // Función para expandir/colapsar una sección
         function toggleSection(sectionId) {
-            const contentElement = document.getElementById(`section-content-${sectionId}`);
-            const iconElement = document.getElementById(`toggle-icon-${sectionId}`);
+            // Comprobar si es un ID de grupo o de sección individual
+            const isGroup = typeof sectionId === 'string' && sectionId.startsWith('group-');
+            const contentId = isGroup ? sectionId : sectionId;
+            const actualId = isGroup ? sectionId.replace('group-', '') : sectionId;
+            
+            const contentElement = document.getElementById(`section-content-${contentId}`);
+            const iconElement = document.getElementById(`toggle-icon-${contentId}`);
 
             if (contentElement.style.display === 'none') {
                 // Expandir
@@ -364,10 +427,24 @@
         function expandAllSections() {
             if (!currentTopic || !currentTopic.sections) return;
 
+            // Expandir secciones individuales
             currentTopic.sections.forEach(section => {
                 const contentElement = document.getElementById(`section-content-${section.id}`);
                 const iconElement = document.getElementById(`toggle-icon-${section.id}`);
 
+                if (contentElement && iconElement) {
+                    contentElement.style.display = 'block';
+                    iconElement.classList.remove('fa-chevron-down');
+                    iconElement.classList.add('fa-chevron-up');
+                }
+            });
+            
+            // Expandir grupos
+            const groupIds = [...new Set(currentTopic.sections.filter(s => s.groupId).map(s => s.groupId))];
+            groupIds.forEach(groupId => {
+                const contentElement = document.getElementById(`section-content-group-${groupId}`);
+                const iconElement = document.getElementById(`toggle-icon-group-${groupId}`);
+                
                 if (contentElement && iconElement) {
                     contentElement.style.display = 'block';
                     iconElement.classList.remove('fa-chevron-down');
@@ -380,10 +457,24 @@
         function collapseAllSections() {
             if (!currentTopic || !currentTopic.sections) return;
 
+            // Colapsar secciones individuales
             currentTopic.sections.forEach(section => {
                 const contentElement = document.getElementById(`section-content-${section.id}`);
                 const iconElement = document.getElementById(`toggle-icon-${section.id}`);
 
+                if (contentElement && iconElement) {
+                    contentElement.style.display = 'none';
+                    iconElement.classList.remove('fa-chevron-up');
+                    iconElement.classList.add('fa-chevron-down');
+                }
+            });
+            
+            // Colapsar grupos
+            const groupIds = [...new Set(currentTopic.sections.filter(s => s.groupId).map(s => s.groupId))];
+            groupIds.forEach(groupId => {
+                const contentElement = document.getElementById(`section-content-group-${groupId}`);
+                const iconElement = document.getElementById(`toggle-icon-group-${groupId}`);
+                
                 if (contentElement && iconElement) {
                     contentElement.style.display = 'none';
                     iconElement.classList.remove('fa-chevron-up');
@@ -395,21 +486,21 @@
         function getSectionIcon(type) {
             switch (type) {
                 case 'text':
-                    return 'fas fa-align-left';
+                    return { class: 'fas', icon: 'fa-align-left', color: '#6c757d' };
                 case 'youtube':
-                    return 'fab fa-youtube';
+                    return { class: 'fab', icon: 'fa-youtube', color: '#ff0000' };
                 case 'geogebra':
-                    return 'fas fa-calculator';
+                    return { class: 'fas', icon: 'fa-calculator', color: '#007bff' };
                 case 'image':
-                    return 'fas fa-image';
+                    return { class: 'fas', icon: 'fa-image', color: '#9933ff' };
                 case 'pdf':
-                    return 'fas fa-file-pdf';
+                    return { class: 'fas', icon: 'fa-file-pdf', color: '#009933' };
                 case 'html':
-                    return 'fab fa-html5';
+                    return { class: 'fab', icon: 'fa-html5', color: '#ff9900' };
                 case 'activity':
-                    return 'fas fa-tasks';
+                    return { class: 'fas', icon: 'fa-tasks', color: '#ff0099' };
                 default:
-                    return 'fas fa-file';
+                    return { class: 'fas', icon: 'fa-file', color: '#6c757d' };
             }
         }
 

@@ -1,0 +1,235 @@
+/* Estilos para la funcionalidad de arrastrar y soltar */
+
+/* Contenedor que tendrá elementos arrastrables */
+.drag-container {
+    position: relative; /* Para posicionamiento correcto de elementos arrastrables */
+    min-height: 50px;
+    padding: 10px 0;
+    z-index: 1; /* Asegurar que esté por encima del contenido base */
+}
+
+/* Elemento arrastrable */
+.draggable-item {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 12px;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s, transform 0.2s;
+    max-width: 100%; /* Evitar que se salga del contenedor */
+    overflow: hidden; /* Contener el contenido */
+}
+
+.draggable-item:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Clase para elemento mientras está siendo arrastrado */
+.draggable-item.dragging {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    border: 1px dashed #007bff;
+    background-color: #f8f9fa;
+    opacity: 0.9;
+    z-index: 1050 !important; /* Asegurar que esté por encima de todo, incluyendo el footer */
+    max-width: 100%; /* Restricción de ancho al arrastrar */
+    pointer-events: none; /* Evitar problemas de eventos */
+    -webkit-user-select: none; /* Prevenir selección de texto para Safari */
+    user-select: none; /* Prevenir selección de texto */
+    contain: layout; /* Optimizar rendimiento */
+    position: fixed !important; /* Usar posición fija para mejor control */
+}
+
+/* Placeholder que mantiene el espacio mientras se arrastra */
+.drag-placeholder {
+    border: 2px dashed #6c757d;
+    background-color: #f8f9fa;
+    visibility: visible !important; /* Asegurar que siempre sea visible */
+    opacity: 0.5 !important; /* Opacidad constante */
+}
+
+/* Manija para arrastrar el elemento */
+.drag-handle {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    cursor: grab;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Etiqueta de orden */
+.order-label {
+    display: inline-block;
+    min-width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    margin-right: 8px;
+    font-weight: bold;
+    color: #495057;
+}
+
+/* Ajustes para acomodar el asa de arrastre */
+.draggable-item-inner {
+    padding-left: 35px;
+    overflow: hidden; /* Contener contenido desbordado */
+    position: relative; /* Para elementos internos */
+}
+
+/* Grupo de elementos arrastrables */
+.draggable-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+}
+
+.draggable-group-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.draggable-group-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Indicadores visuales para las zonas de destino */
+.drop-target {
+    border: 2px dashed #28a745;
+    background-color: rgba(40, 167, 69, 0.05);
+}
+
+.drop-target.invalid {
+    border: 2px dashed #dc3545;
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .draggable-item {
+        padding-left: 35px; /* Espacio para el asa de arrastre en móviles */
+    }
+    
+    .drag-handle {
+        left: 5px;
+        width: 20px;
+        height: 20px;
+    }
+    
+    .draggable-item-inner {
+        padding-left: 25px;
+    }
+}
+
+/* Estilos para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    .draggable-item {
+        background-color: #343a40;
+        border-color: #495057;
+        color: #e9ecef;
+    }
+    
+    .draggable-item:hover {
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .draggable-item.dragging {
+        border-color: #0d6efd;
+        background-color: #2b3035;
+    }
+    
+    .drag-placeholder {
+        border-color: #495057;
+        background-color: #2b3035;
+    }
+    
+    .drag-handle {
+        color: #adb5bd;
+    }
+    
+    .order-label {
+        background-color: #495057;
+        color: #e9ecef;
+    }
+    
+    .draggable-group {
+        background-color: #2b3035;
+        border-color: #495057;
+    }
+    
+    .draggable-group-header {
+        border-bottom-color: #495057;
+    }
+    
+    .drop-target {
+        border-color: #28a745;
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    
+    .drop-target.invalid {
+        border-color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+}
+
+/* Estilos para capa de superposición que bloquee eventos en el footer durante el arrastre */
+.drag-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 1049; /* Justo debajo del elemento arrastrado */
+    pointer-events: none; /* No bloquear eventos */
+}
+
+.is-dragging .drag-overlay {
+    display: block;
+}
+
+/* Estilo para scroll automático durante el arrastre */
+.drag-scroll-zone {
+    position: fixed;
+    height: 100px;
+    left: 0;
+    right: 0;
+    z-index: 1048;
+    pointer-events: none;
+}
+
+.drag-scroll-zone-top {
+    top: 0;
+}
+
+.drag-scroll-zone-bottom {
+    bottom: 0;
+} 
