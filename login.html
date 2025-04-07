@@ -34,8 +34,9 @@
                 <div class="text-center mt-3">
                     <a href="forgot-password.html">¿Olvidaste tu contraseña?</a>
                 </div>
+                <!-- Mensaje de ayuda sin mostrar credenciales -->
                 <div class="alert alert-info mt-3">
-                    <small><i class="fas fa-info-circle"></i> Credenciales de administrador: admin@matematicaweb.com / admin123</small>
+                    <small><i class="fas fa-info-circle"></i> Utiliza las credenciales de administrador proporcionadas.</small>
                 </div>
             </form>
         </div>
@@ -50,12 +51,32 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', 'components/header.html');
             loadComponent('footer', 'components/footer.html');
+
+            // Reiniciar intentos de login al cargar la página
+            if (auth && typeof auth.resetLoginAttempts === 'function') {
+                auth.resetLoginAttempts();
+            }
         });
 
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+
+            // Mostrar mensaje de carga
+            const loginButton = document.querySelector('button[type="submit"]');
+            const originalButtonText = loginButton.innerHTML;
+            loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+            loginButton.disabled = true;
+
+            // Crear o actualizar el div de mensajes de error
+            let errorDiv = document.getElementById('loginErrorMessage');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.id = 'loginErrorMessage';
+                errorDiv.className = 'alert alert-danger mt-3 d-none';
+                document.getElementById('loginForm').appendChild(errorDiv);
+            }
 
             try {
                 if (await auth.login(email, password)) {
@@ -66,11 +87,29 @@
                         window.location.href = 'index.html';
                     }
                 } else {
-                    alert('Credenciales incorrectas. Usa admin@matematicaweb.com / admin123');
+                    // Mostrar mensaje de error en el formulario en lugar de alerta
+                    errorDiv.textContent = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
+                    errorDiv.classList.remove('d-none');
+
+                    // Restaurar el botón
+                    loginButton.innerHTML = originalButtonText;
+                    loginButton.disabled = false;
                 }
             } catch (error) {
                 console.error('Error al iniciar sesión:', error);
-                alert('Error al iniciar sesión. Intenta con admin@matematicaweb.com / admin123');
+
+                // Mostrar mensaje de error en el formulario en lugar de alerta
+                // Si es un error de bloqueo por intentos fallidos, mostrar el mensaje específico
+                if (error.message && error.message.includes('Demasiados intentos fallidos')) {
+                    errorDiv.textContent = error.message;
+                } else {
+                    errorDiv.textContent = 'Error al iniciar sesión. Por favor, intenta nuevamente más tarde.';
+                }
+                errorDiv.classList.remove('d-none');
+
+                // Restaurar el botón
+                loginButton.innerHTML = originalButtonText;
+                loginButton.disabled = false;
             }
         }
     </script>

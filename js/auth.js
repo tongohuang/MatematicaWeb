@@ -1,10 +1,16 @@
 class AuthService {
     constructor() {
         this.user = null;
+        // Credenciales de administrador
         this.adminCredentials = {
             email: 'admin@matematicaweb.com',
-            password: 'admin123'
+            password: 'Asdqwe123' // Contraseña actualizada
         };
+
+        // Protección contra ataques de fuerza bruta
+        this.loginAttempts = 0;
+        this.lockoutUntil = 0;
+
         this.checkAuthStatus();
     }
 
@@ -22,18 +28,48 @@ class AuthService {
     }
 
     async login(email, password) {
-        // Autenticación local para demo
+        // Verificar si la cuenta está bloqueada temporalmente
+        const now = Date.now();
+        if (now < this.lockoutUntil) {
+            const waitSeconds = Math.ceil((this.lockoutUntil - now) / 1000);
+            throw new Error(`Demasiados intentos fallidos. Intenta nuevamente en ${waitSeconds} segundos.`);
+        }
+
+        // Simular un pequeño retraso para dificultar ataques de fuerza bruta
+        // El retraso aumenta con cada intento fallido
+        const delayMs = Math.min(500 + (this.loginAttempts * 100), 3000);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+
+        // Verificar las credenciales directamente
         if (email === this.adminCredentials.email && password === this.adminCredentials.password) {
+            // Reiniciar contador de intentos fallidos
+            this.loginAttempts = 0;
+            this.lockoutUntil = 0;
+
             this.user = {
                 id: 1,
                 name: 'Administrador',
                 email: email,
                 role: 'admin'
             };
+
+            // Guardar en localStorage (en producción usaríamos JWT o cookies seguras)
             localStorage.setItem('user', JSON.stringify(this.user));
             this.updateUI();
             return true;
         }
+
+        // Incrementar contador de intentos fallidos
+        this.loginAttempts++;
+
+        // Bloquear temporalmente después de varios intentos fallidos
+        if (this.loginAttempts >= 5) {
+            // Bloquear por un tiempo que aumenta con cada intento adicional
+            const lockoutSeconds = Math.min(30 * (this.loginAttempts - 4), 300); // Máximo 5 minutos
+            this.lockoutUntil = now + (lockoutSeconds * 1000);
+            throw new Error(`Demasiados intentos fallidos. Cuenta bloqueada por ${lockoutSeconds} segundos.`);
+        }
+
         return false;
     }
 
@@ -41,6 +77,9 @@ class AuthService {
         localStorage.removeItem('user');
         this.user = null;
         this.updateUI();
+
+        // Reiniciar intentos de login al cerrar sesión
+        this.resetLoginAttempts();
 
         // Determinar la ruta correcta para redirigir
         let redirectPath = 'index.html';
@@ -53,6 +92,15 @@ class AuthService {
         }
 
         window.location.href = redirectPath;
+    }
+
+    /**
+     * Reinicia el contador de intentos de login y el bloqueo
+     */
+    resetLoginAttempts() {
+        this.loginAttempts = 0;
+        this.lockoutUntil = 0;
+        console.log('Intentos de login reiniciados');
     }
 
     isAdmin() {
