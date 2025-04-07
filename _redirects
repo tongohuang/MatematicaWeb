@@ -1,6 +1,12 @@
-# Redirigir todas las rutas no encontradas a index.html
-/* /index.html 200
-
 # Asegurarse de que las rutas a archivos HTML funcionen correctamente
 /activities/html/* /activities/html/:splat 200
 /activities/templates/* /activities/templates/:splat 200
+
+# Asegurarse de que las rutas relativas funcionen correctamente
+/topics/activities/html/* /activities/html/:splat 200
+/topics/activities/templates/* /activities/templates/:splat 200
+/sections/activities/html/* /activities/html/:splat 200
+/sections/activities/templates/* /activities/templates/:splat 200
+
+# Redirigir todas las rutas no encontradas a index.html
+/* /index.html 200

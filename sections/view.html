@@ -250,8 +250,8 @@
 
                 case 'html':
                     // Verificar si el archivo existe
-                    const htmlPath = '../activities/html/' + currentSection.content;
-                    const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
+                    const htmlPath = '/activities/html/' + currentSection.content;
+                    const fallbackHtmlPath = '/activities/html/ejemplo-simple.html';
 
                     // Crear el iframe sin script inline
                     const iframeHtml = document.createElement('iframe');
@@ -291,8 +291,8 @@
 
                 case 'activity':
                     // Verificar si el archivo existe
-                    const activityPath = '../activities/templates/' + currentSection.content;
-                    const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
+                    const activityPath = '/activities/templates/' + currentSection.content;
+                    const fallbackActivityPath = '/activities/templates/ejemplo-simple.html';
 
                     // Crear el iframe sin script inline
                     const iframeActivity = document.createElement('iframe');

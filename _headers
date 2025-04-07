@@ -1,0 +1,12 @@
+# Configuración global
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-XSS-Protection: 1; mode=block
+  Content-Security-Policy: frame-ancestors 'self'
+  X-Content-Type-Options: nosniff
+
+# Configuración específica para archivos en activities
+/activities/*
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self';
+  Access-Control-Allow-Origin: *
