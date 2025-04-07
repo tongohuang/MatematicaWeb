@@ -123,6 +123,9 @@ const DataPersistence = {
                     unsynced: localData.unsynced || {}
                 };
                 console.log('Usando datos del repositorio como fuente principal');
+
+                // Verificar si hay secciones de tipo HTML o Activity y registrarlas
+                this._checkSpecialSectionTypes(repoData);
             } else {
                 // En desarrollo, combinar dando prioridad a los datos locales
                 merged = {
@@ -134,6 +137,9 @@ const DataPersistence = {
                     unsynced: localData.unsynced || {}
                 };
                 console.log('Combinando datos locales y del repositorio');
+
+                // Verificar si hay secciones de tipo HTML o Activity y registrarlas
+                this._checkSpecialSectionTypes(merged.persistent);
             }
 
             // Guardar la combinación en localStorage para uso futuro
@@ -197,7 +203,96 @@ const DataPersistence = {
         return content;
     },
 
-    // Ya no necesitamos la función _isImportantChange
+    /**
+     * Verifica si hay secciones de tipo HTML o Activity y registra información sobre ellas
+     * @private
+     * @param {Object} data - Datos a verificar
+     */
+    _checkSpecialSectionTypes(data) {
+        if (!data || !data.topics) return;
+
+        console.log('Verificando secciones especiales (HTML y Activity)...');
+
+        // Recopilar todas las secciones de tipo HTML y Activity
+        const htmlSections = [];
+        const activitySections = [];
+
+        // Recorrer todos los temas
+        Object.values(data.topics).forEach(topic => {
+            if (!topic.sections || !Array.isArray(topic.sections)) return;
+
+            // Buscar secciones de tipo HTML y Activity
+            topic.sections.forEach(section => {
+                if (section.type === 'html') {
+                    htmlSections.push({
+                        id: section.id,
+                        title: section.title,
+                        content: section.content,
+                        topicId: topic.id,
+                        topicTitle: topic.title
+                    });
+                } else if (section.type === 'activity') {
+                    activitySections.push({
+                        id: section.id,
+                        title: section.title,
+                        content: section.content,
+                        topicId: topic.id,
+                        topicTitle: topic.title
+                    });
+                }
+            });
+        });
+
+        // Registrar información sobre las secciones especiales
+        if (htmlSections.length > 0) {
+            console.log(`Encontradas ${htmlSections.length} secciones de tipo HTML:`);
+            htmlSections.forEach(section => {
+                console.log(`- ${section.title} (ID: ${section.id}, Archivo: ${section.content})`);
+                // Verificar si el archivo existe
+                this._checkFileExists(`activities/html/${section.content}`, 'HTML', section.id, section.title);
+            });
+        } else {
+            console.log('No se encontraron secciones de tipo HTML');
+        }
+
+        if (activitySections.length > 0) {
+            console.log(`Encontradas ${activitySections.length} secciones de tipo Activity:`);
+            activitySections.forEach(section => {
+                console.log(`- ${section.title} (ID: ${section.id}, Archivo: ${section.content})`);
+                // Verificar si el archivo existe
+                this._checkFileExists(`activities/templates/${section.content}`, 'Activity', section.id, section.title);
+            });
+        } else {
+            console.log('No se encontraron secciones de tipo Activity');
+        }
+    },
+
+    /**
+     * Verifica si un archivo existe
+     * @private
+     * @param {string} path - Ruta del archivo
+     * @param {string} type - Tipo de sección
+     * @param {number} id - ID de la sección
+     * @param {string} title - Título de la sección
+     */
+    async _checkFileExists(path, type, id, title) {
+        try {
+            const response = await fetch(path, { method: 'HEAD' });
+            if (response.ok) {
+                console.log(`✅ Archivo ${path} encontrado para la sección ${type} "${title}" (ID: ${id})`);
+            } else {
+                console.warn(`⚠️ Archivo ${path} NO ENCONTRADO para la sección ${type} "${title}" (ID: ${id})`);
+                // Usar archivo de ejemplo como fallback
+                if (type === 'HTML') {
+                    console.log(`   Usando ejemplo-simple.html como fallback para la sección HTML "${title}"`);
+                } else if (type === 'Activity') {
+                    console.log(`   Usando ejemplo-simple.html como fallback para la sección Activity "${title}"`);
+                }
+            }
+        } catch (error) {
+            console.error(`Error verificando archivo ${path}:`, error);
+        }
+    }
 
     /**
      * Obtiene datos del sistema de persistencia

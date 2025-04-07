@@ -1,0 +1,298 @@
+/* Estilos personalizados para Netlify CMS */
+
+/* Estilos generales */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+/* Encabezado personalizado */
+.custom-header {
+    background-color: #f8f9fa;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.custom-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.custom-header .btn {
+    margin-left: 0.5rem;
+}
+
+/* Estadísticas */
+.stats-container {
+    margin-bottom: 2rem;
+}
+
+.stats-card {
+    background-color: white;
+    border-radius: 0.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    height: 100%;
+}
+
+.stats-card .stats-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #007bff;
+}
+
+.stats-card .stats-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card .stats-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Acciones rápidas */
+.quick-actions {
+    margin-bottom: 2rem;
+}
+
+.quick-actions .card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.quick-actions .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    font-weight: 500;
+}
+
+.quick-actions .btn {
+    margin-bottom: 0.5rem;
+}
+
+.quick-actions h6 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+/* Personalización de Netlify CMS */
+.nc-app-container {
+    background-color: #f8f9fa !important;
+}
+
+.nc-appHeader-container {
+    background-color: #fff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+.nc-appHeader-content {
+    padding: 0.75rem 1.5rem !important;
+}
+
+.nc-appHeader-button {
+    color: #007bff !important;
+}
+
+.nc-appHeader-button:hover {
+    background-color: #f8f9fa !important;
+}
+
+.nc-collectionPage-container {
+    padding: 1.5rem !important;
+}
+
+.nc-entryEditor-container {
+    padding: 1.5rem !important;
+}
+
+.nc-collectionPage-cardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.nc-collectionPage-card {
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.nc-collectionPage-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15) !important;
+}
+
+.nc-collectionPage-cardContent {
+    padding: 1.5rem !important;
+}
+
+.nc-entryEditor-editor {
+    background-color: #fff !important;
+    border-radius: 0.25rem !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+}
+
+.nc-entryEditor-toolbar {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #ddd !important;
+}
+
+/* Botones */
+.nc-button {
+    border-radius: 0.25rem !important;
+    font-weight: 500 !important;
+}
+
+.nc-button-primary {
+    background-color: #007bff !important;
+}
+
+.nc-button-primary:hover {
+    background-color: #0069d9 !important;
+}
+
+.nc-button-secondary {
+    background-color: #6c757d !important;
+}
+
+.nc-button-secondary:hover {
+    background-color: #5a6268 !important;
+}
+
+.nc-button-success {
+    background-color: #28a745 !important;
+}
+
+.nc-button-success:hover {
+    background-color: #218838 !important;
+}
+
+.nc-button-danger {
+    background-color: #dc3545 !important;
+}
+
+.nc-button-danger:hover {
+    background-color: #c82333 !important;
+}
+
+/* Formularios */
+.nc-controlPane-control {
+    margin-bottom: 1.5rem !important;
+}
+
+.nc-controlPane-label {
+    font-weight: 500 !important;
+    color: #495057 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.nc-controlPane-widget {
+    border-radius: 0.25rem !important;
+}
+
+.nc-controlPane-widget input,
+.nc-controlPane-widget textarea,
+.nc-controlPane-widget select {
+    border-radius: 0.25rem !important;
+    border: 1px solid #ced4da !important;
+    padding: 0.375rem 0.75rem !important;
+}
+
+.nc-controlPane-widget input:focus,
+.nc-controlPane-widget textarea:focus,
+.nc-controlPane-widget select:focus {
+    border-color: #80bdff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25) !important;
+}
+
+/* Menú lateral */
+.nc-sidebarPane-header {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #ddd !important;
+}
+
+.nc-sidebarPane-card {
+    border: none !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+    margin-bottom: 1rem !important;
+}
+
+.nc-sidebarPane-cardHeading {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #ddd !important;
+    font-weight: 500 !important;
+}
+
+/* Loader personalizado */
+.custom-loader {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.custom-loader.show {
+    display: flex;
+}
+
+.custom-loader-content {
+    text-align: center;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.custom-loader-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 0.25rem solid #f3f3f3;
+    border-top: 0.25rem solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .custom-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .stats-card {
+        padding: 1rem;
+    }
+    
+    .stats-card .stats-icon {
+        font-size: 1.5rem;
+    }
+    
+    .stats-card .stats-value {
+        font-size: 1.5rem;
+    }
+}

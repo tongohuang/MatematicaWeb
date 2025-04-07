@@ -7,10 +7,17 @@ backend:
 media_folder: "images/uploads"
 public_folder: "/images/uploads"
 
-# Configuración para la vista previa en vivo (opcional)
-# site_url: https://tu-sitio-netlify.netlify.app
-# display_url: https://tu-sitio-netlify.netlify.app
-# logo_url: https://tu-sitio-netlify.netlify.app/images/logo.png
+# Configuración para la vista previa en vivo
+site_url: /
+display_url: /
+logo_url: /images/logo.png
+
+# Personalizar la interfaz de usuario
+locale: 'es'
+publish_mode: 'editorial_workflow'
+
+# Personalizar la interfaz de usuario
+slug: {encoding: "ascii", clean_accents: true, sanitize_replacement: "-"}
 
 # Colecciones de contenido
 collections:

@@ -249,22 +249,60 @@
                     break;
 
                 case 'html':
+                    // Verificar si el archivo existe
+                    const htmlPath = `../activities/html/${currentSection.content}`;
+                    const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
+
                     contentHtml = `
                         <div class="section-preview-content">
                             <div class="html-container">
-                                <iframe src="../activities/html/${currentSection.content}"
-                                        frameborder="0" style="width:100%; height:500px;"></iframe>
+                                <iframe src="${htmlPath}"
+                                        frameborder="0" style="width:100%; height:500px;"
+                                        onerror="this.src='${fallbackHtmlPath}'; console.error('Error cargando ${htmlPath}, usando fallback');"></iframe>
+                                <script>
+                                    // Verificar si el archivo existe
+                                    fetch('${htmlPath}', { method: 'HEAD' })
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                console.warn('Archivo ${htmlPath} no encontrado, usando fallback');
+                                                document.querySelector('.html-container iframe').src = '${fallbackHtmlPath}';
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error verificando archivo ${htmlPath}:', error);
+                                            document.querySelector('.html-container iframe').src = '${fallbackHtmlPath}';
+                                        });
+                                </script>
                             </div>
                         </div>
                     `;
                     break;
 
                 case 'activity':
+                    // Verificar si el archivo existe
+                    const activityPath = `../activities/templates/${currentSection.content}`;
+                    const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
+
                     contentHtml = `
                         <div class="section-preview-content">
                             <div class="activity-container">
-                                <iframe src="../activities/templates/${currentSection.content}"
-                                        frameborder="0" style="width:100%; height:600px;"></iframe>
+                                <iframe src="${activityPath}"
+                                        frameborder="0" style="width:100%; height:600px;"
+                                        onerror="this.src='${fallbackActivityPath}'; console.error('Error cargando ${activityPath}, usando fallback');"></iframe>
+                                <script>
+                                    // Verificar si el archivo existe
+                                    fetch('${activityPath}', { method: 'HEAD' })
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                console.warn('Archivo ${activityPath} no encontrado, usando fallback');
+                                                document.querySelector('.activity-container iframe').src = '${fallbackActivityPath}';
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error verificando archivo ${activityPath}:', error);
+                                            document.querySelector('.activity-container iframe').src = '${fallbackActivityPath}';
+                                        });
+                                </script>
                             </div>
                         </div>
                     `;

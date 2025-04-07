@@ -1,39 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Administración de Contenido - MatemáticaWeb</title>
+  <title>Panel CMS - MatemáticaWeb</title>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <style>
-    /* Estilos básicos para mejorar la apariencia del CMS */
-    .header {
-      background-color: #f8f9fa;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #e9ecef;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-    .header a {
-      color: #007bff;
-      text-decoration: none;
-    }
-    .header a:hover {
-      text-decoration: underline;
-    }
-  </style>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="custom.css">
 </head>
 <body>
   <!-- Encabezado personalizado -->
-  <div class="header">
+  <div class="custom-header">
     <div class="container">
-      <div class="d-flex justify-content-between align-items-center">
-        <h1>Administración de Contenido - MatemáticaWeb</h1>
+      <h1><i class="fas fa-cloud me-2"></i> Panel CMS en la Nube - MatemáticaWeb</h1>
+      <div>
+        <a href="../admin/index.html" class="btn btn-outline-secondary">
+          <i class="fas fa-cog"></i> Panel Admin Local
+        </a>
         <a href="../index.html" class="btn btn-outline-primary">
           <i class="fas fa-home"></i> Volver al Sitio
         </a>
@@ -41,20 +28,214 @@
     </div>
   </div>
 
+  <!-- Contenido personalizado antes del CMS -->
+  <div class="container mb-4 intro-section">
+    <div class="row stats-container">
+      <div class="col-md-4">
+        <div class="stats-card">
+          <div class="stats-icon">
+            <i class="fas fa-book"></i>
+          </div>
+          <div class="stats-value" id="cmsCoursesCount">-</div>
+          <div class="stats-label">Cursos</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stats-card">
+          <div class="stats-icon">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <div class="stats-value" id="cmsTopicsCount">-</div>
+          <div class="stats-label">Temas</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stats-card">
+          <div class="stats-icon">
+            <i class="fas fa-puzzle-piece"></i>
+          </div>
+          <div class="stats-value" id="cmsSectionsCount">-</div>
+          <div class="stats-label">Secciones</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row quick-actions">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Acciones Rápidas</h5>
+          </div>
+          <div class="card-body">
+            <div class="row mb-4">
+              <h6 class="text-muted mb-3">Gestión de Contenidos</h6>
+              <div class="col-md-3">
+                <button class="btn btn-primary w-100" id="btnEditCourses">
+                  <i class="fas fa-edit me-2"></i> Editar Cursos
+                </button>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-success w-100" id="btnEditTopics">
+                  <i class="fas fa-book-open me-2"></i> Editar Temas
+                </button>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-info w-100" id="btnEditSections">
+                  <i class="fas fa-puzzle-piece me-2"></i> Editar Secciones
+                </button>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-warning w-100" id="btnEditSettings">
+                  <i class="fas fa-cog me-2"></i> Configuración
+                </button>
+              </div>
+            </div>
+
+            <div class="row">
+              <h6 class="text-muted mb-3">Sincronización</h6>
+              <div class="col-md-6">
+                <button class="btn btn-outline-primary w-100" id="btnSyncData">
+                  <i class="fas fa-sync me-2"></i> Sincronizar con Repositorio
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button class="btn btn-outline-success w-100" id="btnPublishChanges">
+                  <i class="fas fa-cloud-upload-alt me-2"></i> Publicar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loader personalizado -->
+  <div class="custom-loader" id="customLoader">
+    <div class="custom-loader-content">
+      <div class="custom-loader-spinner"></div>
+      <p>Cargando CMS...</p>
+    </div>
+  </div>
+
   <!-- Netlify CMS -->
   <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
-  
+  <script src="config.js"></script>
+
   <!-- Script para redireccionar después de iniciar sesión -->
   <script>
+    // Mostrar loader
+    document.getElementById('customLoader').classList.add('show');
+
+    // Inicializar Netlify Identity
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
           window.netlifyIdentity.on("login", () => {
             document.location.href = "/netlify-cms/";
           });
+        } else {
+          // Ocultar loader cuando el usuario está autenticado
+          document.getElementById('customLoader').classList.remove('show');
         }
       });
     }
+
+    // Funciones para los botones de acciones rápidas
+    document.addEventListener('DOMContentLoaded', function() {
+      // Cargar estadísticas
+      setTimeout(loadCMSStats, 2000);
+
+      // Configurar botones de acciones rápidas
+      document.getElementById('btnEditCourses').addEventListener('click', function() {
+        window.location.hash = '#/collections/courses';
+      });
+
+      document.getElementById('btnEditTopics').addEventListener('click', function() {
+        window.location.hash = '#/collections/topics';
+      });
+
+      document.getElementById('btnEditSections').addEventListener('click', function() {
+        // Redirigir a la colección de temas, ya que las secciones están dentro de los temas
+        window.location.hash = '#/collections/topics';
+      });
+
+      document.getElementById('btnEditSettings').addEventListener('click', function() {
+        window.location.hash = '#/collections/settings';
+      });
+
+      document.getElementById('btnSyncData').addEventListener('click', function() {
+        if (confirm('\u00bfDeseas sincronizar los datos con el repositorio?')) {
+          alert('Función de sincronización con el repositorio iniciada.');
+          // Aquí iría la lógica de sincronización
+        }
+      });
+
+      document.getElementById('btnPublishChanges').addEventListener('click', function() {
+        if (confirm('\u00bfDeseas publicar los cambios?')) {
+          alert('Los cambios se publicarán cuando hagas commit en el repositorio.');
+          // Aquí iría la lógica de publicación
+        }
+      });
+    });
+
+    // Función para cargar estadísticas
+    function loadCMSStats() {
+      // En un entorno real, estas estadísticas vendrían de una API
+      // Por ahora, usamos valores de ejemplo
+      fetch('../data/courses.json')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('cmsCoursesCount').textContent = Array.isArray(data) ? data.length : Object.keys(data).length;
+        })
+        .catch(() => {
+          document.getElementById('cmsCoursesCount').textContent = '?';
+        });
+
+      fetch('../data/topics.json')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('cmsTopicsCount').textContent = Array.isArray(data) ? data.length : Object.keys(data).length;
+        })
+        .catch(() => {
+          document.getElementById('cmsTopicsCount').textContent = '?';
+        });
+
+      // Para las secciones, contamos las secciones dentro de los temas
+      fetch('../data/topics.json')
+        .then(response => response.json())
+        .then(data => {
+          let sectionsCount = 0;
+          if (Array.isArray(data)) {
+            data.forEach(topic => {
+              if (topic.sections && Array.isArray(topic.sections)) {
+                sectionsCount += topic.sections.length;
+              }
+            });
+          } else {
+            Object.values(data).forEach(topic => {
+              if (topic.sections && Array.isArray(topic.sections)) {
+                sectionsCount += topic.sections.length;
+              }
+            });
+          }
+          document.getElementById('cmsSectionsCount').textContent = sectionsCount;
+        })
+        .catch(() => {
+          document.getElementById('cmsSectionsCount').textContent = '?';
+        });
+    }
+
+    // Ocultar la sección de introducción cuando se navega a una colección
+    window.addEventListener('hashchange', function() {
+      const introSection = document.querySelector('.intro-section');
+      if (window.location.hash.startsWith('#/collections/')) {
+        introSection.style.display = 'none';
+      } else {
+        introSection.style.display = 'block';
+        loadCMSStats(); // Recargar estadísticas al volver a la página principal
+      }
+    });
   </script>
 </body>
 </html>

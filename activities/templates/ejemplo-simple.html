@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejemplo Simple de Actividad</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .question {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+        }
+        .options {
+            margin: 15px 0;
+        }
+        .option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .option:hover {
+            background-color: #e9ecef;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ejemplo de Actividad Interactiva</h1>
+        
+        <div class="question">
+            <h3>Pregunta 1: ¿Cuál es el resultado de 2 + 2?</h3>
+            <div class="options">
+                <label class="option">
+                    <input type="radio" name="q1" value="3"> 3
+                </label>
+                <label class="option">
+                    <input type="radio" name="q1" value="4"> 4
+                </label>
+                <label class="option">
+                    <input type="radio" name="q1" value="5"> 5
+                </label>
+                <label class="option">
+                    <input type="radio" name="q1" value="6"> 6
+                </label>
+            </div>
+        </div>
+        
+        <div class="question">
+            <h3>Pregunta 2: ¿Cuál es el resultado de 5 - 3?</h3>
+            <div class="options">
+                <label class="option">
+                    <input type="radio" name="q2" value="1"> 1
+                </label>
+                <label class="option">
+                    <input type="radio" name="q2" value="2"> 2
+                </label>
+                <label class="option">
+                    <input type="radio" name="q2" value="3"> 3
+                </label>
+                <label class="option">
+                    <input type="radio" name="q2" value="4"> 4
+                </label>
+            </div>
+        </div>
+        
+        <button id="checkBtn" class="btn">Verificar Respuestas</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        document.getElementById('checkBtn').addEventListener('click', function() {
+            const q1Answer = document.querySelector('input[name="q1"]:checked');
+            const q2Answer = document.querySelector('input[name="q2"]:checked');
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            
+            if (!q1Answer || !q2Answer) {
+                resultDiv.className = 'result incorrect';
+                resultDiv.innerHTML = 'Por favor, responde todas las preguntas.';
+                return;
+            }
+            
+            const correctAnswers = {
+                q1: '4',
+                q2: '2'
+            };
+            
+            const score = [
+                q1Answer.value === correctAnswers.q1,
+                q2Answer.value === correctAnswers.q2
+            ].filter(Boolean).length;
+            
+            const percentage = (score / 2) * 100;
+            
+            if (percentage === 100) {
+                resultDiv.className = 'result correct';
+                resultDiv.innerHTML = `
+                    <h3>¡Excelente!</h3>
+                    <p>Has respondido correctamente todas las preguntas.</p>
+                    <p>Puntuación: ${score}/2 (${percentage}%)</p>
+                `;
+            } else if (percentage >= 50) {
+                resultDiv.className = 'result correct';
+                resultDiv.innerHTML = `
+                    <h3>¡Buen trabajo!</h3>
+                    <p>Has respondido correctamente ${score} de 2 preguntas.</p>
+                    <p>Puntuación: ${score}/2 (${percentage}%)</p>
+                `;
+            } else {
+                resultDiv.className = 'result incorrect';
+                resultDiv.innerHTML = `
+                    <h3>Necesitas mejorar</h3>
+                    <p>Has respondido correctamente ${score} de 2 preguntas.</p>
+                    <p>Puntuación: ${score}/2 (${percentage}%)</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
