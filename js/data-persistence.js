@@ -19,7 +19,14 @@ const DataPersistence = {
         unsynced: {}
     },
 
-    // Ruta al archivo JSON en el repositorio
+    // Rutas a los archivos JSON en el repositorio
+    JSON_FILES: {
+        courses: '/data/courses.json',
+        topics: '/data/topics.json',
+        settings: '/data/settings.json'
+    },
+
+    // Ruta al archivo JSON combinado (para compatibilidad)
     JSON_FILE_PATH: '/data/courseData.json',
 
     /**
@@ -73,17 +80,64 @@ const DataPersistence = {
             let repoData = {};
             let repoDataLoaded = false;
             try {
-                console.log('Intentando cargar datos desde:', this.JSON_FILE_PATH);
                 console.log('Priorizar repositorio:', shouldPrioritizeRepo ? 'Sí' : 'No');
 
                 // Usar cache: 'no-store' para evitar problemas de caché en producción
                 const fetchOptions = { cache: 'no-store' };
+
+                // Intentar cargar desde archivos separados primero
+                console.log('Intentando cargar datos desde archivos separados...');
+                try {
+                    const coursesPromise = fetch(this.JSON_FILES.courses, fetchOptions);
+                    const topicsPromise = fetch(this.JSON_FILES.topics, fetchOptions);
+
+                    const [coursesResponse, topicsResponse] = await Promise.all([coursesPromise, topicsPromise]);
+
+                    if (coursesResponse.ok && topicsResponse.ok) {
+                        // Si ambos archivos existen, cargar desde ellos
+                        const coursesData = await coursesResponse.json();
+                        const topicsData = await topicsResponse.json();
+
+                        repoData = {
+                            courses: {},
+                            topics: {},
+                            sections: {}
+                        };
+
+                        // Convertir arrays a objetos indexados por ID
+                        if (Array.isArray(coursesData)) {
+                            coursesData.forEach(course => {
+                                repoData.courses[course.id] = course;
+                            });
+                        } else {
+                            repoData.courses = coursesData;
+                        }
+
+                        if (Array.isArray(topicsData)) {
+                            topicsData.forEach(topic => {
+                                repoData.topics[topic.id] = topic;
+                            });
+                        } else {
+                            repoData.topics = topicsData;
+                        }
+
+                        repoDataLoaded = true;
+                        console.log('Datos del repositorio cargados desde archivos separados');
+                        console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
+                        console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
+                    }
+                } catch (error) {
+                    console.warn('Error cargando datos desde archivos separados:', error);
+                }
+
+                // Si no se pudieron cargar los archivos separados, intentar con el archivo combinado
+                console.log('Intentando cargar datos desde archivo combinado:', this.JSON_FILE_PATH);
                 const repoResponse = await fetch(this.JSON_FILE_PATH, fetchOptions);
 
                 if (repoResponse.ok) {
                     repoData = await repoResponse.json();
                     repoDataLoaded = true;
-                    console.log('Datos del repositorio cargados correctamente');
+                    console.log('Datos del repositorio cargados desde archivo combinado');
                     console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
                     console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
 
@@ -292,7 +346,37 @@ const DataPersistence = {
         } catch (error) {
             console.error(`Error verificando archivo ${path}:`, error);
         }
-    }
+    },
+
+    /**
+     * Descarga un archivo JSON
+     * @private
+     * @param {string} jsonData - Datos JSON a descargar
+     * @param {string} filename - Nombre del archivo
+     * @param {string} dataType - Tipo de datos para el atributo data-download-type
+     */
+    _downloadJsonFile(jsonData, filename, dataType) {
+        try {
+            // Crear un blob y descargar
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.setAttribute('data-download-type', dataType);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log(`Archivo ${filename} generado correctamente`);
+            return true;
+        } catch (error) {
+            console.error(`Error generando archivo ${filename}:`, error);
+            return false;
+        }
+    },
 
     /**
      * Obtiene datos del sistema de persistencia
@@ -397,43 +481,56 @@ const DataPersistence = {
     },
 
     /**
-     * Genera el archivo JSON para el repositorio
-     * @param {object} data - Datos a guardar en el JSON
+     * Genera los archivos JSON para el repositorio
+     * @param {object} data - Datos a guardar en los JSON
      * @param {boolean} silent - Si es true, no muestra alertas
      */
     generateRepoJSON(data, silent = false) {
         try {
             // Validar que los datos no estén vacíos
             if (!data || Object.keys(data).length === 0) {
-                console.error('No hay datos para generar el JSON');
+                console.error('No hay datos para generar los JSON');
                 if (!silent) {
-                    alert('No hay datos para generar el archivo JSON.');
+                    alert('No hay datos para generar los archivos JSON.');
                 }
                 return false;
             }
 
-            const jsonData = JSON.stringify(data, null, 2);
+            // 1. Generar archivo combinado (para compatibilidad)
+            const combinedJsonData = JSON.stringify(data, null, 2);
+            this._downloadJsonFile(combinedJsonData, 'courseData.json', 'repository-data');
 
-            // Crear un blob y descargar
-            const blob = new Blob([jsonData], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+            // 2. Generar archivos separados
 
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'courseData.json';
-            a.setAttribute('data-download-type', 'repository-data');
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Cursos
+            if (data.courses && Object.keys(data.courses).length > 0) {
+                // Convertir objeto a array
+                const coursesArray = Object.values(data.courses);
+                const coursesJsonData = JSON.stringify(coursesArray, null, 2);
+                this._downloadJsonFile(coursesJsonData, 'courses.json', 'courses-data');
+            }
+
+            // Temas
+            if (data.topics && Object.keys(data.topics).length > 0) {
+                // Convertir objeto a array
+                const topicsArray = Object.values(data.topics);
+                const topicsJsonData = JSON.stringify(topicsArray, null, 2);
+                this._downloadJsonFile(topicsJsonData, 'topics.json', 'topics-data');
+            }
+
+            // Configuración (si existe)
+            if (data.settings) {
+                const settingsJsonData = JSON.stringify(data.settings, null, 2);
+                this._downloadJsonFile(settingsJsonData, 'settings.json', 'settings-data');
+            }
 
             // Solo mostramos la alerta si se solicita explícitamente y no estamos en modo silencioso
             if (!silent && window.location.pathname.includes('/admin/')) {
-                alert('Se ha generado el archivo JSON para el repositorio. Por favor, guárdelo en la carpeta "data" del proyecto y haga commit de los cambios.');
+                alert('Se han generado los archivos JSON para el repositorio. Por favor, guárdelos en las carpetas correspondientes del proyecto:\n\n- courseData.json en /data/\n- courses.json en /data/\n- topics.json en /data/\n\nY haga commit de los cambios.');
             }
 
             // Guardar una copia en localStorage para referencia
-            localStorage.setItem('lastGeneratedJSON', jsonData);
+            localStorage.setItem('lastGeneratedJSON', combinedJsonData);
             localStorage.setItem('lastJSONGenerationTime', new Date().toISOString());
 
             return true;
