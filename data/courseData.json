@@ -1,0 +1,196 @@
+{
+  "courses": {
+    "1": {
+      "id": 1,
+      "title": "Álgebra Básica",
+      "description": "Fundamentos de álgebra para estudiantes principiantes",
+      "image": "images/algebra.jpg",
+      "color": "#4CAF50",
+      "icon": "fas fa-square-root-alt",
+      "sections": [
+        {
+          "title": "Introducción a las Ecuaciones",
+          "lessons": [
+            {
+              "id": 1,
+              "title": "¿Qué es una ecuación?"
+            },
+            {
+              "id": 2,
+              "title": "Ecuaciones de primer grado"
+            }
+          ]
+        },
+        {
+          "title": "Polinomios",
+          "lessons": [
+            {
+              "id": 3,
+              "title": "Operaciones con polinomios"
+            },
+            {
+              "id": 4,
+              "title": "Factorización"
+            }
+          ]
+        }
+      ]
+    },
+    "2": {
+      "id": 2,
+      "title": "Geometría Interactiva",
+      "description": "Aprende geometría con ejercicios interactivos",
+      "image": "images/geometry.jpg",
+      "color": "#2196F3",
+      "icon": "fas fa-shapes",
+      "sections": [
+        {
+          "title": "Figuras Planas",
+          "lessons": [
+            {
+              "id": 5,
+              "title": "Triángulos y sus propiedades"
+            },
+            {
+              "id": 6,
+              "title": "Cuadriláteros"
+            }
+          ]
+        }
+      ]
+    },
+    "3": {
+      "id": 3,
+      "title": "Cálculo Diferencial",
+      "description": "Introducción al cálculo y sus aplicaciones",
+      "image": "images/calculus.jpg",
+      "color": "#FF5722",
+      "icon": "fas fa-chart-line",
+      "sections": [
+        {
+          "title": "Límites",
+          "lessons": [
+            {
+              "id": 7,
+              "title": "Concepto de límite"
+            },
+            {
+              "id": 8,
+              "title": "Límites laterales"
+            }
+          ]
+        }
+      ]
+    },
+    "4": {
+      "id": 4,
+      "title": "Estadística Básica",
+      "description": "Fundamentos de estadística y probabilidad",
+      "image": "",
+      "color": "#9C27B0",
+      "icon": "fas fa-chart-bar",
+      "sections": [
+        {
+          "title": "Estadística Descriptiva",
+          "lessons": [
+            {
+              "id": 9,
+              "title": "Medidas de tendencia central"
+            },
+            {
+              "id": 10,
+              "title": "Medidas de dispersión"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "topics": {
+    "101": {
+      "id": 101,
+      "courseId": 1,
+      "title": "Ecuaciones Lineales",
+      "description": "Aprende a resolver ecuaciones de primer grado",
+      "icon": "fas fa-equals",
+      "sections": [
+        {
+          "id": 1001,
+          "title": "Introducción a las Ecuaciones",
+          "type": "text",
+          "content": "<h3>¿Qué es una ecuación?</h3><p>Una ecuación es una igualdad matemática entre dos expresiones algebraicas, denominadas miembros, en las que aparecen valores conocidos o datos, y desconocidos o incógnitas, relacionados mediante operaciones matemáticas.</p><p>La solución de la ecuación son los valores que pueden tomar las incógnitas para que la igualdad sea cierta.</p>"
+        },
+        {
+          "id": 1002,
+          "title": "Video Explicativo",
+          "type": "youtube",
+          "content": "dQw4w9WgXcQ"
+        },
+        {
+          "id": 1003,
+          "title": "Resolviendo una ecuación",
+          "type": "activity",
+          "content": "activity_1743729300309.json"
+        }
+      ]
+    },
+    "102": {
+      "id": 102,
+      "courseId": 1,
+      "title": "Polinomios",
+      "description": "Operaciones con polinomios y factorización",
+      "icon": "fas fa-superscript",
+      "sections": [
+        {
+          "id": 1003,
+          "title": "Definición de Polinomios",
+          "type": "text",
+          "content": "<h3>Polinomios</h3><p>Un polinomio es una expresión matemática que consiste en variables y coeficientes, que implica solo las operaciones de adición, sustracción, multiplicación y exponentes enteros no negativos de variables.</p>"
+        },
+        {
+          "id": 1004,
+          "title": "Características de los polinomios",
+          "type": "activity",
+          "content": "activity_1743729899823.json"
+        }
+      ]
+    },
+    "201": {
+      "id": 201,
+      "courseId": 2,
+      "title": "Figuras Planas",
+      "description": "Estudio de triángulos, cuadriláteros y círculos",
+      "icon": "fas fa-shapes",
+      "sections": [
+        {
+          "id": 2001,
+          "title": "Triángulos",
+          "type": "text",
+          "content": "<h3>Triángulos</h3><p>Un triángulo es un polígono de tres lados. La suma de los ángulos internos de un triángulo es siempre 180 grados.</p>"
+        },
+        {
+          "id": 2002,
+          "title": "Applet Interactivo",
+          "type": "geogebra",
+          "content": "abcdef123456"
+        }
+      ]
+    },
+    "301": {
+      "id": 301,
+      "courseId": 3,
+      "title": "Límites y Continuidad",
+      "description": "Conceptos fundamentales del cálculo diferencial",
+      "icon": "fas fa-chart-line",
+      "sections": [
+        {
+          "id": 1001,
+          "title": "asdasd",
+          "type": "activity",
+          "content": "activity_1743732085579"
+        }
+      ]
+    }
+  },
+  "sections": {}
+}

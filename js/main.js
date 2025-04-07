@@ -1,5 +1,14 @@
 // Los datos de muestra ahora se cargan desde sample-data.js
 
+// Inicializar sistema de persistencia
+async function initializeDataSystem() {
+    // Verificar si el sistema de persistencia está disponible
+    if (typeof DataPersistence !== 'undefined') {
+        console.log('Inicializando sistema de persistencia...');
+        await DataPersistence.init();
+    }
+}
+
 // Cargar cursos destacados
 function loadFeaturedCourses() {
     try {

@@ -177,6 +177,32 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Sincronización de Datos -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-sync me-2"></i> Sincronización de Datos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="syncStatus" class="alert alert-info mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <div>Verificando estado de sincronización...</div>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button id="syncButton" class="btn btn-primary" type="button" onclick="synchronizeData()">
+                                        <i class="fas fa-sync me-2"></i> Sincronizar Cambios
+                                    </button>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="checkSyncStatus()">
+                                        <i class="fas fa-refresh me-2"></i> Verificar Estado
+                                    </button>
+                                </div>
+                                <div class="mt-3 small text-muted">
+                                    <p>La sincronización guarda los cambios locales en el archivo JSON del repositorio sin perder datos.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -220,80 +246,84 @@
     <script src="../js/utils.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/sample-data.js"></script>
+    <script src="../js/data-persistence.js"></script>
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
-            
+
             // Verificar si el usuario está autenticado y es administrador
             if (!auth.isAdmin()) {
                 window.location.href = '../login.html';
                 return;
             }
-            
+
             // Configurar eventos
             setupEventListeners();
-            
+
             // Actualizar vista previa
             updatePreview();
+
+            // Verificar estado de sincronización
+            await checkSyncStatus();
         });
-        
+
         function setupEventListeners() {
             // Formulario de configuración general
             document.getElementById('generalSettingsForm').addEventListener('submit', saveGeneralSettings);
-            
+
             // Formulario de logo
             document.getElementById('logoSettingsForm').addEventListener('submit', saveLogo);
-            
+
             // Botón de vista previa de color
             document.getElementById('previewColorBtn').addEventListener('click', updatePreview);
-            
+
             // Botón de restablecer logo
             document.getElementById('resetLogoBtn').addEventListener('click', resetLogo);
-            
+
             // Eventos para cambios en tiempo real
             document.getElementById('siteName').addEventListener('input', updatePreview);
             document.getElementById('primaryColor').addEventListener('input', updatePreview);
             document.getElementById('fontFamily').addEventListener('change', updatePreview);
-            
+
             // Herramientas adicionales
             document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
             document.getElementById('exportDataBtn').addEventListener('click', exportData);
             document.getElementById('importDataBtn').addEventListener('click', showImportModal);
             document.getElementById('resetDataBtn').addEventListener('click', resetData);
-            
+
             // Modal de importación
             document.getElementById('confirmImportBtn').addEventListener('click', importData);
         }
-        
+
         function saveGeneralSettings(event) {
             event.preventDefault();
-            
+
             const siteName = document.getElementById('siteName').value;
             const siteDescription = document.getElementById('siteDescription').value;
             const primaryColor = document.getElementById('primaryColor').value;
             const fontFamily = document.getElementById('fontFamily').value;
-            
+
             // En una aplicación real, aquí se guardarían los datos en el servidor
             // Para esta demo, simulamos el guardado
-            
+
             // Guardar en localStorage
             localStorage.setItem('site_name', siteName);
             localStorage.setItem('site_description', siteDescription);
             localStorage.setItem('primary_color', primaryColor);
             localStorage.setItem('font_family', fontFamily);
-            
+
             alert('Configuración guardada correctamente');
         }
-        
+
         function saveLogo(event) {
             event.preventDefault();
-            
+
             const logoFile = document.getElementById('logoFile').files[0];
             const useLogo = document.getElementById('useLogo').checked;
-            
+
             if (logoFile) {
                 // En una aplicación real, aquí se subiría el archivo al servidor
                 // Para esta demo, simulamos la subida
@@ -302,12 +332,12 @@
                     // Guardar en localStorage
                     localStorage.setItem('site_logo', e.target.result);
                     localStorage.setItem('use_logo', useLogo);
-                    
+
                     // Actualizar la vista previa
                     document.getElementById('currentLogo').src = e.target.result;
                     document.getElementById('currentLogo').style.display = 'inline-block';
                     document.getElementById('defaultLogo').style.display = 'none';
-                    
+
                     alert('Logo guardado correctamente');
                 };
                 reader.readAsDataURL(logoFile);
@@ -317,41 +347,41 @@
                 alert('Preferencias guardadas correctamente');
             }
         }
-        
+
         function resetLogo() {
             if (confirm('¿Estás seguro de que deseas restablecer el logo predeterminado?')) {
                 // Eliminar el logo personalizado
                 localStorage.removeItem('site_logo');
-                
+
                 // Actualizar la vista previa
                 document.getElementById('currentLogo').style.display = 'none';
                 document.getElementById('defaultLogo').style.display = 'flex';
-                
+
                 alert('Logo restablecido correctamente');
             }
         }
-        
+
         function updatePreview() {
             const siteName = document.getElementById('siteName').value;
             const primaryColor = '#' + document.getElementById('primaryColor').value;
             const fontFamily = document.getElementById('fontFamily').value;
-            
+
             // Actualizar nombre del sitio
             document.getElementById('previewSiteName').textContent = siteName;
-            
+
             // Actualizar colores
             document.getElementById('previewHeader').style.backgroundColor = primaryColor;
             document.getElementById('previewButton').style.backgroundColor = primaryColor;
-            
+
             // Actualizar fuente
             document.querySelector('.preview-container').style.fontFamily = fontFamily;
         }
-        
+
         function clearCache() {
             if (confirm('¿Estás seguro de que deseas limpiar la caché? Esto no afectará a tus datos guardados.')) {
                 // En una aplicación real, aquí se limpiaría la caché del navegador
                 // Para esta demo, simulamos la limpieza
-                
+
                 // Limpiar caché de localStorage excepto los datos importantes
                 const keysToKeep = [
                     DataManager.COURSES_KEY,
@@ -364,17 +394,17 @@
                     'site_logo',
                     'use_logo'
                 ];
-                
+
                 Object.keys(localStorage).forEach(key => {
                     if (!keysToKeep.includes(key)) {
                         localStorage.removeItem(key);
                     }
                 });
-                
+
                 alert('Caché limpiada correctamente');
             }
         }
-        
+
         function exportData() {
             // Obtener todos los datos
             const exportData = {
@@ -389,14 +419,14 @@
                     useLogo: localStorage.getItem('use_logo') === 'true'
                 }
             };
-            
+
             // Convertir a JSON
             const jsonData = JSON.stringify(exportData, null, 2);
-            
+
             // Crear un blob y descargar
             const blob = new Blob([jsonData], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            
+
             const a = document.createElement('a');
             a.href = url;
             a.download = 'matematicaweb_backup_' + new Date().toISOString().split('T')[0] + '.json';
@@ -405,58 +435,58 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
-        
+
         function showImportModal() {
             const importModal = new bootstrap.Modal(document.getElementById('importModal'));
             importModal.show();
         }
-        
+
         function importData() {
             const importFile = document.getElementById('importFile').files[0];
             const backupBeforeImport = document.getElementById('backupBeforeImport').checked;
-            
+
             if (!importFile) {
                 alert('Por favor seleccione un archivo para importar');
                 return;
             }
-            
+
             // Crear copia de seguridad si es necesario
             if (backupBeforeImport) {
                 exportData();
             }
-            
+
             // Leer el archivo
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    
+
                     // Validar los datos
                     if (!importedData.courses || !importedData.topics) {
                         throw new Error('El archivo no contiene datos válidos');
                     }
-                    
+
                     // Importar los datos
                     DataManager.saveCourses(importedData.courses);
                     DataManager.saveTopics(importedData.topics);
-                    
+
                     // Importar configuración
                     if (importedData.settings) {
                         localStorage.setItem('site_name', importedData.settings.siteName || 'MatemáticaWeb');
                         localStorage.setItem('site_description', importedData.settings.siteDescription || 'Plataforma educativa para el aprendizaje de matemáticas');
                         localStorage.setItem('primary_color', importedData.settings.primaryColor || '0d6efd');
                         localStorage.setItem('font_family', importedData.settings.fontFamily || "'Roboto', sans-serif");
-                        
+
                         if (importedData.settings.siteLogo) {
                             localStorage.setItem('site_logo', importedData.settings.siteLogo);
                         }
-                        
+
                         localStorage.setItem('use_logo', importedData.settings.useLogo || false);
                     }
-                    
+
                     // Cerrar el modal
                     bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
-                    
+
                     alert('Datos importados correctamente. La página se recargará para aplicar los cambios.');
                     window.location.reload();
                 } catch (error) {
@@ -466,13 +496,13 @@
             };
             reader.readAsText(importFile);
         }
-        
+
         function resetData() {
             if (confirm('¿Estás seguro de que deseas reiniciar todos los datos? Esta acción no se puede deshacer.')) {
                 if (confirm('Esta acción eliminará todos los cursos, temas y secciones. ¿Deseas continuar?')) {
                     // Reiniciar datos
                     DataManager.resetData();
-                    
+
                     // Reiniciar configuración
                     localStorage.removeItem('site_name');
                     localStorage.removeItem('site_description');
@@ -480,9 +510,89 @@
                     localStorage.removeItem('font_family');
                     localStorage.removeItem('site_logo');
                     localStorage.removeItem('use_logo');
-                    
+
                     alert('Todos los datos han sido reiniciados. La página se recargará para aplicar los cambios.');
                     window.location.reload();
+                }
+            }
+        }
+
+        // Funciones de sincronización
+        async function checkSyncStatus() {
+            // Verificar si el sistema de persistencia está disponible
+            if (typeof DataPersistence === 'undefined') {
+                updateSyncStatusUI({
+                    synced: true,
+                    pendingChanges: 0,
+                    lastChange: null,
+                    error: 'Sistema de persistencia no disponible'
+                });
+                return;
+            }
+
+            // Obtener estado de sincronización
+            const status = DataManager.getSyncStatus();
+            updateSyncStatusUI(status);
+        }
+
+        function updateSyncStatusUI(status) {
+            const syncStatusEl = document.getElementById('syncStatus');
+            const syncButtonEl = document.getElementById('syncButton');
+
+            if (status.error) {
+                syncStatusEl.className = 'alert alert-warning mb-3';
+                syncStatusEl.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div>${status.error}</div>
+                    </div>
+                `;
+                syncButtonEl.disabled = true;
+                return;
+            }
+
+            if (status.synced) {
+                syncStatusEl.className = 'alert alert-success mb-3';
+                syncStatusEl.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <div>Todos los datos están sincronizados</div>
+                    </div>
+                `;
+                syncButtonEl.disabled = true;
+            } else {
+                const lastChangeDate = status.lastChange ? new Date(status.lastChange).toLocaleString() : 'desconocida';
+                syncStatusEl.className = 'alert alert-warning mb-3';
+                syncStatusEl.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <div>
+                            <strong>${status.pendingChanges} cambios pendientes</strong><br>
+                            <small>Último cambio: ${lastChangeDate}</small>
+                        </div>
+                    </div>
+                `;
+                syncButtonEl.disabled = false;
+            }
+        }
+
+        function synchronizeData() {
+            // Verificar si el sistema de persistencia está disponible
+            if (typeof DataPersistence === 'undefined') {
+                alert('Sistema de persistencia no disponible');
+                return;
+            }
+
+            // Confirmar sincronización
+            if (confirm('¿Deseas sincronizar todos los cambios locales con el repositorio?')) {
+                // Sincronizar datos
+                const result = DataManager.synchronizeData();
+
+                if (result) {
+                    alert('Datos sincronizados correctamente. Se ha generado el archivo JSON para el repositorio.');
+                    checkSyncStatus();
+                } else {
+                    alert('Error al sincronizar los datos. Consulta la consola para más detalles.');
                 }
             }
         }
