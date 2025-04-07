@@ -2,11 +2,17 @@
 let currentCourseId = null;
 let currentCourse = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Verificar si el usuario está autenticado y es administrador
     if (!auth.isAdmin()) {
         window.location.href = '../login.html';
         return;
+    }
+
+    // Inicializar sistema de persistencia antes de cargar los datos
+    if (typeof initializeDataSystem === 'function') {
+        console.log('Inicializando sistema de persistencia en course-editor.js...');
+        await initializeDataSystem();
     }
 
     // Obtener el ID del curso de la URL (si existe)

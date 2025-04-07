@@ -44,11 +44,17 @@ let currentTopic = null;
 // Variable global para mantener la selección actual
 let savedSelection = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Verificar si el usuario está autenticado y es administrador
     if (!auth.isAdmin()) {
         window.location.href = '../login.html';
         return;
+    }
+
+    // Inicializar sistema de persistencia antes de cargar los datos
+    if (typeof initializeDataSystem === 'function') {
+        console.log('Inicializando sistema de persistencia en section-editor.js...');
+        await initializeDataSystem();
     }
 
     // Obtener el ID del tema de la URL
@@ -75,26 +81,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sectionModal) {
         sectionModal.addEventListener('hidden.bs.modal', function (e) {
             console.log("Modal cerrado: eliminando backdrop y restaurando interacción");
-            
+
             // Eliminar explícitamente cualquier backdrop que pueda haber quedado
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
                 backdrop.remove();
                 console.log("Backdrop eliminado manualmente");
             }
-            
+
             // Eliminar cualquier clase añadida al body que pueda estar bloqueando
             document.body.classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.style.paddingRight = '';
         });
-        
+
         // Añadir manejador específico para el botón X (close)
         const closeButton = sectionModal.querySelector('.btn-close');
         if (closeButton) {
             closeButton.addEventListener('click', function() {
                 console.log("Botón X (close) clickeado");
-                
+
                 try {
                     // Cerrar el modal usando la API de Bootstrap
                     const modalInstance = bootstrap.Modal.getInstance(sectionModal);
@@ -103,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (error) {
                     console.error("Error al cerrar modal con botón X:", error);
-                    
+
                     // Plan B: forzar el cierre manualmente
                     sectionModal.classList.remove('show');
                     document.body.classList.remove('modal-open');
@@ -117,14 +123,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newSectionBtn = document.querySelector('button[data-bs-target="#sectionModal"]');
     if (newSectionBtn) {
         console.log("Configurando eventos para el botón de Nueva Sección");
-        
+
         // Eliminar cualquier evento anterior para evitar duplicados
         newSectionBtn.removeEventListener('click', handleNewSectionClick);
-        
+
         // Añadir manejador para limpiar completamente el modal antes de mostrarlo
         newSectionBtn.addEventListener('click', handleNewSectionClick);
     }
-    
+
     // Añadir evento al selector de tipo de sección para mostrar los campos correspondientes
     const sectionTypeSelect = document.getElementById('sectionType');
     if (sectionTypeSelect) {
@@ -154,26 +160,26 @@ function loadTopicInfo() {
 function loadSections() {
     const sectionsContainer = document.getElementById('sectionsContainer');
     if (!sectionsContainer) return;
-    
+
     // Limpiar el contenedor
     sectionsContainer.innerHTML = '';
-    
+
     // Si no hay tema, mostrar mensaje
     if (!currentTopic) {
         sectionsContainer.innerHTML = '<div class="alert alert-info">No hay un tema seleccionado</div>';
         return;
     }
-    
+
     // Si no hay secciones, mostrar mensaje
     if (!currentTopic.sections || currentTopic.sections.length === 0) {
         sectionsContainer.innerHTML = '<div class="alert alert-info">Este tema no tiene secciones</div>';
         return;
     }
-    
+
     // Crear una estructura ordenada de elementos (secciones y grupos)
     const allSectionsWithOrder = [];
     const groupMap = {};
-    
+
     // Primero, recopilar todas las secciones no agrupadas
     currentTopic.sections.forEach(section => {
         if (!section.groupId) {
@@ -184,7 +190,7 @@ function loadSections() {
             });
         }
     });
-    
+
     // Luego, recopilar y organizar todos los grupos
     currentTopic.sections.forEach(section => {
         if (section.groupId) {
@@ -199,17 +205,17 @@ function loadSections() {
                 // Actualizar el orden del grupo si encontramos una sección con orden menor
                 groupMap[section.groupId].order = section.order || 0;
             }
-            
+
             // Agregar la sección al grupo
             groupMap[section.groupId].sections.push(section);
         }
     });
-    
+
     // Ordenar las secciones dentro de cada grupo
     Object.values(groupMap).forEach(group => {
         group.sections.sort((a, b) => (a.order || 0) - (b.order || 0));
     });
-    
+
     // Agregar los grupos a la lista de elementos
     Object.values(groupMap).forEach(group => {
         allSectionsWithOrder.push({
@@ -218,10 +224,10 @@ function loadSections() {
             order: group.order
         });
     });
-    
+
     // Ordenar todos los elementos por su orden
     allSectionsWithOrder.sort((a, b) => a.order - b.order);
-    
+
     // Mostrar las secciones y grupos en el orden correcto
     allSectionsWithOrder.forEach((item, index) => {
         if (item.type === 'section') {
@@ -238,20 +244,20 @@ function loadSections() {
             const groupElement = document.createElement('div');
             groupElement.className = 'section-group mb-4';
             groupElement.dataset.groupId = item.data.id;
-            
+
             // Encabezado del grupo
             const groupHeader = document.createElement('div');
             groupHeader.className = 'group-header d-flex justify-content-between align-items-center p-2 mb-2 bg-light border';
-            
+
             // Icono y nombre del grupo
             const groupTitle = document.createElement('h4');
             groupTitle.className = 'mb-0 d-flex align-items-center';
             groupTitle.innerHTML = `<i class="fas fa-folder me-2"></i> Grupo: ${item.data.name}`;
-            
+
             // Controles del grupo
             const groupControls = document.createElement('div');
             groupControls.className = 'group-controls';
-            
+
             // Botón para editar nombre
             const editNameButton = document.createElement('button');
             editNameButton.className = 'btn btn-sm btn-outline-primary me-1 edit-group-name';
@@ -259,7 +265,7 @@ function loadSections() {
             editNameButton.innerHTML = '<i class="fas fa-edit"></i> Editar Nombre';
             editNameButton.dataset.groupId = item.data.id;
             groupControls.appendChild(editNameButton);
-            
+
             // Botón para desagrupar
             const ungroupButton = document.createElement('button');
             ungroupButton.className = 'btn btn-sm btn-outline-danger ungroup-sections';
@@ -267,7 +273,7 @@ function loadSections() {
             ungroupButton.innerHTML = '<i class="fas fa-object-ungroup"></i> Desagrupar';
             ungroupButton.dataset.groupId = item.data.id;
             groupControls.appendChild(ungroupButton);
-            
+
             // Botón para añadir secciones al grupo (nuevo)
             const addToGroupButton = document.createElement('button');
             addToGroupButton.className = 'btn btn-sm btn-outline-success add-to-group me-1';
@@ -275,75 +281,75 @@ function loadSections() {
             addToGroupButton.innerHTML = '<i class="fas fa-plus-circle"></i> Añadir sección';
             addToGroupButton.dataset.groupId = item.data.id;
             groupControls.appendChild(addToGroupButton);
-            
+
             // Determinar si es el primer o último elemento en la lista completa
             const isFirstGroup = index === 0;
             const isLastGroup = index === allSectionsWithOrder.length - 1;
-            
+
             // Crear botones de navegación para el grupo
             const moveUpButton = document.createElement('button');
             moveUpButton.className = 'btn btn-sm btn-outline-primary me-1 move-group-up';
             moveUpButton.title = 'Mover grupo hacia arriba';
             moveUpButton.innerHTML = '<i class="fas fa-arrow-up"></i> Mover grupo arriba';
             moveUpButton.dataset.groupId = item.data.id;
-            
+
             moveUpButton.addEventListener('click', function() {
                 moveGroupInOrder(item.data.id, 'up');
             });
-            
+
             const moveDownButton = document.createElement('button');
             moveDownButton.className = 'btn btn-sm btn-outline-primary me-1 move-group-down';
             moveDownButton.title = 'Mover grupo hacia abajo';
             moveDownButton.innerHTML = '<i class="fas fa-arrow-down"></i> Mover grupo abajo';
             moveDownButton.dataset.groupId = item.data.id;
-            
+
             moveDownButton.addEventListener('click', function() {
                 moveGroupInOrder(item.data.id, 'down');
             });
-            
+
             // Solo añadimos los botones si corresponde según la posición
             if (!isFirstGroup) {
                 groupControls.appendChild(moveUpButton);
             }
-            
+
             if (!isLastGroup) {
                 groupControls.appendChild(moveDownButton);
             }
-            
+
             // Ensamblar el encabezado
             groupHeader.appendChild(groupTitle);
             groupHeader.appendChild(groupControls);
             groupElement.appendChild(groupHeader);
-            
+
             // Contenedor para las secciones del grupo
             const groupSectionsContainer = document.createElement('div');
             groupSectionsContainer.className = 'group-sections ps-4';
-            
+
             // Agregar cada sección del grupo
             item.data.sections.forEach((section, sectionIndex) => {
                 const isFirstInGroup = sectionIndex === 0;
                 const isLastInGroup = sectionIndex === item.data.sections.length - 1;
-                
+
                 const sectionElement = createSectionElement(
-                    section, 
-                    sectionIndex, 
-                    isFirstInGroup, 
+                    section,
+                    sectionIndex,
+                    isFirstInGroup,
                     isLastInGroup,
                     true // Indicar que está en un grupo
                 );
-                
+
                 groupSectionsContainer.appendChild(sectionElement);
             });
-            
+
             // Ensamblar el grupo
             groupElement.appendChild(groupSectionsContainer);
             sectionsContainer.appendChild(groupElement);
         }
     });
-    
+
     // Inicializar eventos
     initSectionEvents();
-    
+
     console.log('Secciones cargadas exitosamente');
 }
 
@@ -351,41 +357,41 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
     const sectionElement = document.createElement('div');
     sectionElement.className = 'section-item card mb-3';
     sectionElement.dataset.sectionId = section.id;
-    
+
     // Si la sección está en un grupo, agregar el atributo data-group-id
     if (section.groupId) {
         sectionElement.dataset.groupId = section.groupId;
     }
-    
+
     // Obtener el ícono adecuado para el tipo de sección
     const iconData = getSectionIcon(section.type);
-    
+
     // Crear el contenedor principal del contenido de la sección
     const contentContainer = document.createElement('div');
     contentContainer.className = 'card-body d-flex align-items-center';
-    
+
     // Agregar el ícono de arrastre (handle)
     const handleDiv = document.createElement('div');
     handleDiv.className = 'section-handle me-2';
     handleDiv.style.cursor = 'grab';
     handleDiv.innerHTML = '<i class="fas fa-grip-vertical"></i>';
     contentContainer.appendChild(handleDiv);
-    
+
     // Agregar el ícono del tipo de sección
     const typeIconDiv = document.createElement('div');
     typeIconDiv.className = 'section-type-icon me-3';
     typeIconDiv.innerHTML = `<i class="${iconData.class} ${iconData.icon} fa-2x" style="color: ${iconData.color};"></i>`;
     contentContainer.appendChild(typeIconDiv);
-    
+
     // Agregar la información de la sección
     const infoDiv = document.createElement('div');
     infoDiv.className = 'section-info flex-grow-1';
-    
+
     const title = document.createElement('h5');
     title.className = 'm-0';
     title.textContent = section.title;
     infoDiv.appendChild(title);
-    
+
     const typeLabel = document.createElement('div');
     typeLabel.className = 'small text-muted';
     typeLabel.innerHTML = `
@@ -394,30 +400,30 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
                     </span>
     `;
     infoDiv.appendChild(typeLabel);
-    
+
     contentContainer.appendChild(infoDiv);
-    
+
     // Crear botones de acción
     const actionsContainer = document.createElement('div');
     actionsContainer.className = 'section-actions';
-    
+
     // Botón editar
     const editButton = document.createElement('button');
     editButton.className = 'btn btn-sm btn-outline-primary edit-section me-1';
     editButton.title = 'Editar sección';
     editButton.innerHTML = '<i class="fas fa-edit"></i>';
     actionsContainer.appendChild(editButton);
-    
+
     // Botón previsualizar
     const previewButton = document.createElement('button');
     previewButton.className = 'btn btn-sm btn-outline-info preview-section me-1';
     previewButton.title = 'Vista previa';
     previewButton.innerHTML = '<i class="fas fa-eye"></i>';
     actionsContainer.appendChild(previewButton);
-    
+
     // Botones de navegación para mover la sección
     // Los botones se agregan siempre y se controlarán en updateNavigationButtons
-    
+
     // Botón mover hacia arriba
     const moveUpButton = document.createElement('button');
     moveUpButton.className = 'btn btn-sm btn-outline-secondary move-up-section me-1';
@@ -426,7 +432,7 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
     if (!isFirst) {
         actionsContainer.appendChild(moveUpButton);
     }
-    
+
     // Botón mover hacia abajo
     const moveDownButton = document.createElement('button');
     moveDownButton.className = 'btn btn-sm btn-outline-secondary move-down-section me-1';
@@ -435,7 +441,7 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
     if (!isLast) {
         actionsContainer.appendChild(moveDownButton);
     }
-    
+
     // Botón agrupar sección (solo si no está en un grupo)
     if (!isInGroup && !section.groupId) {
         const groupButton = document.createElement('button');
@@ -444,17 +450,17 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
         groupButton.innerHTML = '<i class="fas fa-layer-group"></i>';
         actionsContainer.appendChild(groupButton);
     }
-    
+
     // Botón eliminar sección
     const deleteButton = document.createElement('button');
     deleteButton.className = 'btn btn-sm btn-outline-danger delete-section';
     deleteButton.title = 'Eliminar sección';
     deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
     actionsContainer.appendChild(deleteButton);
-    
+
     contentContainer.appendChild(actionsContainer);
     sectionElement.appendChild(contentContainer);
-    
+
     // Agregar información adicional para tipos específicos
     if (section.type === 'activity') {
         const activityInfo = document.createElement('div');
@@ -477,7 +483,7 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
     `;
         sectionElement.appendChild(youtubeInfo);
     }
-    
+
     return sectionElement;
 }
 
@@ -489,20 +495,20 @@ function initSectionEvents() {
             editSection(sectionId);
         });
     });
-    
+
     // Eventos para eliminar secciones
     document.querySelectorAll('.delete-section').forEach(button => {
         button.addEventListener('click', function() {
             const sectionItem = this.closest('.section-item');
             const sectionId = sectionItem.dataset.sectionId;
             const sectionTitle = sectionItem.querySelector('h5').textContent;
-            
+
             if (confirm(`¿Está seguro de que desea eliminar la sección "${sectionTitle}"?`)) {
                 deleteSection(sectionId);
             }
         });
     });
-    
+
     // Eventos para previsualizar secciones
     document.querySelectorAll('.preview-section').forEach(button => {
         button.addEventListener('click', function() {
@@ -510,7 +516,7 @@ function initSectionEvents() {
             previewSection(sectionId);
         });
     });
-    
+
     // Eventos para mover secciones hacia abajo
     document.querySelectorAll('.move-down-section').forEach(button => {
         button.addEventListener('click', function() {
@@ -526,7 +532,7 @@ function initSectionEvents() {
             moveSection(sectionId, 'down');
         });
     });
-    
+
     // Eventos para mover secciones hacia arriba
     document.querySelectorAll('.move-up-section').forEach(button => {
         button.addEventListener('click', function() {
@@ -542,7 +548,7 @@ function initSectionEvents() {
             moveSection(sectionId, 'up');
         });
     });
-    
+
     // Eventos para editar nombres de grupos
     document.querySelectorAll('.edit-group-name').forEach(button => {
         button.addEventListener('click', function() {
@@ -550,7 +556,7 @@ function initSectionEvents() {
             editGroupName(groupId);
         });
     });
-    
+
     // Eventos para desagrupar secciones
     document.querySelectorAll('.ungroup-sections').forEach(button => {
         button.addEventListener('click', function() {
@@ -558,7 +564,7 @@ function initSectionEvents() {
             ungroupSections(groupId);
         });
     });
-    
+
     // Eventos para agrupar secciones
     document.querySelectorAll('.group-section').forEach(button => {
         button.addEventListener('click', function() {
@@ -566,7 +572,7 @@ function initSectionEvents() {
             showSectionSelectionModal(sectionId);
         });
     });
-    
+
     // Eventos para mover grupos hacia arriba
     document.querySelectorAll('.move-group-up').forEach(button => {
         button.addEventListener('click', function() {
@@ -576,7 +582,7 @@ function initSectionEvents() {
             moveGroupInOrder(groupId, 'up');
         });
     });
-    
+
     // Eventos para mover grupos hacia abajo
     document.querySelectorAll('.move-group-down').forEach(button => {
         button.addEventListener('click', function() {
@@ -655,16 +661,16 @@ function showContentFields() {
     console.log("Mostrando campos para el tipo seleccionado");
     const contentType = document.getElementById('sectionType').value;
     const contentFields = document.getElementById('contentFields');
-    
+
     // Limpiar el contenido anterior
     contentFields.innerHTML = '';
-    
+
     // Verificar que esté disponible el DataManager
     if (typeof DataManager === 'undefined') {
         console.error("DataManager no está disponible. Asegúrese de cargar los archivos necesarios.");
         return;
     }
-    
+
     // Crear los campos según el tipo
     switch (contentType) {
         case 'text':
@@ -675,7 +681,7 @@ function showContentFields() {
                     <textarea class="form-control" id="textContent" rows="10"></textarea>
                 </div>
             `;
-            
+
             // Inicializar el editor matemático después de un pequeño retraso
             setTimeout(() => {
                 try {
@@ -683,18 +689,18 @@ function showContentFields() {
                     if (typeof initNewMathEditor === 'function') {
                         const success = initNewMathEditor('textContent');
                         console.log(`Editor matemático inicializado con éxito: ${success}`);
-                        
+
                         // Inicializar los botones de formato después de un breve retraso
                         setTimeout(() => {
                             if (typeof initFormatButtons === 'function') {
                                 console.log("Inicializando botones de formato para nueva sección");
                                 initFormatButtons();
-                                
+
                                 // Inicializar explícitamente los eventos de la paleta de colores
                                 setTimeout(() => {
                                     console.log("Inicializando eventos de color para nueva sección");
                                     initColorPickerEvents();
-                                    
+
                                     // Verificar si el botón de color es visible
                                     const colorBtn = document.getElementById('textColorBtn');
                                     if (colorBtn) {
@@ -713,7 +719,7 @@ function showContentFields() {
                 }
             }, 200);
             break;
-            
+
         case 'youtube':
             // Campo para ID de YouTube
             contentFields.innerHTML = `
@@ -724,7 +730,7 @@ function showContentFields() {
                 </div>
             `;
             break;
-            
+
         case 'geogebra':
             // Campo para ID de GeoGebra
             contentFields.innerHTML = `
@@ -735,7 +741,7 @@ function showContentFields() {
                 </div>
             `;
             break;
-            
+
         case 'image':
             // Campo para subir imagen
             contentFields.innerHTML = `
@@ -745,7 +751,7 @@ function showContentFields() {
                 </div>
             `;
             break;
-            
+
         case 'pdf':
             // Campo para subir PDF
             contentFields.innerHTML = `
@@ -755,7 +761,7 @@ function showContentFields() {
                 </div>
             `;
             break;
-            
+
         case 'html':
             // Campo para el nombre del archivo HTML
             contentFields.innerHTML = `
@@ -766,7 +772,7 @@ function showContentFields() {
                 </div>
             `;
             break;
-            
+
         case 'activity':
             // Opción para crear nueva actividad o seleccionar existente
             contentFields.innerHTML = `
@@ -787,11 +793,11 @@ function showContentFields() {
                 </div>
             `;
             break;
-            
+
         default:
             contentFields.innerHTML = '<p class="text-muted">Seleccione un tipo de contenido para ver las opciones.</p>';
     }
-    
+
     console.log(`Campos configurados para tipo: ${contentType}`);
 }
 
@@ -988,53 +994,53 @@ function editSection(sectionId) {
                     let editorInitialized = false;
                     let attemptCount = 0;
                     const maxAttempts = 3;
-                    
+
                     function attemptInitEditor() {
                         if (editorInitialized || attemptCount >= maxAttempts) return;
-                        
+
                         attemptCount++;
                         console.log(`Intento ${attemptCount}/${maxAttempts} de inicializar el editor...`);
-                        
+
                         try {
                             if (typeof initNewMathEditor === 'function') {
                                 console.log("Usando el nuevo editor matemático...");
                                 const success = initNewMathEditor('textContent');
-                                
+
                                 if (success) {
                                     editorInitialized = true;
                                     console.log("Editor inicializado correctamente");
-                                    
+
                                     // Esperar a que se complete la inicialización antes de configurar botones
                                     setTimeout(() => {
                                         console.log("Verificando editor y configurando botones...");
-                                        
+
                                         // Verificar que el editor esté en el DOM y sea editable
                                         const mathEditor = document.getElementById('mathEditorContent');
                                         if (mathEditor) {
                                             // Asegurar que sea editable
                                             mathEditor.contentEditable = 'true';
-                                            
+
                                             // Ocultar el textarea original
                                             if (textContentElem) {
                                                 textContentElem.style.display = 'none';
                                             }
-                                            
+
                                             // Inicializar los botones de formato con un retraso adicional
                                             setTimeout(() => {
                                                 if (typeof initFormatButtons === 'function') {
                                                     try {
                                                         console.log("Inicializando botones de formato explícitamente...");
                                                         initFormatButtons();
-                                                        
+
                                                         // Inicializar eventos de color picker usando nuestra función auxiliar
                                                         setTimeout(() => {
                                                             console.log("Inicializando selector de color de manera directa");
                                                             createColorButton();
                                                             createColorPalette();
-                                                            
+
                                                             // Añadir inicialización de eventos para la paleta de colores
                                                             initColorPickerEvents();
-                                                            
+
                                                             // Verificar si el botón existe y tiene el evento
                                                             const colorBtn = document.getElementById('textColorBtn');
                                                             if (colorBtn) {
@@ -1042,14 +1048,14 @@ function editSection(sectionId) {
                                                                 colorBtn.style.display = 'inline-flex';
                                                                 colorBtn.style.visibility = 'visible';
                                                                 colorBtn.style.opacity = '1';
-                                                                
+
                                                                 console.log("Botón de color verificado y visible");
                                                             }
                                                         }, 600);
-                                                        
+
                                                         // Verificar que los botones respondan a eventos
                                                         console.log("Botones inicializados, ahora verificando funcionalidad...");
-                                                        
+
                                                         // Enfocar el editor para permitir la edición
                                                         mathEditor.focus();
                                                     } catch (error) {
@@ -1061,7 +1067,7 @@ function editSection(sectionId) {
                                             }, 500);
                                         } else {
                                             console.error("Editor no encontrado después de inicialización");
-                                            
+
                                             // Si no hay editor, mostrar el textarea
                                             if (textContentElem) {
                                                 textContentElem.style.display = 'block';
@@ -1070,7 +1076,7 @@ function editSection(sectionId) {
                                     }, 300);
                                 } else {
                                     console.error("Fallo al inicializar el editor en el intento " + attemptCount);
-                                    
+
                                     // Reintentar después de un tiempo
                                     if (attemptCount < maxAttempts) {
                                         setTimeout(attemptInitEditor, 500);
@@ -1093,7 +1099,7 @@ function editSection(sectionId) {
                             }
                         }
                     }
-                    
+
                     // Iniciar el proceso de inicialización
                     attemptInitEditor();
                 } else {
@@ -1142,52 +1148,52 @@ function editSection(sectionId) {
 
 function deleteSection(sectionId) {
     console.log(`Eliminando sección con ID: ${sectionId}`);
-    
+
     if (!currentTopic || !currentTopic.sections) {
         console.error("No hay tema o secciones cargadas");
         return;
     }
-    
+
     // Buscar el índice de la sección
     const sectionIndex = currentTopic.sections.findIndex(section => section.id == sectionId);
-    
+
     if (sectionIndex === -1) {
         console.error(`No se encontró la sección con ID ${sectionId}`);
         return;
     }
-    
+
     // Eliminar la sección del array
     currentTopic.sections.splice(sectionIndex, 1);
-    
+
     // Guardar los cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Recargar la lista de secciones
     loadSections();
-    
+
     console.log(`Sección eliminada correctamente`);
 }
 
 function previewSection(sectionId) {
     console.log(`Previsualizando sección con ID: ${sectionId}`);
-    
-    
+
+
     if (!currentTopic || !currentTopic.sections) {
         console.error("No hay tema o secciones cargadas");
         return;
     }
-    
+
     // Buscar la sección
     const section = currentTopic.sections.find(section => section.id == sectionId);
-    
+
     if (!section) {
         console.error(`No se encontró la sección con ID ${sectionId}`);
         return;
     }
-    
+
     // Modal para previsualizar la sección
     let previewContent = '';
-    
+
     // Generar el contenido según el tipo de sección
     switch (section.type) {
         case 'text':
@@ -1232,16 +1238,16 @@ function previewSection(sectionId) {
                 </div>
             `;
     }
-    
+
     // Crear y mostrar el modal de previsualización
     const previewModalId = 'sectionPreviewModal';
     let previewModal = document.getElementById(previewModalId);
-    
+
     // Eliminar el modal existente si hay uno
     if (previewModal) {
         previewModal.remove();
     }
-    
+
     // Crear el nuevo modal
     previewModal = document.createElement('div');
     previewModal.className = 'modal fade';
@@ -1249,7 +1255,7 @@ function previewSection(sectionId) {
     previewModal.tabIndex = '-1';
     previewModal.setAttribute('aria-labelledby', 'sectionPreviewModalLabel');
     previewModal.setAttribute('aria-hidden', 'true');
-    
+
     previewModal.innerHTML = `
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -1266,30 +1272,30 @@ function previewSection(sectionId) {
             </div>
         </div>
     `;
-    
+
     // Añadir el modal al documento
     document.body.appendChild(previewModal);
-    
+
     // Mostrar el modal
     const modal = new bootstrap.Modal(previewModal);
     modal.show();
-    
+
     console.log(`Previsualización de sección mostrada`);
 }
 
 // Función para mover un grupo completo en el orden general
 function moveGroupInOrder(groupId, direction) {
     console.log(`Moviendo grupo ${groupId} en dirección ${direction}`);
-    
+
     if (!currentTopic || !currentTopic.sections) {
         console.error('No hay tema o secciones cargadas');
         return;
     }
-    
+
     // Crear una estructura de elementos ordenados (secciones sueltas y grupos)
     const allSectionsWithOrder = [];
     const groupMap = {};
-    
+
     // Recopilar grupos y sus secciones
     currentTopic.sections.forEach(section => {
         if (section.groupId) {
@@ -1313,7 +1319,7 @@ function moveGroupInOrder(groupId, direction) {
             });
         }
     });
-    
+
     // Agregar grupos a la lista ordenada
     Object.values(groupMap).forEach(group => {
         group.sections.sort((a, b) => a.order - b.order);
@@ -1323,20 +1329,20 @@ function moveGroupInOrder(groupId, direction) {
             order: group.order || 0
         });
     });
-    
+
     // Ordenar todo por su orden
     allSectionsWithOrder.sort((a, b) => a.order - b.order);
-    
+
     // Encontrar el grupo que queremos mover
     const currentGroupIndex = allSectionsWithOrder.findIndex(
         item => item.type === 'group' && item.data.id === groupId
     );
-    
+
     if (currentGroupIndex === -1) {
         console.error(`No se encontró el grupo con ID ${groupId}`);
         return;
     }
-    
+
     // Determinar el nuevo índice
     let targetIndex;
     if (direction === 'up') {
@@ -1355,23 +1361,23 @@ function moveGroupInOrder(groupId, direction) {
         console.error(`Dirección desconocida: ${direction}`);
         return;
     }
-    
+
     // Obtener el elemento objetivo (puede ser un grupo o una sección suelta)
     const currentItem = allSectionsWithOrder[currentGroupIndex];
     const targetItem = allSectionsWithOrder[targetIndex];
-    
+
     console.log(`Intercambiando: ${currentItem.type} (${currentItem.data.name || currentItem.data.title}) con ${targetItem.type} (${targetItem.data.name || targetItem.data.title})`);
-    
+
     // En lugar de calcular un nuevo orden arbitrario, intercambiamos los órdenes directamente
     // Esta es la corrección principal para evitar "saltos" de más de una posición
     const tempOrder = targetItem.order;
-    
+
     // Actualizar el orden de todas las secciones del grupo
     const groupSections = currentTopic.sections.filter(section => section.groupId === groupId);
     groupSections.forEach(section => {
         section.order = tempOrder;
     });
-    
+
     // También actualizamos el orden del elemento objetivo
     // Si es un grupo, actualizamos todas sus secciones
     if (targetItem.type === 'group') {
@@ -1385,21 +1391,21 @@ function moveGroupInOrder(groupId, direction) {
         // Si es una sección, actualizamos solo esa
         targetItem.data.order = currentItem.order;
     }
-    
+
     // Guardar los cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Para mayor consistencia, siempre recargamos la página completa
     // Esto evita problemas visuales y asegura que todos los botones se actualicen correctamente
     loadSections();
-    
+
     console.log(`Grupo movido correctamente`);
 }
 
 // Modificar moveSection para permitir mover secciones fuera de su contexto
 function moveSection(sectionId, direction) {
     console.log(`Moviendo sección ${sectionId} en dirección ${direction}`);
-    
+
     // Verificar que hay un tema actual y secciones cargadas
     if (!currentTopic || !currentTopic.sections) {
         console.error('No hay un tema o secciones cargadas');
@@ -1408,7 +1414,7 @@ function moveSection(sectionId, direction) {
 
     // Convertir sectionId a string para comparaciones consistentes
     sectionId = String(sectionId);
-    
+
     // Encontrar la sección actual por su ID
     const currentSection = currentTopic.sections.find(section => String(section.id) === sectionId);
     if (!currentSection) {
@@ -1416,9 +1422,9 @@ function moveSection(sectionId, direction) {
         alert('Error: No se pudo encontrar la sección');
         return;
     }
-    
+
     console.log('Sección actual:', currentSection);
-    
+
     // Si la sección está en un grupo, movemos dentro del grupo
     if (currentSection.groupId) {
         moveWithinGroup(currentSection, direction);
@@ -1431,23 +1437,23 @@ function moveSection(sectionId, direction) {
 // Función para mover una sección dentro de su grupo
 function moveWithinGroup(currentSection, direction) {
     console.log(`Moviendo sección ${currentSection.id} en dirección ${direction} dentro del grupo ${currentSection.groupId}`);
-    
+
     // Obtener todas las secciones del mismo grupo
-    const sectionsInGroup = currentTopic.sections.filter(section => 
+    const sectionsInGroup = currentTopic.sections.filter(section =>
         section.groupId === currentSection.groupId
     );
-    
+
     // Ordenar las secciones por su orden
     sectionsInGroup.sort((a, b) => (a.order || 0) - (b.order || 0));
-    
+
     // Encontrar el índice actual
     const currentIndex = sectionsInGroup.findIndex(section => String(section.id) === String(currentSection.id));
-    
+
     if (currentIndex === -1) {
         console.error('No se pudo encontrar la sección en el grupo');
         return;
     }
-    
+
     // Determinar el nuevo índice
     let newIndex;
     if (direction === 'up') {
@@ -1466,28 +1472,28 @@ function moveWithinGroup(currentSection, direction) {
         console.error(`Dirección desconocida: ${direction}`);
         return;
     }
-    
+
     // Obtener la sección objetivo
     const targetSection = sectionsInGroup[newIndex];
-    
+
     console.log(`Intercambiando con sección ${targetSection.id} (${targetSection.title || ''})`);
-    
+
     // Intercambiar órdenes
     const tempOrder = currentSection.order;
     currentSection.order = targetSection.order;
     targetSection.order = tempOrder;
-    
+
     // Usar la función específica para reordenar dentro del grupo
     reorderSectionsInGroup(currentSection.groupId);
-    
+
     // Guardar cambios
     DataManager.saveTopic(currentTopic);
-    
-    
+
+
     // Para mayor consistencia, siempre recargamos la visualización completa
     // en lugar de solo actualizar el DOM directamente
     loadSections();
-    
+
     console.log("Sección movida dentro del grupo exitosamente");
 }
 
@@ -1496,7 +1502,7 @@ function moveUnGroupedSection(currentSection, direction) {
     // Crear estructura ordenada de elementos (secciones y grupos)
     const allSectionsWithOrder = [];
     const groupMap = {};
-    
+
     // Recopilar grupos y secciones sueltas
     currentTopic.sections.forEach(section => {
         if (section.groupId) {
@@ -1519,7 +1525,7 @@ function moveUnGroupedSection(currentSection, direction) {
             });
         }
     });
-    
+
     // Agregar grupos a la lista
     Object.values(groupMap).forEach(group => {
         group.sections.sort((a, b) => a.order - b.order);
@@ -1529,20 +1535,20 @@ function moveUnGroupedSection(currentSection, direction) {
             order: group.order || 0
         });
     });
-    
+
     // Ordenar todo
     allSectionsWithOrder.sort((a, b) => a.order - b.order);
-    
+
     // Encontrar la sección actual
     const currentIndex = allSectionsWithOrder.findIndex(
         item => item.type === 'section' && String(item.data.id) === String(currentSection.id)
     );
-    
+
     if (currentIndex === -1) {
         console.error('No se pudo encontrar la sección en el orden general');
         return;
     }
-    
+
     // Determinar nuevo índice
     let targetIndex;
     if (direction === 'up') {
@@ -1561,13 +1567,13 @@ function moveUnGroupedSection(currentSection, direction) {
         console.error(`Dirección desconocida: ${direction}`);
         return;
     }
-    
+
     // Obtener elemento objetivo
     const currentItem = allSectionsWithOrder[currentIndex];
     const targetItem = allSectionsWithOrder[targetIndex];
-    
+
     console.log(`Intercambiando: ${currentItem.type} (${currentItem.data.title || ''}) con ${targetItem.type} (${targetItem.data.name || targetItem.data.title || ''})`);
-    
+
     // Si el objetivo es un grupo, ajustamos el orden de la sección actual para colocarla antes o después del grupo
     if (targetItem.type === 'group') {
         // Actualizar el orden de la sección actual
@@ -1578,10 +1584,10 @@ function moveUnGroupedSection(currentSection, direction) {
         } else {
             // Para mover después del grupo, necesitamos encontrar la sección que sigue al grupo
             // y colocarnos justo antes de ella
-            const groupIndex = allSectionsWithOrder.findIndex(item => 
+            const groupIndex = allSectionsWithOrder.findIndex(item =>
                 item.type === 'group' && item.data.id === targetItem.data.id
             );
-            
+
             if (groupIndex < allSectionsWithOrder.length - 1) {
                 // Hay un elemento después del grupo
                 const afterGroupItem = allSectionsWithOrder[groupIndex + 1];
@@ -1598,16 +1604,16 @@ function moveUnGroupedSection(currentSection, direction) {
         currentSection.order = targetItem.data.order;
         targetItem.data.order = tempOrder;
     }
-    
+
     // Después de un intercambio, reordenamos todos los valores para mantener consistencia
     reorderAllSections();
-    
+
     // Guardar cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Recargar para reflejar cambios
     loadSections();
-    
+
     console.log("Sección movida correctamente");
 }
 
@@ -1616,19 +1622,19 @@ function moveElementsInDOM(currentSection, targetSection, isInGroup) {
     // Obtener elementos DOM
     const currentElement = document.querySelector(`.section-item[data-section-id="${currentSection.id}"]`);
     const targetElement = document.querySelector(`.section-item[data-section-id="${targetSection.id}"]`);
-    
+
     if (!currentElement || !targetElement) {
         console.warn("No se pudieron encontrar los elementos en el DOM");
         return false;
     }
-    
+
     // Determinar dirección basada en orden de elementos
     const direction = targetSection.order < currentSection.order ? 'up' : 'down';
-    
+
     if (isInGroup) {
         // Mover dentro del grupo
         const groupContainer = currentElement.closest('.section-group');
-        
+
         if (direction === 'up') {
             groupContainer.insertBefore(currentElement, targetElement);
         } else {
@@ -1638,13 +1644,13 @@ function moveElementsInDOM(currentSection, targetSection, isInGroup) {
                 groupContainer.appendChild(currentElement);
             }
         }
-        
+
         // Actualizar clases visuales
         updateFirstLastClasses(groupContainer, ".section-item");
     } else {
         // Mover fuera del grupo
         const sectionsContainer = document.getElementById('sectionsContainer');
-        
+
         if (direction === 'up') {
             sectionsContainer.insertBefore(currentElement, targetElement);
         } else {
@@ -1654,26 +1660,26 @@ function moveElementsInDOM(currentSection, targetSection, isInGroup) {
                 sectionsContainer.appendChild(currentElement);
             }
         }
-        
+
         // Actualizar clases visuales
         updateNonGroupedFirstLastClasses();
     }
-    
+
     // Actualizar botones de navegación
     updateNavigationButtons(currentElement, isInGroup);
     updateNavigationButtons(targetElement, isInGroup);
-    
+
     return true;
 }
 
 // Función para reordenar todas las secciones y evitar conflictos de orden
 function reorderAllSections() {
     console.log("Reordenando todos los elementos para mantener consistencia");
-    
+
     // Crear una estructura ordenada de elementos (secciones y grupos)
     const allItems = [];
     const groupMap = {};
-    
+
     // Primero, recopilar todas las secciones no agrupadas
     currentTopic.sections.forEach(section => {
         if (!section.groupId) {
@@ -1684,7 +1690,7 @@ function reorderAllSections() {
             });
         }
     });
-    
+
     // Luego, recopilar todos los grupos
     currentTopic.sections.forEach(section => {
         if (section.groupId) {
@@ -1700,12 +1706,12 @@ function reorderAllSections() {
                 // Si encontramos una sección con orden menor, actualizamos el orden del grupo
                 groupMap[section.groupId].order = section.order || 0;
             }
-            
+
             // Agregamos la sección al grupo
             groupMap[section.groupId].sections.push(section);
         }
     });
-    
+
     // Agregar los grupos a la lista de elementos
     Object.values(groupMap).forEach(group => {
         allItems.push({
@@ -1714,15 +1720,15 @@ function reorderAllSections() {
             order: group.order
         });
     });
-    
+
     // Ordenar todos los elementos por su orden actual
     allItems.sort((a, b) => a.order - b.order);
-    
+
     // Asignar nuevos valores de orden secuenciales con espacios fijos entre elementos
     // Esto garantiza que no haya conflictos y que todo esté espaciado uniformemente
     const spacing = 100; // Espacio entre elementos para permitir inserciones futuras
     let orderCounter = spacing;
-    
+
     // Primero asignar órdenes a los elementos principales (secciones sueltas y grupos)
     allItems.forEach(item => {
         if (item.type === 'section') {
@@ -1736,38 +1742,38 @@ function reorderAllSections() {
         }
         orderCounter += spacing;
     });
-    
+
     // Ahora, ordenar las secciones dentro de cada grupo
     Object.values(groupMap).forEach(group => {
         // Ordenar las secciones del grupo por su orden actual
         group.sections.sort((a, b) => (a.order || 0) - (b.order || 0));
-        
+
         // Reajustar el orden de las secciones dentro del grupo
         // Todas las secciones del grupo tendrán el mismo orden base,
         // más una parte decimal para ordenarlas entre sí
         const baseOrder = group.sections[0].order;
         const inGroupSpacing = 0.1; // Espacio dentro del grupo
-        
+
         group.sections.forEach((section, index) => {
             section.order = baseOrder + (index * inGroupSpacing);
         });
     });
-    
+
     console.log("Reordenamiento completado");
 }
 
 // Función auxiliar para actualizar las clases first/last dentro de un contenedor
 function updateFirstLastClasses(container, itemSelector) {
     if (!container) return;
-    
+
     const items = container.querySelectorAll(itemSelector);
     if (!items.length) return;
-    
+
     // Eliminar todas las clases first/last
     items.forEach(item => {
         item.classList.remove('is-first', 'is-last');
     });
-    
+
     // Añadir las clases a los elementos actuales
     if (items.length > 0) {
         items[0].classList.add('is-first');
@@ -1779,12 +1785,12 @@ function updateFirstLastClasses(container, itemSelector) {
 function updateNonGroupedFirstLastClasses() {
     // Obtener todas las secciones no agrupadas
     const nonGroupedSections = document.querySelectorAll('.section-item:not([data-group-id])');
-    
+
     // Eliminar todas las clases first/last
     nonGroupedSections.forEach(section => {
         section.classList.remove('is-first', 'is-last');
     });
-    
+
     // Añadir clases a los elementos actuales
     if (nonGroupedSections.length > 0) {
         nonGroupedSections[0].classList.add('is-first');
@@ -1795,50 +1801,50 @@ function updateNonGroupedFirstLastClasses() {
 // Función para actualizar los botones de navegación de un elemento
 function updateNavigationButtons(element, isInGroup) {
     if (!element) return;
-    
+
     // Eliminar los botones de navegación existentes
     const oldUpButton = element.querySelector('.move-up-section');
     const oldDownButton = element.querySelector('.move-down-section');
-    
+
     if (oldUpButton) oldUpButton.remove();
     if (oldDownButton) oldDownButton.remove();
-    
+
     // Encontrar todos los elementos desplazables (secciones y grupos)
     const allMovableElements = Array.from(document.querySelectorAll('.section-item, .section-group'));
-    
+
     // Encontrar el índice del elemento actual
     const elementIndex = allMovableElements.indexOf(element);
     if (elementIndex === -1) {
         console.error('No se pudo encontrar el elemento en el DOM');
         return;
     }
-    
+
     // Determinar si es primera o última sección según su contexto
     let canMoveUp = false;
     let canMoveDown = false;
-    
+
     if (isInGroup) {
         // Si está en un grupo, comprobar dentro del grupo
         const groupContainer = element.closest('.section-group');
         const groupSections = Array.from(groupContainer.querySelectorAll('.section-item'));
-        
+
         // Puede moverse hacia arriba si no es la primera sección del grupo
         canMoveUp = groupSections.indexOf(element) > 0;
-        
+
         // Puede moverse hacia abajo si no es la última sección del grupo
         canMoveDown = groupSections.indexOf(element) < groupSections.length - 1;
     } else {
         // Si no está en un grupo, verificar en el contexto general
-        
+
         // Puede moverse hacia arriba si no es el primer elemento movible
         canMoveUp = elementIndex > 0;
-        
+
         // Puede moverse hacia abajo si no es el último elemento movible
         canMoveDown = elementIndex < allMovableElements.length - 1;
-        
+
         // Si el elemento anterior es un grupo, permitimos moverse hacia arriba
         // Esta es la corrección principal: eliminamos la condición restrictiva
-        
+
         // Si el elemento siguiente es un grupo o una sección dentro de un grupo, sí permitimos mover hacia abajo
         if (canMoveDown) {
             const nextElement = allMovableElements[elementIndex + 1];
@@ -1849,22 +1855,22 @@ function updateNavigationButtons(element, isInGroup) {
             }
         }
     }
-    
+
     // Actualizar las clases visuales del elemento
     element.classList.toggle('is-first', !canMoveUp);
     element.classList.toggle('is-last', !canMoveDown);
-    
+
     // Obtener el contenedor de acciones donde insertar los botones
     const actionsContainer = element.querySelector('.section-actions');
     if (!actionsContainer) return;
-    
+
     // Crear y añadir los botones según corresponda
     if (canMoveUp) {
         const moveUpButton = document.createElement('button');
         moveUpButton.className = 'btn btn-sm btn-outline-secondary move-up-section me-1';
         moveUpButton.title = 'Mover arriba';
         moveUpButton.innerHTML = '<i class="fas fa-arrow-up"></i>';
-        
+
         // Insertar el botón en la posición correcta (después del botón de vista previa)
         const previewButton = actionsContainer.querySelector('.preview-section');
         if (previewButton) {
@@ -1872,7 +1878,7 @@ function updateNavigationButtons(element, isInGroup) {
         } else {
             actionsContainer.appendChild(moveUpButton);
         }
-        
+
         // Añadir el evento de click
         moveUpButton.addEventListener('click', function() {
             console.log('Botón mover-arriba clickeado');
@@ -1881,13 +1887,13 @@ function updateNavigationButtons(element, isInGroup) {
             moveSection(sectionId, 'up');
         });
     }
-    
+
     if (canMoveDown) {
         const moveDownButton = document.createElement('button');
         moveDownButton.className = 'btn btn-sm btn-outline-secondary move-down-section me-1';
         moveDownButton.title = 'Mover abajo';
         moveDownButton.innerHTML = '<i class="fas fa-arrow-down"></i>';
-        
+
         // Insertar el botón en la posición correcta (después del botón de subir o vista previa)
         const moveUpButton = actionsContainer.querySelector('.move-up-section');
         if (moveUpButton) {
@@ -1900,7 +1906,7 @@ function updateNavigationButtons(element, isInGroup) {
                 actionsContainer.appendChild(moveDownButton);
             }
         }
-        
+
         // Añadir el evento de click
         moveDownButton.addEventListener('click', function() {
             console.log('Botón mover-abajo clickeado');
@@ -1928,7 +1934,7 @@ function hasTextSelection() {
     try {
         const selection = window.getSelection();
         if (!selection) return false;
-        
+
         // Verificar si hay algo seleccionado
         return selection.toString().length > 0;
     } catch (error) {
@@ -1941,13 +1947,13 @@ function hasTextSelection() {
 function showPaletteMessage(message) {
     const palette = document.getElementById('colorPalette');
     if (!palette) return;
-    
+
     // Eliminar mensaje anterior si existe
     const existingMsg = palette.querySelector('.color-picker-message');
     if (existingMsg) {
         existingMsg.remove();
     }
-    
+
     // Crear nuevo mensaje
     const messageDiv = document.createElement('div');
     messageDiv.className = 'color-picker-message';
@@ -1960,7 +1966,7 @@ function showPaletteMessage(message) {
     messageDiv.style.textAlign = 'center';
     messageDiv.style.width = '100%';
     messageDiv.innerHTML = message;
-    
+
     // Insertar al principio de la paleta
     if (palette.firstChild) {
         palette.insertBefore(messageDiv, palette.firstChild);
@@ -1971,49 +1977,49 @@ function showPaletteMessage(message) {
 
 function handleNewSectionClick(e) {
     console.log('Botón de Nueva Sección clickeado');
-    
+
     // Limpiar los campos del formulario
     document.getElementById('sectionId').value = '';
     document.getElementById('sectionTitle').value = '';
     document.getElementById('sectionType').value = '';
-    
+
     // Cambiar el título del modal
     document.getElementById('sectionModalLabel').textContent = 'Nueva Sección';
-    
+
     // Limpiar campos de contenido
     document.getElementById('contentFields').innerHTML = '';
 }
 
 function editGroupName(groupId) {
     console.log(`Editando nombre del grupo ${groupId}`);
-    
+
     // Buscar todas las secciones de este grupo
     const groupSections = currentTopic.sections.filter(section => section.groupId === groupId);
-    
+
     if (groupSections.length === 0) {
         console.error(`No se encontraron secciones para el grupo ${groupId}`);
         return;
     }
-    
+
     // Obtener el nombre actual del grupo
     const currentName = groupSections[0].groupName || '';
-    
+
     // Pedir el nuevo nombre
     const newName = prompt('Ingrese el nuevo nombre para el grupo:', currentName);
-    
+
     // Si se cancela el prompt o no se ingresa un nombre, no hacer nada
     if (newName === null) {
         return;
     }
-    
+
     // Actualizar el nombre en todas las secciones del grupo
     groupSections.forEach(section => {
         section.groupName = newName.trim();
     });
-    
+
     // Guardar los cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Actualizar visualmente el nombre del grupo en el DOM
     const groupHeader = document.querySelector(`.section-group[data-group-id="${groupId}"] .section-group-header h5`);
     if (groupHeader) {
@@ -2023,63 +2029,63 @@ function editGroupName(groupId) {
         // Si no se puede actualizar visualmente, recargar la lista completa
     loadSections();
     }
-    
+
     console.log(`Nombre del grupo actualizado a: ${newName}`);
 }
 
 function ungroupSections(groupId) {
     console.log(`Desagrupando secciones del grupo ${groupId}`);
-    
+
     if (!confirm('¿Está seguro de que desea desagrupar estas secciones?')) {
         return;
     }
-    
+
     // Buscar todas las secciones de este grupo
     const groupSections = currentTopic.sections.filter(section => section.groupId === groupId);
-    
+
     if (groupSections.length === 0) {
         console.error(`No se encontraron secciones para el grupo ${groupId}`);
         return;
     }
-    
+
     // Eliminar el grupo de todas las secciones
     groupSections.forEach(section => {
         delete section.groupId;
         delete section.groupName;
     });
-    
+
     // Guardar los cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Esta operación es más compleja para actualizar en el DOM directamente,
     // así que recargamos la lista completa
     loadSections();
-    
+
     console.log(`Secciones desagrupadas correctamente`);
 }
 
 // Función para mostrar el modal de selección de secciones a agrupar
 function showSectionSelectionModal(sectionId) {
     console.log(`Mostrando modal para agrupar la sección ${sectionId}`);
-    
+
     // Obtener la sección actual
     const currentSection = currentTopic.sections.find(section => section.id == sectionId);
     if (!currentSection) {
         console.error(`No se encontró la sección ${sectionId}`);
         return;
     }
-    
+
     // Obtener el contenedor de la lista de secciones
     const otherSectionsList = document.getElementById('otherSectionsList');
     otherSectionsList.innerHTML = '';
-    
+
     // Filtrar las secciones que no son la sección actual y no están ya en un grupo
-    const availableSections = currentTopic.sections.filter(section => 
-        section.id != sectionId && 
-        !section.groupId && 
+    const availableSections = currentTopic.sections.filter(section =>
+        section.id != sectionId &&
+        !section.groupId &&
         (currentSection.groupId ? section.groupId !== currentSection.groupId : true)
     );
-    
+
     if (availableSections.length === 0) {
         otherSectionsList.innerHTML = `
             <div class="alert alert-info">
@@ -2092,9 +2098,9 @@ function showSectionSelectionModal(sectionId) {
             const sectionElement = document.createElement('div');
             sectionElement.className = 'section-selection-item p-2 border rounded mb-2';
             sectionElement.dataset.sectionId = section.id;
-            
+
             const iconData = getSectionIcon(section.type);
-            
+
             sectionElement.innerHTML = `
                 <div class="d-flex align-items-center">
                     <div class="section-type-icon me-2">
@@ -2113,10 +2119,10 @@ function showSectionSelectionModal(sectionId) {
                     </button>
                 </div>
             `;
-            
+
             otherSectionsList.appendChild(sectionElement);
         });
-        
+
         // Añadir eventos a los botones de selección
         document.querySelectorAll('#otherSectionsList .select-section').forEach(button => {
             button.addEventListener('click', function() {
@@ -2125,7 +2131,7 @@ function showSectionSelectionModal(sectionId) {
             });
         });
     }
-    
+
     // Mostrar el modal
     const sectionSelectionModal = new bootstrap.Modal(document.getElementById('sectionSelectionModal'));
     sectionSelectionModal.show();
@@ -2134,21 +2140,21 @@ function showSectionSelectionModal(sectionId) {
 // Función para preparar el agrupamiento y mostrar el modal para nombrar al grupo
 function prepareGrouping(sectionId1, sectionId2) {
     console.log(`Preparando agrupación de secciones ${sectionId1} y ${sectionId2}`);
-    
+
     // Cerrar el modal de selección
     const sectionSelectionModal = bootstrap.Modal.getInstance(document.getElementById('sectionSelectionModal'));
     sectionSelectionModal.hide();
-    
+
     // Generar un ID único para el grupo
     const groupId = 'group_' + Date.now();
-    
+
     // Guardar los IDs de las secciones y el ID del grupo en los campos ocultos
     document.getElementById('groupSectionIds').value = JSON.stringify([sectionId1, sectionId2]);
     document.getElementById('groupId').value = groupId;
-    
+
     // Limpiar el campo de nombre de grupo
     document.getElementById('groupName').value = '';
-    
+
     // Mostrar el modal para nombrar al grupo
     const groupNameModal = new bootstrap.Modal(document.getElementById('groupNameModal'));
     groupNameModal.show();
@@ -2157,17 +2163,17 @@ function prepareGrouping(sectionId1, sectionId2) {
 // Función para guardar el grupo después de asignarle un nombre
 function saveGroup() {
     console.log('Guardando grupo de secciones');
-    
+
     // Obtener los IDs de las secciones a agrupar y el ID del grupo
     const sectionIds = JSON.parse(document.getElementById('groupSectionIds').value);
     const groupId = document.getElementById('groupId').value;
     const groupName = document.getElementById('groupName').value.trim();
-    
+
     if (!groupName) {
         alert('Por favor, ingrese un nombre para el grupo.');
         return;
     }
-    
+
     // Verificar que las secciones existan
     const sectionsToGroup = currentTopic.sections.filter(section => sectionIds.includes(section.id.toString()));
     if (sectionsToGroup.length !== sectionIds.length) {
@@ -2175,31 +2181,31 @@ function saveGroup() {
         alert('Ha ocurrido un error al agrupar las secciones. Por favor, inténtelo de nuevo.');
         return;
     }
-    
+
     // Asignar el grupo a las secciones
     sectionsToGroup.forEach(section => {
         section.groupId = groupId;
         section.groupName = groupName;
     });
-    
+
     // Guardar los cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Cerrar el modal
     const groupNameModal = bootstrap.Modal.getInstance(document.getElementById('groupNameModal'));
     groupNameModal.hide();
-    
+
     // Esta operación es compleja para manipular el DOM directamente,
     // así que recargamos toda la lista
     loadSections();
-    
+
     console.log(`Grupo ${groupName} creado correctamente con ${sectionsToGroup.length} secciones`);
 }
 
 // Función de limpieza de emergencia accesible desde consola
 window.emergencyCleanupModal = function() {
     console.log("Ejecutando limpieza de emergencia del modal...");
-    
+
     // Obtener todas las instancias de modales
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
@@ -2209,16 +2215,16 @@ window.emergencyCleanupModal = function() {
         modal.removeAttribute('aria-modal');
         modal.removeAttribute('role');
     });
-    
+
     // Eliminar todos los backdrops
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => backdrop.remove());
-    
+
     // Restaurar el body
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
-    
+
     console.log("Limpieza de emergencia completada. La página debería estar desbloqueada.");
     return "Limpieza completada";
 };
@@ -2234,36 +2240,36 @@ document.addEventListener('keydown', function(event) {
 // Función específica para reordenar secciones dentro de un grupo
 function reorderSectionsInGroup(groupId) {
     console.log(`Reordenando secciones dentro del grupo ${groupId}`);
-    
+
     if (!currentTopic || !currentTopic.sections) {
         console.error('No hay tema o secciones cargadas');
         return;
     }
-    
+
     // Obtener todas las secciones del grupo
-    const sectionsInGroup = currentTopic.sections.filter(section => 
+    const sectionsInGroup = currentTopic.sections.filter(section =>
         section.groupId === groupId
     );
-    
+
     if (sectionsInGroup.length === 0) {
         console.warn(`No hay secciones en el grupo ${groupId}`);
         return;
     }
-    
+
     // Ordenar las secciones por su orden actual
     sectionsInGroup.sort((a, b) => (a.order || 0) - (b.order || 0));
-    
+
     // Establecer un orden base para todas las secciones del grupo
     // Usamos el valor entero del orden actual de la primera sección
     const baseOrder = Math.floor(sectionsInGroup[0].order);
-    
+
     // Asignar nuevos valores con incrementos de 0.1
     sectionsInGroup.forEach((section, index) => {
         const newOrder = baseOrder + (index * 0.1);
         section.order = newOrder;
         console.log(`Sección ${section.id} (${section.title || ''}) reordenada a ${newOrder}`);
     });
-    
+
     console.log(`Reordenamiento del grupo ${groupId} completado`);
     return true;
 }
@@ -2271,7 +2277,7 @@ function reorderSectionsInGroup(groupId) {
 // Función para mostrar el modal de selección de secciones para añadir a un grupo existente
 function showAddToGroupModal(groupId) {
     console.log(`Mostrando modal para añadir secciones al grupo ${groupId}`);
-    
+
     // Verificar que el grupo existe
     const groupSections = currentTopic.sections.filter(section => section.groupId === groupId);
     if (groupSections.length === 0) {
@@ -2279,20 +2285,20 @@ function showAddToGroupModal(groupId) {
         alert("Error: No se encontró el grupo especificado.");
         return;
     }
-    
+
     // Obtener el nombre del grupo
     const groupName = groupSections[0].groupName || 'Grupo sin nombre';
-    
+
     // Obtener el contenedor de la lista de secciones
     const otherSectionsList = document.getElementById('otherSectionsList');
     otherSectionsList.innerHTML = '';
-    
+
     // Actualizar el título del modal
     document.getElementById('sectionSelectionModalLabel').textContent = `Añadir secciones al grupo: ${groupName}`;
-    
+
     // Filtrar las secciones que no están en ningún grupo
     const availableSections = currentTopic.sections.filter(section => !section.groupId);
-    
+
     if (availableSections.length === 0) {
         otherSectionsList.innerHTML = `
             <div class="alert alert-info">
@@ -2305,9 +2311,9 @@ function showAddToGroupModal(groupId) {
             const sectionElement = document.createElement('div');
             sectionElement.className = 'section-selection-item p-2 border rounded mb-2';
             sectionElement.dataset.sectionId = section.id;
-            
+
             const iconData = getSectionIcon(section.type);
-            
+
             sectionElement.innerHTML = `
                 <div class="d-flex align-items-center">
                     <div class="section-type-icon me-2">
@@ -2326,10 +2332,10 @@ function showAddToGroupModal(groupId) {
                     </button>
                 </div>
             `;
-            
+
             otherSectionsList.appendChild(sectionElement);
         });
-        
+
         // Añadir eventos a los botones de añadir
         document.querySelectorAll('#otherSectionsList .add-to-group').forEach(button => {
             button.addEventListener('click', function() {
@@ -2338,7 +2344,7 @@ function showAddToGroupModal(groupId) {
             });
         });
     }
-    
+
     // Mostrar el modal
     const sectionSelectionModal = new bootstrap.Modal(document.getElementById('sectionSelectionModal'));
     sectionSelectionModal.show();
@@ -2347,7 +2353,7 @@ function showAddToGroupModal(groupId) {
 // Función para añadir una sección a un grupo existente
 function addSectionToGroup(sectionId, groupId, groupName) {
     console.log(`Añadiendo sección ${sectionId} al grupo ${groupId}`);
-    
+
     // Obtener la sección a añadir
     const section = currentTopic.sections.find(s => String(s.id) === String(sectionId));
     if (!section) {
@@ -2355,45 +2361,45 @@ function addSectionToGroup(sectionId, groupId, groupName) {
         alert("Error: No se encontró la sección seleccionada.");
         return;
     }
-    
+
     // Cerrar el modal
     const sectionSelectionModal = bootstrap.Modal.getInstance(document.getElementById('sectionSelectionModal'));
     sectionSelectionModal.hide();
-    
+
     // Añadir la sección al grupo
     section.groupId = groupId;
     section.groupName = groupName;
-    
+
     // Actualizar el orden para mantener consistencia
     reorderSectionsInGroup(groupId);
-    
+
     // Guardar los cambios
     DataManager.saveTopic(currentTopic);
-    
+
     // Recargar las secciones
     loadSections();
-    
+
     console.log(`Sección ${sectionId} añadida al grupo ${groupId} correctamente`);
 }
 
 // Función para crear el botón de color en la barra de herramientas
 function createColorButton() {
     console.log("Creando botón de color si no existe");
-    
+
     // Verificar si el botón ya existe
     let colorBtn = document.getElementById('textColorBtn');
     if (colorBtn) {
         console.log("El botón de color ya existe");
         return colorBtn;
     }
-    
+
     // Buscar la barra de herramientas
     const toolbar = document.querySelector('.math-editor-toolbar');
     if (!toolbar) {
         console.error("No se encontró la barra de herramientas para agregar el botón de color");
         return null;
     }
-    
+
     // Encontrar el grupo de formato
     let formatGroup = toolbar.querySelector('.math-editor-toolbar-group');
     if (!formatGroup) {
@@ -2402,7 +2408,7 @@ function createColorButton() {
         formatGroup.className = 'math-editor-toolbar-group';
         toolbar.appendChild(formatGroup);
     }
-    
+
     // Crear el botón de color
     colorBtn = document.createElement('button');
     colorBtn.type = 'button';
@@ -2422,38 +2428,38 @@ function createColorButton() {
     colorBtn.style.cursor = 'pointer';
     colorBtn.style.opacity = '1';
     colorBtn.style.visibility = 'visible';
-    
+
     // Agregar el botón al grupo de formato
     formatGroup.appendChild(colorBtn);
-    
+
     console.log("Botón de color creado y agregado a la barra de herramientas");
-    
+
     return colorBtn;
 }
 
 function positionColorPalette(buttonElement) {
     console.log("Posicionando paleta de colores");
-    
+
     const colorPalette = document.getElementById('colorPalette');
     if (!colorPalette || !buttonElement) {
         console.error("No se puede posicionar la paleta: falta la paleta o el botón de referencia");
         return;
     }
-    
+
     try {
         // Obtener posición del botón
         const buttonRect = buttonElement.getBoundingClientRect();
-        
+
         // Calcular posición para la paleta
         const top = buttonRect.bottom + window.scrollY + 5;
         const left = buttonRect.left + window.scrollX;
-        
+
         // Aplicar posición
         colorPalette.style.position = 'absolute';
         colorPalette.style.top = `${top}px`;
         colorPalette.style.left = `${left}px`;
         colorPalette.style.zIndex = '9999';
-        
+
         console.log(`Paleta posicionada en top: ${top}px, left: ${left}px`);
     } catch (error) {
         console.error("Error al posicionar la paleta de colores:", error);
@@ -2462,14 +2468,14 @@ function positionColorPalette(buttonElement) {
 
 function createColorPalette() {
     console.log("Creando paleta de colores");
-    
+
     // Remover paleta existente si hay una
     const existingPalette = document.getElementById('colorPalette');
     if (existingPalette) {
         console.log("Removiendo paleta existente");
         existingPalette.remove();
     }
-    
+
     // Crear nuevo elemento para la paleta
     const palette = document.createElement('div');
     palette.id = 'colorPalette';
@@ -2482,7 +2488,7 @@ function createColorPalette() {
     palette.style.borderRadius = '4px';
     palette.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
     palette.style.zIndex = '9999';
-    
+
     // Definir los colores organizados en filas
     const colors = [
         // Fila 1: Tonos de rojo
@@ -2498,7 +2504,7 @@ function createColorPalette() {
         // Fila 6: Escala de grises
         ['#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#FFFFFF']
     ];
-    
+
     // Agregar título a la paleta
     const title = document.createElement('div');
     title.textContent = 'Selecciona un color:';
@@ -2506,13 +2512,13 @@ function createColorPalette() {
     title.style.fontWeight = 'bold';
     title.style.fontSize = '14px';
     palette.appendChild(title);
-    
+
     // Crear contenedor para colores en grid
     const colorGrid = document.createElement('div');
     colorGrid.style.display = 'grid';
     colorGrid.style.gridTemplateColumns = 'repeat(6, 1fr)';
     colorGrid.style.gap = '5px';
-    
+
     // Agregar cada color al grid
     colors.forEach(row => {
         row.forEach(color => {
@@ -2525,16 +2531,16 @@ function createColorPalette() {
             colorOption.style.cursor = 'pointer';
             colorOption.style.border = '1px solid #ccc';
             colorOption.style.borderRadius = '2px';
-            
+
             // Agregar tooltip con código de color
             colorOption.title = color;
-            
+
             colorGrid.appendChild(colorOption);
         });
     });
-    
+
     palette.appendChild(colorGrid);
-    
+
     // Agregar sección para instrucciones
     const instructions = document.createElement('div');
     instructions.className = 'color-picker-message';
@@ -2543,29 +2549,29 @@ function createColorPalette() {
     instructions.style.color = '#666';
     instructions.innerHTML = '<b>Tip:</b> Selecciona texto y luego haz clic en un color para aplicarlo';
     palette.appendChild(instructions);
-    
+
     // Agregar la paleta al documento
     document.body.appendChild(palette);
-    
+
     console.log("Paleta de colores creada correctamente");
-    
+
     return palette;
 }
 
 function initColorPickerEvents() {
     console.log("Inicializando eventos para la paleta de colores");
-    
+
     // Limpiar eventos previos removiendo cualquier paleta anterior
     const existingPalette = document.getElementById('colorPalette');
     if (existingPalette) {
         existingPalette.remove();
         console.log("Paleta de colores previa eliminada");
     }
-    
+
     // Variables para guardar la selección
     window.savedSelection = null;
     window.savedRange = null;
-    
+
     // Función para guardar la selección actual
     const saveCurrentSelection = () => {
         try {
@@ -2581,7 +2587,7 @@ function initColorPickerEvents() {
         }
         return false;
     };
-    
+
     // Función para restaurar la selección previamente guardada
     const restoreSelection = () => {
         try {
@@ -2597,10 +2603,10 @@ function initColorPickerEvents() {
         }
         return false;
     };
-    
+
     // Crear la paleta de colores
     const colorPalette = createColorPalette();
-    
+
     // Buscar el botón de color o crearlo si no existe
     let textColorBtn = document.getElementById('textColorBtn');
     if (!textColorBtn) {
@@ -2611,49 +2617,49 @@ function initColorPickerEvents() {
             return;
         }
     }
-    
+
     console.log("Configurando evento para el botón de color");
-    
+
     // Clonar el botón para eliminar eventos anteriores
     const newColorBtn = textColorBtn.cloneNode(true);
     if (textColorBtn.parentNode) {
         textColorBtn.parentNode.replaceChild(newColorBtn, textColorBtn);
         textColorBtn = newColorBtn;
     }
-    
+
     // Establecer el estilo del botón para asegurar que sea visible
     textColorBtn.style.display = 'inline-flex';
     textColorBtn.style.visibility = 'visible';
     textColorBtn.style.opacity = '1';
-    
+
     // Agregar evento al botón de color
     textColorBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         console.log("Clic en botón de color detectado");
-        
+
         // Guardar la selección actual
         saveCurrentSelection();
-        
+
         // Buscar el editor y ponerle foco
         const editor = document.getElementById('mathEditorContent');
         if (editor) {
             editor.focus();
         }
-        
+
         // Asegurarse de que la paleta existe
         let palette = document.getElementById('colorPalette');
         if (!palette) {
             palette = createColorPalette();
             console.log("Paleta creada porque no existía");
         }
-        
+
         // Mostrar/ocultar la paleta
         if (palette.style.display === 'none' || !palette.style.display) {
             console.log("Mostrando paleta de colores");
             palette.style.display = 'block';
-            
+
             // Posicionar la paleta
             const buttonRect = textColorBtn.getBoundingClientRect();
             palette.style.position = 'absolute';
@@ -2665,21 +2671,21 @@ function initColorPickerEvents() {
             palette.style.display = 'none';
         }
     });
-    
+
     // Configurar eventos para las opciones de color
     const colorOptions = colorPalette.querySelectorAll('.color-option');
     console.log(`Configurando ${colorOptions.length} opciones de color`);
-    
+
     colorOptions.forEach(option => {
         option.addEventListener('click', function() {
             const color = this.dataset.color;
             console.log(`Color seleccionado: ${color}`);
-            
+
             // Restaurar la selección
             if (restoreSelection()) {
                 document.execCommand('foreColor', false, color);
                 console.log("Color aplicado al texto seleccionado");
-                
+
                 // Actualizar textarea
                 const editor = document.getElementById('mathEditorContent');
                 const textareaContent = document.getElementById('textContent');
@@ -2692,7 +2698,7 @@ function initColorPickerEvents() {
                 if (editor) {
                     editor.focus();
                     document.execCommand('foreColor', false, color);
-                    
+
                     // Actualizar textarea
                     const textareaContent = document.getElementById('textContent');
                     if (textareaContent) {
@@ -2700,24 +2706,24 @@ function initColorPickerEvents() {
                     }
                 }
             }
-            
+
             // Ocultar la paleta
             colorPalette.style.display = 'none';
         });
     });
-    
+
     // Cerrar la paleta al hacer clic fuera
     document.addEventListener('click', function(e) {
         const palette = document.getElementById('colorPalette');
-        if (palette && 
-            palette.style.display === 'block' && 
-            e.target !== textColorBtn && 
+        if (palette &&
+            palette.style.display === 'block' &&
+            e.target !== textColorBtn &&
             !palette.contains(e.target)) {
             console.log("Cerrando paleta por clic fuera");
             palette.style.display = 'none';
         }
     });
-    
+
     console.log("Eventos de la paleta de colores inicializados correctamente");
 }
 
@@ -2728,10 +2734,10 @@ function hasTextSelection() {
 
 function showPaletteMessage(message) {
     console.log(`Mostrando mensaje en paleta: ${message}`);
-    
+
     const colorPalette = document.getElementById('colorPalette');
     if (!colorPalette) return;
-    
+
     // Buscar o crear contenedor para mensajes
     let messageContainer = colorPalette.querySelector('.color-picker-message');
     if (!messageContainer) {
@@ -2742,14 +2748,14 @@ function showPaletteMessage(message) {
         messageContainer.style.color = '#666';
         colorPalette.appendChild(messageContainer);
     }
-    
+
     // Establecer el mensaje
     messageContainer.innerHTML = message;
 }
 
 function initFormatButtons() {
     console.log("Inicializando botones de formato");
-    
+
     try {
         // Verificar que el editor existe
         const editor = document.getElementById('mathEditorContent');
@@ -2757,43 +2763,43 @@ function initFormatButtons() {
             console.error("No se pudo encontrar el editor matemático");
             return;
         }
-        
+
         // Asegurar que el editor es editable
         editor.contentEditable = 'true';
-        
+
         // Crear botón de color y la paleta si no existen
         createColorButton();
         createColorPalette();
-        
+
         // Inicializar los eventos del selector de color
         initColorPickerEvents();
-        
+
         // Buscar todos los botones de formato
         const formatButtons = document.querySelectorAll('.math-editor-btn[data-command]');
         console.log(`Se encontraron ${formatButtons.length} botones de formato`);
-        
+
         // Remover eventos previos clonando los botones
         formatButtons.forEach(button => {
             const command = button.getAttribute('data-command');
             if (!command) return;
-            
+
             // Clonar y reemplazar para eliminar eventos previos (excepto el botón de color)
             if (command !== 'foreColor') {
                 const newButton = button.cloneNode(true);
                 button.parentNode.replaceChild(newButton, button);
-                
+
                 // Agregar nuevo evento
                 newButton.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
+
                     // Enfocar el editor
                     editor.focus();
-                    
+
                     // Ejecutar el comando
                     try {
                         document.execCommand(command, false, null);
                         console.log(`Comando ejecutado: ${command}`);
-                        
+
                         // Actualizar el textarea
                         const textareaId = editor.getAttribute('data-target-textarea-id') || 'textContent';
                         const textarea = document.getElementById(textareaId);
@@ -2804,14 +2810,14 @@ function initFormatButtons() {
                         console.error(`Error al ejecutar comando ${command}:`, error);
                     }
                 });
-                
+
                 console.log(`Botón ${command} inicializado`);
             }
         });
-        
+
         // Enfocar el editor
         editor.focus();
-        
+
         console.log("Botones de formato inicializados correctamente");
     } catch (error) {
         console.error("Error al inicializar botones de formato:", error);
@@ -2821,7 +2827,7 @@ function initFormatButtons() {
 // Función para guardar sección
 function saveSection() {
     console.log("Iniciando guardado de sección");
-    
+
     // Recoger datos del formulario
     const sectionData = {
         id: document.getElementById('sectionId')?.value || '',
@@ -2831,13 +2837,13 @@ function saveSection() {
         order: document.getElementById('orderInput')?.value || '0',
         type: document.getElementById('sectionType')?.value || 'text'
     };
-    
+
     // Validación básica
     if (!sectionData.title) {
         alert('El título de la sección es obligatorio.');
         return false;
     }
-    
+
     // Captura del contenido según el tipo de sección
     try {
         if (sectionData.type === 'text') {
@@ -2891,35 +2897,35 @@ function saveSection() {
         alert('Hubo un problema al procesar el contenido. Por favor intente nuevamente.');
         return false;
     }
-    
+
     console.log('Contenido recopilado para guardar:', {
         id: sectionData.id,
         title: sectionData.title,
         type: sectionData.type,
         contentLength: sectionData.content ? sectionData.content.length : 0
     });
-    
+
     // Verificar que tengamos el tema actual cargado
     if (!currentTopic) {
         console.error('Error: No hay un tema cargado para guardar la sección.');
         alert('Error al guardar la sección: no se encontró el tema.');
         return false;
     }
-    
+
     // Inicializar el array de secciones si no existe
     if (!currentTopic.sections) {
         currentTopic.sections = [];
     }
-    
+
     // Determinar si es una nueva sección o una edición
     const isNewSection = !sectionData.id || sectionData.id === '';
     console.log(`¿Es una nueva sección? ${isNewSection}`);
-    
+
     if (isNewSection) {
         // Generar un ID único para la nueva sección
         sectionData.id = Date.now().toString();
         console.log(`ID generado para nueva sección: ${sectionData.id}`);
-        
+
         // Añadir la nueva sección al tema
         currentTopic.sections.push(sectionData);
         console.log(`Nueva sección añadida. Total de secciones: ${currentTopic.sections.length}`);
@@ -2937,7 +2943,7 @@ function saveSection() {
             return false;
         }
     }
-    
+
     // Guardar los cambios usando DataManager
     try {
         DataManager.saveTopic(currentTopic);
@@ -2947,7 +2953,7 @@ function saveSection() {
         alert('Error al guardar los cambios. Por favor, intente nuevamente.');
         return false;
     }
-    
+
     // Cerrar el modal de manera segura
     try {
         const modalInstance = bootstrap.Modal.getInstance(document.getElementById('sectionModal'));
@@ -2958,13 +2964,13 @@ function saveSection() {
     } catch (error) {
         console.error("Error al cerrar el modal:", error);
     }
-    
+
     // Recargar las secciones para mostrar los cambios
     loadSections();
-    
+
     // Notificación de éxito
     alert(isNewSection ? 'Sección creada correctamente.' : 'Sección actualizada correctamente.');
-    
+
     return true;
 }
 

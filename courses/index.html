@@ -17,7 +17,7 @@
             <div class="col-12">
                 <h1 class="text-center mb-4">Nuestros Cursos</h1>
                 <p class="text-center lead mb-5">Explora nuestra colección de cursos de matemáticas</p>
-                
+
                 <div class="courses-grid" id="coursesList">
                     <!-- Los cursos se cargarán dinámicamente -->
                     <div class="text-center w-100">
@@ -35,22 +35,38 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/utils.js"></script>
     <script src="../js/auth.js"></script>
-    <script src="../js/main.js"></script>
+    <script src="../js/sample-data.js"></script>
+    <script src="../js/data-persistence.js"></script>
     <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+
+            // Inicializar sistema de persistencia antes de cargar los datos
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia en courses/index.html...');
+                await initializeDataSystem();
+            }
+
             loadCourses();
         });
-        
+
         function loadCourses() {
+            console.log('Cargando cursos en courses/index.html...');
             const coursesList = document.getElementById('coursesList');
-            
+
             // Obtener cursos usando DataManager
             const courses = DataManager.getCourses();
-            
+            console.log('Cursos cargados:', courses.length);
+
+            if (courses && courses.length) {
+                console.log('Primer curso:', courses[0].title);
+            }
+
             if (courses.length === 0) {
+                console.warn('No se encontraron cursos');
                 coursesList.innerHTML = `
                     <div class="text-center w-100">
                         <i class="fas fa-info-circle fa-3x mb-3"></i>
@@ -59,16 +75,16 @@
                 `;
                 return;
             }
-            
+
             coursesList.innerHTML = courses.map(course => {
                 // Determinar si usar imagen o icono con color de fondo
                 const hasImage = course.image && course.image.trim() !== '';
-                
+
                 return `
                 <div class="course-card">
                     <div class="course-header" style="background-color: ${course.color || '#6c757d'}">
-                        ${hasImage ? 
-                            `<img src="${course.image}" alt="${course.title}" class="course-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : 
+                        ${hasImage ?
+                            `<img src="${course.image}" alt="${course.title}" class="course-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
                             ''
                         }
                         <div class="course-icon" ${hasImage ? 'style="display: none;"' : ''}>
@@ -78,7 +94,7 @@
                     <div class="course-content">
                         <h3>${course.title}</h3>
                         <p>${course.description}</p>
-                        
+
                         <a href="view.html?id=${course.id}" class="btn btn-primary mt-2">Ver curso</a>
                     </div>
                 </div>

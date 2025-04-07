@@ -1,6 +1,6 @@
 // Los datos de muestra ahora se cargan desde sample-data.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     loadComponent('header', '../components/header.html');
     loadComponent('footer', '../components/footer.html');
 
@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!auth.isAdmin()) {
         window.location.href = '../login.html';
         return;
+    }
+
+    // Inicializar sistema de persistencia antes de cargar los datos
+    if (typeof initializeDataSystem === 'function') {
+        console.log('Inicializando sistema de persistencia en topic-editor.js...');
+        await initializeDataSystem();
     }
 
     // Cargar cursos en el selector

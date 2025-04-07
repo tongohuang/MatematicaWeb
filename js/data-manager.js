@@ -84,12 +84,30 @@ const DataManager = {
             }
         }
 
-        // Migrar temas
+        // Migrar temas y sus secciones
         if (oldTopicsData) {
             try {
                 const topics = JSON.parse(oldTopicsData);
                 topics.forEach(topic => {
+                    // Asegurarse de que el tema tenga una propiedad sections
+                    if (!topic.sections) {
+                        topic.sections = [];
+                    }
+
+                    // Guardar el tema con sus secciones
                     DataPersistence.saveData('topics', topic.id, topic);
+
+                    // También guardar cada sección individualmente si es necesario
+                    if (topic.sections && topic.sections.length > 0) {
+                        topic.sections.forEach(section => {
+                            if (section.id) {
+                                DataPersistence.saveData('sections', section.id, {
+                                    ...section,
+                                    topicId: topic.id
+                                });
+                            }
+                        });
+                    }
                 });
                 console.log(`Migrados ${topics.length} temas`);
             } catch (error) {
@@ -282,6 +300,44 @@ const DataManager = {
         const topics = this.getTopics();
         const newTopics = topics.filter(topic => topic.id !== topicId);
         this.saveTopics(newTopics);
+    },
+
+    // Obtener todas las secciones
+    getAllSections() {
+        // Extraer secciones de todos los temas
+        const allSections = [];
+        const topics = this.getTopics();
+
+        console.log('Extrayendo secciones de', topics.length, 'temas');
+
+        topics.forEach(topic => {
+            if (topic.sections && Array.isArray(topic.sections) && topic.sections.length > 0) {
+                console.log(`Tema ${topic.id} (${topic.title}) tiene ${topic.sections.length} secciones`);
+                topic.sections.forEach(section => {
+                    allSections.push({
+                        ...section,
+                        topicId: topic.id
+                    });
+                });
+            } else {
+                console.log(`Tema ${topic.id} (${topic.title}) no tiene secciones o tiene un formato incorrecto`);
+                if (topic.sections) {
+                    console.log('Tipo de sections:', typeof topic.sections, 'Es array:', Array.isArray(topic.sections));
+                }
+            }
+        });
+
+        console.log('Total de secciones encontradas:', allSections.length);
+        return allSections;
+    },
+
+    // Obtener secciones por tema
+    getSectionsByTopic(topicId) {
+        const topic = this.getTopicById(topicId);
+        if (!topic || !topic.sections) {
+            return [];
+        }
+        return topic.sections;
     },
 
     // Reiniciar todos los datos (volver a los datos de muestra)
