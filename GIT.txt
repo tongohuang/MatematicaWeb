@@ -1,3 +1,31 @@
-git commit -m "Implementación de almacenamiento JSON y cambio de credenciales"
+Flujo estándar para actualizar Git (3 pasos clave):
+Preparar cambios (añadir archivos modificados)
+
+git add .  # Para TODOS los cambios
+# O específicamente:
+
+git add nombre_archivo  # Para archivos individuales
+Confirmar cambios (crear commit)
+
+git commit -m "Mensaje descriptivo de lo que hiciste"
+Subir cambios (enviar a GitHub)
 
 git push origin main
+
+Consejos importantes:
+Verifica siempre con git status antes y después de cada paso
+
+Mensajes claros: Usa commits descriptivos como:
+
+"Agregada función de exportación JSON"
+
+"Corregido error en el editor de ecuaciones"
+
+"Actualizada la interfaz del panel admin"
+
+Cuando NO usar git add .:
+Si hay archivos que no quieres subir (como archivos temporales)
+
+En ese caso añade archivos uno por uno:
+
+git add data/  # Para añadir tu JSON

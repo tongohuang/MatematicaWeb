@@ -5,7 +5,18 @@ async function initializeDataSystem() {
     // Verificar si el sistema de persistencia está disponible
     if (typeof DataPersistence !== 'undefined') {
         console.log('Inicializando sistema de persistencia...');
-        await DataPersistence.init();
+
+        // Determinar si estamos en producción (Netlify)
+        const isProduction = window.location.hostname.includes('netlify.app');
+
+        if (isProduction) {
+            console.log('Entorno de producción detectado, forzando carga desde el repositorio...');
+            // En producción, forzar la carga desde el repositorio
+            await DataPersistence.init(true);
+        } else {
+            // En desarrollo, comportamiento normal
+            await DataPersistence.init();
+        }
     }
 }
 
