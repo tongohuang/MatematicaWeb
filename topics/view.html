@@ -86,6 +86,7 @@
     <script src="../js/utils.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/sample-data.js"></script>
+    <script src="../js/data-persistence.js"></script>
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script>
@@ -95,9 +96,15 @@
         let currentCourseId = null;
         let currentCourse = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+
+            // Inicializar sistema de persistencia antes de cargar los datos
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia en topics/view.html...');
+                await initializeDataSystem();
+            }
 
             // Obtener los IDs de la URL
             const urlParams = new URLSearchParams(window.location.search);
@@ -217,7 +224,7 @@
 
             // Objeto para agrupar las secciones por su groupId
             const groupedSections = {};
-            
+
             // Primero identificar todos los grupos
             currentTopic.sections.forEach(section => {
                 if (section.groupId) {
@@ -236,11 +243,11 @@
             currentTopic.sections.forEach((section, index) => {
                 // Si la sección ya está procesada como parte de un grupo, la saltamos
                 if (section.groupId && section._processed) return;
-                
+
                 if (section.groupId && groupedSections[section.groupId]) {
                     // Es parte de un grupo, mostrar el grupo
                     const group = groupedSections[section.groupId];
-                    
+
                     // Crear el encabezado del grupo
                     sectionsHtml += `
                         <div class="section-block section-group" id="section-group-${section.groupId}">
@@ -258,14 +265,14 @@
                             </div>
                             <div class="section-content" id="section-content-group-${section.groupId}" style="display: none;">
                     `;
-                    
+
                     // Agregar el contenido de todas las secciones del grupo
                     group.sections.forEach(groupSection => {
                         sectionsHtml += renderSectionContent(groupSection);
                         // Marcar la sección como procesada
                         groupSection._processed = true;
                     });
-                    
+
                     // Cerrar el div del grupo
                     sectionsHtml += `
                             </div>
@@ -406,7 +413,7 @@
             const isGroup = typeof sectionId === 'string' && sectionId.startsWith('group-');
             const contentId = isGroup ? sectionId : sectionId;
             const actualId = isGroup ? sectionId.replace('group-', '') : sectionId;
-            
+
             const contentElement = document.getElementById(`section-content-${contentId}`);
             const iconElement = document.getElementById(`toggle-icon-${contentId}`);
 
@@ -438,13 +445,13 @@
                     iconElement.classList.add('fa-chevron-up');
                 }
             });
-            
+
             // Expandir grupos
             const groupIds = [...new Set(currentTopic.sections.filter(s => s.groupId).map(s => s.groupId))];
             groupIds.forEach(groupId => {
                 const contentElement = document.getElementById(`section-content-group-${groupId}`);
                 const iconElement = document.getElementById(`toggle-icon-group-${groupId}`);
-                
+
                 if (contentElement && iconElement) {
                     contentElement.style.display = 'block';
                     iconElement.classList.remove('fa-chevron-down');
@@ -468,13 +475,13 @@
                     iconElement.classList.add('fa-chevron-down');
                 }
             });
-            
+
             // Colapsar grupos
             const groupIds = [...new Set(currentTopic.sections.filter(s => s.groupId).map(s => s.groupId))];
             groupIds.forEach(groupId => {
                 const contentElement = document.getElementById(`section-content-group-${groupId}`);
                 const iconElement = document.getElementById(`toggle-icon-group-${groupId}`);
-                
+
                 if (contentElement && iconElement) {
                     contentElement.style.display = 'none';
                     iconElement.classList.remove('fa-chevron-up');

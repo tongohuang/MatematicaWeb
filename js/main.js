@@ -5,18 +5,42 @@ async function initializeDataSystem() {
     // Verificar si el sistema de persistencia está disponible
     if (typeof DataPersistence !== 'undefined') {
         console.log('Inicializando sistema de persistencia...');
+        console.log('URL actual:', window.location.href);
+        console.log('Hostname:', window.location.hostname);
+        console.log('Pathname:', window.location.pathname);
 
         // Determinar si estamos en producción (Netlify)
-        const isProduction = window.location.hostname.includes('netlify.app');
+        const isProduction = window.location.hostname.includes('netlify.app') ||
+                           window.location.hostname.includes('netlify.com');
 
         if (isProduction) {
             console.log('Entorno de producción detectado, forzando carga desde el repositorio...');
             // En producción, forzar la carga desde el repositorio
-            await DataPersistence.init(true);
+            try {
+                await DataPersistence.init(true);
+                console.log('Datos cargados correctamente desde el repositorio');
+            } catch (error) {
+                console.error('Error al cargar datos desde el repositorio:', error);
+            }
         } else {
             // En desarrollo, comportamiento normal
-            await DataPersistence.init();
+            console.log('Entorno de desarrollo detectado, cargando datos normalmente...');
+            try {
+                await DataPersistence.init();
+                console.log('Datos inicializados correctamente');
+            } catch (error) {
+                console.error('Error al inicializar datos:', error);
+            }
         }
+
+        // Verificar que se hayan cargado los datos correctamente
+        if (typeof DataManager !== 'undefined') {
+            const courses = DataManager.getCourses();
+            const topics = DataManager.getTopics();
+            console.log(`Datos cargados: ${courses.length} cursos, ${topics.length} temas`);
+        }
+    } else {
+        console.warn('Sistema de persistencia no disponible');
     }
 }
 

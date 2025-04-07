@@ -72,6 +72,7 @@
     <script src="../js/utils.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/sample-data.js"></script>
+    <script src="../js/data-persistence.js"></script>
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script>
@@ -81,9 +82,15 @@
         let currentSection = null;
         let currentTopic = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+
+            // Inicializar sistema de persistencia antes de cargar los datos
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia en sections/view.html...');
+                await initializeDataSystem();
+            }
 
             // Obtener los IDs de la URL
             const urlParams = new URLSearchParams(window.location.search);

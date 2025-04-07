@@ -62,21 +62,35 @@ const DataPersistence = {
      */
     async loadApplicationData(forceRepoData = false) {
         try {
+            // Determinar si estamos en producción (Netlify)
+            const isProduction = window.location.hostname.includes('netlify.app') ||
+                               window.location.hostname.includes('netlify.com');
+
+            // En producción o si se fuerza, siempre intentar cargar desde el repositorio primero
+            const shouldPrioritizeRepo = isProduction || forceRepoData;
+
             // 1. Cargar datos del repositorio (producción)
             let repoData = {};
             let repoDataLoaded = false;
             try {
                 console.log('Intentando cargar datos desde:', this.JSON_FILE_PATH);
-                const repoResponse = await fetch(this.JSON_FILE_PATH);
+                console.log('Priorizar repositorio:', shouldPrioritizeRepo ? 'Sí' : 'No');
+
+                // Usar cache: 'no-store' para evitar problemas de caché en producción
+                const fetchOptions = { cache: 'no-store' };
+                const repoResponse = await fetch(this.JSON_FILE_PATH, fetchOptions);
+
                 if (repoResponse.ok) {
                     repoData = await repoResponse.json();
                     repoDataLoaded = true;
-                    console.log('Datos del repositorio cargados correctamente:', repoData);
+                    console.log('Datos del repositorio cargados correctamente');
+                    console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
+                    console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
 
-                    // Si estamos en producción (Netlify) y tenemos datos del repositorio,
+                    // Si estamos en producción (Netlify) o se fuerza la carga desde el repositorio,
                     // actualizar el localStorage con estos datos
-                    if (window.location.hostname.includes('netlify.app') || forceRepoData) {
-                        console.log('Entorno de producción detectado, actualizando localStorage con datos del repositorio');
+                    if (shouldPrioritizeRepo) {
+                        console.log('Actualizando localStorage con datos del repositorio');
                         const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
                         const updatedData = {
                             persistent: repoData,
@@ -93,12 +107,17 @@ const DataPersistence = {
 
             // 2. Cargar datos locales
             const localData = JSON.parse(localStorage.getItem('courseData') || '{}');
+            console.log('Datos locales cargados');
+            console.log('Cursos en localStorage:', Object.keys(localData.persistent?.courses || {}).length);
+            console.log('Temas en localStorage:', Object.keys(localData.persistent?.topics || {}).length);
 
             // 3. Combinación inteligente
             let merged;
 
             // En producción o si se fuerza, priorizar datos del repositorio
-            if ((window.location.hostname.includes('netlify.app') || forceRepoData) && repoDataLoaded) {
+            const shouldUseRepoData = shouldPrioritizeRepo && repoDataLoaded;
+
+            if (shouldUseRepoData) {
                 merged = {
                     persistent: repoData,
                     unsynced: localData.unsynced || {}
@@ -119,6 +138,12 @@ const DataPersistence = {
 
             // Guardar la combinación en localStorage para uso futuro
             localStorage.setItem('courseData', JSON.stringify(merged));
+
+            // Registrar el resultado final
+            console.log('Datos finales combinados:');
+            console.log('Cursos:', Object.keys(merged.persistent.courses || {}).length);
+            console.log('Temas:', Object.keys(merged.persistent.topics || {}).length);
+            console.log('Cambios no sincronizados:', Object.keys(merged.unsynced || {}).length);
 
             return merged;
         } catch (error) {
