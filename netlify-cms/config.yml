@@ -1,0 +1,78 @@
+backend:
+  name: git-gateway
+  branch: main # Cambia a la rama principal de tu repositorio (main o master)
+  repo: tongohuang/MatematicaWeb # Tu usuario/repositorio en GitHub
+
+# Ruta donde se guardarán los archivos multimedia subidos
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+# Configuración para la vista previa en vivo (opcional)
+# site_url: https://tu-sitio-netlify.netlify.app
+# display_url: https://tu-sitio-netlify.netlify.app
+# logo_url: https://tu-sitio-netlify.netlify.app/images/logo.png
+
+# Colecciones de contenido
+collections:
+  # Colección para cursos
+  - name: "courses"
+    label: "Cursos"
+    folder: "data/courses"
+    create: true
+    slug: "{{id}}-{{slug}}"
+    identifier_field: "title"
+    format: "json"
+    extension: "json"
+    fields:
+      - {label: "ID", name: "id", widget: "number", required: true}
+      - {label: "Título", name: "title", widget: "string", required: true}
+      - {label: "Descripción", name: "description", widget: "text", required: true}
+      - {label: "Imagen", name: "image", widget: "string", required: false}
+      - {label: "Color", name: "color", widget: "string", required: false, hint: "Código hexadecimal del color (ej: #FF5733)"}
+      - {label: "Icono", name: "icon", widget: "string", required: false, hint: "Clase de Font Awesome (ej: fa-book)"}
+      - {label: "Orden", name: "order", widget: "number", required: false, value_type: "int"}
+      - {label: "Duración (horas)", name: "duration", widget: "number", required: false, value_type: "int"}
+      - {label: "Nivel", name: "level", widget: "select", options: ["Básico", "Intermedio", "Avanzado"], required: false}
+      - {label: "Destacado", name: "featured", widget: "boolean", default: false, required: false}
+
+  # Colección para temas
+  - name: "topics"
+    label: "Temas"
+    folder: "data/topics"
+    create: true
+    slug: "{{id}}-{{slug}}"
+    identifier_field: "title"
+    format: "json"
+    extension: "json"
+    fields:
+      - {label: "ID", name: "id", widget: "number", required: true}
+      - {label: "Título", name: "title", widget: "string", required: true}
+      - {label: "Descripción", name: "description", widget: "text", required: true}
+      - {label: "ID del Curso", name: "courseId", widget: "number", required: true}
+      - {label: "Orden", name: "order", widget: "number", required: false, value_type: "int"}
+      - label: "Secciones"
+        name: "sections"
+        widget: "list"
+        required: false
+        fields:
+          - {label: "ID", name: "id", widget: "number", required: true}
+          - {label: "Título", name: "title", widget: "string", required: true}
+          - {label: "Tipo", name: "type", widget: "select", options: ["text", "youtube", "geogebra", "image", "pdf", "activity"], required: true}
+          - {label: "Contenido", name: "content", widget: "text", required: true}
+          - {label: "Orden", name: "order", widget: "number", required: false, value_type: "int"}
+
+  # Colección para configuración del sitio
+  - name: "settings"
+    label: "Configuración"
+    files:
+      - label: "Configuración General"
+        name: "general"
+        file: "data/settings.json"
+        format: "json"
+        fields:
+          - {label: "Nombre del Sitio", name: "site_name", widget: "string", required: true}
+          - {label: "Descripción", name: "site_description", widget: "text", required: false}
+          - {label: "Color Primario", name: "primary_color", widget: "string", required: false, hint: "Código hexadecimal del color (ej: #007bff)"}
+          - {label: "Fuente", name: "font_family", widget: "select", options: ["Arial, sans-serif", "Roboto, sans-serif", "Open Sans, sans-serif", "Lato, sans-serif", "Montserrat, sans-serif"], required: false}
+          - {label: "Logo", name: "site_logo", widget: "string", required: false}
+          - {label: "Usar Logo", name: "use_logo", widget: "boolean", default: false, required: false}

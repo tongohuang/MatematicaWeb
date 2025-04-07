@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad Interactiva: Técnicas de Conteo (Conceptual)</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* --- Estilos (igual que antes, más estilo para botón pista) --- */
+        @media print { body { width: 100%; margin: 0; padding: 0; } }
+        .card { break-inside: avoid; }
+        .feedback { margin-top: 0.5rem; font-weight: bold; padding: 0.5rem; border-radius: 0.25rem; min-height: 3em; }
+        .feedback.correct { color: #059669; background-color: #D1FAE5; border: 1px solid #6EE7B7; }
+        .feedback.incorrect { color: #DC2626; background-color: #FEE2E2; border: 1px solid #FCA5A5; }
+        .answered input[type="radio"], .answered input[type="number"], .answered button.check-btn { opacity: 0.6; pointer-events: none; }
+        .question-block { border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; background-color: white; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        label { margin-left: 0.5rem; display: inline-block; margin-bottom: 0.25rem; }
+        input[type="radio"], input[type="number"] { margin-right: 0.25rem; }
+        .principle-tag { font-size: 0.8rem; font-style: italic; color: #4b5563; /* gray-600 */ margin-bottom: 0.75rem; }
+        /* Estilo para el botón/enlace de la pista */
+        .show-hint-btn {
+            font-size: 0.75rem; /* Más pequeño */
+            color: #4f46e5; /* indigo-600 */
+            text-decoration: underline;
+            cursor: pointer;
+            margin-bottom: 0.75rem; /* Espacio antes de las opciones */
+            display: inline-block; /* Para que el margen funcione */
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .show-hint-btn:hover {
+            color: #3730a3; /* indigo-800 */
+        }
+         /* Clase hidden de Tailwind ya hace display: none !important */
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-100 text-gray-800 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-indigo-700 mb-2">Actividad Interactiva: Técnicas de Conteo</h1>
+            <p class="text-lg text-gray-600">¡Pon a prueba tus conocimientos conceptuales!</p>
+            <div class="border-b-2 border-indigo-500 w-32 mx-auto mt-4"></div>
+        </header>
+
+        <!-- Selector de Dificultad -->
+        <section id="difficulty-selector" class="bg-white p-6 rounded-lg shadow-lg mb-8 text-center card">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Selecciona la Dificultad Conceptual</h2>
+            <select id="difficulty" class="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="easy">Fácil (Aplicación Directa)</option>
+                <option value="medium" selected>Medio (Distinguir Principios)</option>
+                <option value="hard">Difícil (Combinación/Complemento)</option>
+            </select>
+            <button id="start-quiz-btn" class="ml-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded transition duration-300 ease-in-out">
+                Comenzar Actividad
+            </button>
+        </section>
+
+        <!-- Contenedor para las Preguntas -->
+        <section id="quiz-container" class="mt-8">
+            <!-- Las preguntas se generarán aquí con JavaScript -->
+        </section>
+
+        <!-- Pie de página -->
+        <footer class="text-center text-gray-500 text-sm mt-12 pt-6 border-t border-gray-300">
+            <p>Conceptos basados en Permutaciones, Arreglos y Combinaciones.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Funciones Auxiliares (sin cambios) ---
+        function factorial(n) {
+             if (n < 0) return NaN; if (n === 0 || n === 1) return 1;
+             let result = 1; if (n > 170) return Infinity;
+             for (let i = n; i >= 2; i--) { result *= i; } return result;
+        }
+        function calculatePnK(n, k) {
+             if (k < 0 || k > n) return 0;
+             const factN = factorial(n); const factNK = factorial(n - k);
+             if (factN === Infinity || factNK === Infinity) return Infinity;
+             let res = 1; for(let i = 0; i < k; i++) { res *= (n - i); if (res === Infinity) return Infinity; }
+             return res;
+        }
+        function calculateCnK(n, k) {
+            if (k < 0 || k > n) return 0; if (k === 0 || k === n) return 1; if (k > n / 2) k = n - k;
+            let res = 1; for (let i = 1; i <= k; i++) { if (res > Number.MAX_SAFE_INTEGER / (n - i + 1)) return Infinity; res = res * (n - i + 1) / i; if (res === Infinity) return Infinity; }
+            return Math.round(res);
+        }
+        function getRandomInt(min, max) { min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+
+        // --- Generación de Preguntas (sin cambios en la lógica interna, solo se añade el 'principle' a cada objeto) ---
+        // (Se omiten las funciones generate... por brevedad, son las mismas que la versión anterior)
+        // ... (Incluir aquí las funciones: generateQuestions, generateMultiplicationQuestion,
+        //      generateArrangementQuestion, generateCombinationQuestion,
+        //      generatePermutationQuestion, generateTrueFalseQuestion de la versión anterior) ...
+          // --- Generación de Preguntas (Enfoque Conceptual) ---
+          function generateQuestions(difficulty) {
+              // ... (lógica interna igual que la versión anterior para generar el array 'questions') ...
+              const questions = [];
+              const numQuestions = 10; // Total de preguntas
+              const baseNRange = { easy: [3, 6], medium: [4, 9], hard: [5, 10] }; // Rangos base para n
+              const numChoices = { easy: 3, medium: 4, hard: 4 }; // Opciones en MC
+
+              // Probabilidades de cada tipo de pregunta según dificultad
+              const typeProbs = {
+                  easy:   { mult: 0.3, pnk: 0.15, cnk: 0.15, pn: 0.2, tf: 0.2 },
+                  medium: { mult: 0.2, pnk: 0.25, cnk: 0.25, pn: 0.1, tf: 0.2 },
+                  hard:   { mult: 0.1, pnk: 0.2, cnk: 0.4, pn: 0.05, tf: 0.25 } // Más C(n,k) y T/F conceptuales
+              };
+
+              const currentProbs = typeProbs[difficulty];
+              let generatedCount = { mult: 0, pnk: 0, cnk: 0, pn: 0, tf: 0 };
+
+              while (questions.length < numQuestions) {
+                  const rand = Math.random();
+                  let questionType = '';
+
+                  // Determinar tipo de pregunta basado en probabilidades
+                  if (rand < currentProbs.mult) questionType = 'mult';
+                  else if (rand < currentProbs.mult + currentProbs.pnk) questionType = 'pnk';
+                  else if (rand < currentProbs.mult + currentProbs.pnk + currentProbs.cnk) questionType = 'cnk';
+                  else if (rand < currentProbs.mult + currentProbs.pnk + currentProbs.cnk + currentProbs.pn) questionType = 'pn';
+                  else questionType = 'tf';
+
+                  let q = null;
+                  const nMin = baseNRange[difficulty][0];
+                  const nMax = baseNRange[difficulty][1];
+                  const choices = numChoices[difficulty];
+
+                  try { // Envolver en try-catch por si alguna generación falla
+                       switch (questionType) {
+                           case 'mult':
+                               q = generateMultiplicationQuestion(difficulty, nMin, nMax, choices);
+                               break;
+                           case 'pnk':
+                                q = generateArrangementQuestion(difficulty, nMin, nMax, choices);
+                               break;
+                           case 'cnk':
+                               q = generateCombinationQuestion(difficulty, nMin, nMax, choices);
+                               break;
+                           case 'pn':
+                               // Ajustar nMax para evitar factoriales enormes
+                               const pnMax = Math.min(nMax, difficulty === 'hard' ? 8 : (difficulty === 'medium' ? 7 : 6));
+                               q = generatePermutationQuestion(difficulty, nMin, pnMax, choices);
+                               break;
+                           case 'tf':
+                               q = generateTrueFalseQuestion(difficulty);
+                               break;
+                       }
+                   } catch (error) {
+                       console.error("Error generating question:", error, "Type:", questionType, "Difficulty:", difficulty);
+                       q = generateTrueFalseQuestion('easy'); // Fallback a T/F fácil si algo falla
+                   }
+
+
+                  // Validar y añadir pregunta (evita duplicados o fallos)
+                  if (q && q.correctAnswer !== Infinity && q.correctAnswer !== NaN && (!q.options || q.options.length >= choices -1)) {
+                      // Evitar duplicados conceptuales simples (muy difícil evitar todos)
+                      if (!questions.some(existing => existing.questionText === q.questionText)) {
+                           questions.push(q);
+                           generatedCount[questionType]++;
+                      }
+                  } else if (q && q.type === 'tf') {
+                       if (!questions.some(existing => existing.questionText === q.questionText)) {
+                           questions.push(q);
+                           generatedCount[questionType]++;
+                       }
+                  }
+
+                  // Fallback si un tipo no se genera
+                  if (questions.length >= numQuestions) break;
+
+              } // Fin while
+
+              return shuffleArray(questions);
+          }
+
+          // --- Generadores Específicos Actualizados (Funciones generate...Question - igual que la versión anterior) ---
+          function generateMultiplicationQuestion(difficulty, nMin, nMax, numChoices) {
+              const m = getRandomInt(Math.max(2, nMin - 1), nMax - 2);
+              const n = getRandomInt(Math.max(2, nMin - 1), nMax - 2);
+              const p = (difficulty === 'hard' || (difficulty === 'medium' && Math.random() < 0.3)) ? getRandomInt(2, 4) : null; // Tercer paso opcional
+              const correctAnswer = p ? m * n * p : m * n;
+
+              const easy_scenarios = [
+                  `Un menú tiene ${m} opciones de plato fuerte y ${n} opciones de postre. ¿Cuántos menús diferentes (un plato fuerte y un postre) se pueden pedir?`,
+                  `Tienes ${m} tipos de pan y ${n} tipos de relleno para un sándwich. ¿Cuántos sándwiches diferentes (un pan, un relleno) puedes hacer?`,
+                  `Para ir de ciudad A a B hay ${m} autobuses y para ir de B a C hay ${n} trenes. ¿De cuántas formas puedes ir de A a C pasando por B?`,
+              ];
+              const medium_scenarios = [
+                   ...easy_scenarios,
+                  `Una contraseña simple se forma con una vocal (${m > 5 ? 5 : m} opciones) seguida de un dígito par (${n > 5 ? 5 : n} opciones). ¿Cuántas contraseñas hay?`,
+                  `Se lanza un dado de ${m} caras y luego una moneda con ${n} posibles resultados (ej. Cara/Sello). ¿Cuántos resultados combinados son posibles?`,
+              ];
+              const hard_scenarios = [
+                  `Se eligen ${m} tipos de pizza, ${n} tipos de bebida ${p ? `y ${p} tipos de postre` : ''}. ¿Cuántas combinaciones de comida completas hay?`,
+                  `Un código se forma con ${m} letras mayúsculas distintas, seguidas de ${n} dígitos distintos ${p ? `y luego ${p} símbolos distintos de un conjunto de 5` : ''}. ¿Cuántos códigos son posibles si no hay restricciones entre categorías? (Calcula sólo el producto)`
+              ];
+
+              let scenarios;
+              if (difficulty === 'easy') scenarios = easy_scenarios;
+              else if (difficulty === 'medium') scenarios = medium_scenarios;
+              else scenarios = hard_scenarios;
+
+              // Adaptar escenario si hay 3 pasos
+               let questionText = scenarios[getRandomInt(0, scenarios.length - 1)];
+               if (p && !questionText.includes('postre') && !questionText.includes('símbolos')) {
+                   questionText = `Hay ${m} opciones para el paso 1, ${n} para el paso 2 y ${p} para el paso 3. ¿Cuántas secuencias totales son posibles?`;
+               } else if (!p && questionText.includes('postre')) { // Asegurarse que el texto coincida con p
+                   questionText = `Se eligen ${m} tipos de pizza y ${n} tipos de bebida. ¿Cuántas combinaciones de comida hay?`;
+                   // No recalculamos correctAnswer aquí porque p ya es null
+               } else if (!p && questionText.includes('símbolos')) {
+                   questionText = `Un código se forma con ${m} letras mayúsculas distintas seguidas de ${n} dígitos distintos. ¿Cuántos códigos son posibles si no hay restricciones entre categorías? (Calcula sólo el producto)`;
+               }
+
+
+              const type = (difficulty === 'easy' || Math.random() < 0.6) ? 'sa' : 'mc';
+
+              if (type === 'sa') {
+                   return { type: 'sa', questionText, correctAnswer, principle: 'Principio de Multiplicación' };
+              } else {
+                   let options = [correctAnswer];
+                   options.push(m + n + (p || 0)); // Distractor suma
+                   if (p) options.push(m*n, n*p, m*p);
+                   else options.push(m*m, n*n);
+
+                   options = [...new Set(options.filter(opt => opt > 0 && opt !== correctAnswer))];
+                   let attempts = 0;
+                   while (options.length < numChoices -1 && attempts < 10) {
+                      let distractor = Math.round(correctAnswer * (0.5 + Math.random()*0.7));
+                      if (!options.includes(distractor) && distractor > 0 && distractor !== correctAnswer) options.push(distractor);
+                       attempts++;
+                   }
+                   options.push(correctAnswer); // Asegurar que la correcta esté
+                   options = [...new Set(options)];
+                   while (options.length < numChoices) options.push(correctAnswer + getRandomInt(1, 10)); // Relleno
+
+                   return { type: 'mc', questionText, options: shuffleArray(options.slice(0, numChoices)), correctAnswer: correctAnswer.toString(), principle: 'Principio de Multiplicación' };
+              }
+          }
+
+          function generateArrangementQuestion(difficulty, nMin, nMax, numChoices) {
+               const n = getRandomInt(nMin, nMax);
+               const k = getRandomInt(2, Math.min(n, difficulty === 'easy' ? n-1 : n)); // k=n es posible en medio/difícil (es P(n))
+               const correctAnswer = calculatePnK(n, k);
+
+               if (correctAnswer === Infinity || correctAnswer > 5040) { // Limitar P(n,k) (7! = 5040)
+                   return generateCombinationQuestion(difficulty, nMin, nMax, numChoices); // Intentar otra
+               }
+
+              const easy_scenarios = [
+                  `¿De cuántas formas se pueden asignar los ${k} primeros lugares (oro, plata, etc.) en una carrera con ${n} competidores?`,
+                  `¿Cuántos códigos de ${k} letras distintas se pueden formar usando las primeras ${n} letras del alfabeto?`,
+              ];
+              const medium_scenarios = [
+                  ...easy_scenarios,
+                  `Se deben elegir ${k} personas de ${n} para ocupar los cargos distintos de Presidente, Secretario y Tesorero (k=3). ¿De cuántas maneras se puede hacer?`, // k forzado a 3
+                  `¿Cuántos números de ${k} dígitos diferentes se pueden formar usando los dígitos {1, 2, ..., ${n}}?`,
+              ];
+               const hard_scenarios = [
+                  ...medium_scenarios,
+                  `En una palabra de ${n} letras distintas, ¿cuántas secuencias ordenadas de ${k} letras se pueden extraer?`,
+                  `${n} amigos van al cine y hay ${k} asientos juntos disponibles en una fila. ¿De cuántas maneras pueden sentarse ${k} de ellos en esos asientos?` // Confuso n y k
+               ];
+
+              let scenarios;
+              let currentK = k;
+              let currentN = n;
+              let currentCorrectAnswer = correctAnswer;
+
+              if (difficulty === 'easy') scenarios = easy_scenarios;
+              else if (difficulty === 'medium') scenarios = medium_scenarios;
+              else scenarios = hard_scenarios;
+
+              let questionText = scenarios[getRandomInt(0, scenarios.length - 1)];
+
+               // Ajuste para escenario de Presidente/Secretario/Tesorero
+               if (questionText.includes('Presidente')) {
+                   currentK = 3;
+                   // Asegurar n >= 3
+                   currentN = getRandomInt(Math.max(3, nMin), nMax);
+                   currentCorrectAnswer = calculatePnK(currentN, currentK);
+                   questionText = `Se deben elegir 3 personas de ${currentN} para ocupar los cargos distintos de Presidente, Secretario y Tesorero. ¿De cuántas maneras se puede hacer?`;
+                   if (currentCorrectAnswer === Infinity || currentCorrectAnswer > 5040) return generateCombinationQuestion(difficulty, nMin, nMax, numChoices); // Reintentar si es muy grande
+               } else {
+                   // Usar los k, n, correctAnswer originales si no es el caso especial
+                   questionText = questionText.replace(/\$\{k\}/g, currentK).replace(/\$\{n\}/g, currentN); // Reemplazar placeholders
+               }
+
+
+              const type = (difficulty === 'hard' || (difficulty==='medium' && Math.random() < 0.6)) ? 'mc' : 'sa';
+
+              if (type === 'sa') {
+                   return { type: 'sa', questionText, correctAnswer: currentCorrectAnswer, principle: 'Arreglos P(n,k) (Orden Importa)' };
+              } else {
+                   let options = [currentCorrectAnswer];
+                   const cnk = calculateCnK(currentN, currentK);
+                   if (cnk !== currentCorrectAnswer && cnk !== Infinity && cnk > 0) options.push(cnk); // Distractor C(n,k)
+                   if (k !== n) {
+                      const pnn = factorial(currentN); // Distractor P(n)
+                      if (pnn !== currentCorrectAnswer && pnn !== Infinity && pnn > 0 && pnn < 50000) options.push(pnn);
+                   }
+                   const nk = Math.pow(currentN, currentK); // Distractor n^k (con repetición)
+                   if (nk !== currentCorrectAnswer && nk !== Infinity && nk < 50000) options.push(nk);
+
+                   options = [...new Set(options.filter(opt => opt !== Infinity && opt >= 0 && opt <= 50000))]; // Limpiar y filtrar
+
+                   // Rellenar
+                   let attempts = 0;
+                   while (options.length < numChoices && attempts < 10) {
+                       let distractor = Math.round(currentCorrectAnswer * (0.5 + Math.random() * 0.8));
+                       if (distractor !== currentCorrectAnswer && !options.includes(distractor) && distractor > 0 && distractor <= 50000) options.push(distractor);
+                       attempts++;
+                   }
+                    options = [...new Set(options)];
+                   while (options.length < numChoices) options.push(currentCorrectAnswer + getRandomInt(1, currentN));
+
+                   return { type: 'mc', questionText, options: shuffleArray(options.slice(0, numChoices)), correctAnswer: currentCorrectAnswer.toString(), principle: 'Arreglos P(n,k) (Orden Importa)' };
+              }
+          }
+
+          function generateCombinationQuestion(difficulty, nMin, nMax, numChoices) {
+               const n = getRandomInt(nMin, nMax);
+               const k = getRandomInt(2, n - 1); // k debe ser menor que n y al menos 2 para C(n,k) interesante
+               let correctAnswer = calculateCnK(n, k);
+               let questionText = "";
+               let principle = 'Combinaciones C(n,k) (Orden NO Importa)';
+
+              // --- Escenarios ---
+               const easy_scenarios = [
+                   `¿Cuántos comités diferentes de ${k} personas se pueden formar a partir de un grupo de ${n} personas?`,
+                   `¿De cuántas maneras se pueden elegir ${k} frutas distintas de una canasta que contiene ${n} tipos diferentes?`,
+                   `Un estudiante debe seleccionar ${k} libros para leer de una lista de ${n} libros recomendados. ¿Cuántas selecciones posibles hay?`,
+               ];
+               const medium_scenarios = [
+                   ...easy_scenarios,
+                   `En una lotería se extraen ${k} números sin orden de un total de ${n} números posibles. ¿Cuántos resultados posibles hay?`,
+                   `De ${n} jugadores de fútbol, ¿cuántos equipos titulares diferentes de ${k} jugadores se pueden formar? (Asume k=11 si no se especifica)`,
+               ];
+               const hard_scenarios = [
+                   `De un grupo de ${n} personas (${Math.floor(n/2)} hombres y ${n-Math.floor(n/2)} mujeres), se quiere formar un comité de ${k} personas tal que haya *al menos un* hombre. ¿Cuántos comités cumplen la condición?`, // Complemento
+                   `Tienes ${n} amigos y quieres invitar a ${k} de ellos a cenar. ¿De cuántas formas puedes hacerlo?`, // Disfrazado
+                   `¿Cuántas manos de ${k} cartas se pueden repartir de una baraja estándar de 52 cartas? (n=52 fijo, k=5 fijo)` // Conocimiento específico
+               ];
+               // --- Fin Escenarios ---
+
+              let scenarios;
+               let currentN = n;
+               let currentK = k;
+
+              if (difficulty === 'easy') scenarios = easy_scenarios;
+              else if (difficulty === 'medium') scenarios = medium_scenarios;
+              else scenarios = hard_scenarios;
+
+               questionText = scenarios[getRandomInt(0, scenarios.length - 1)];
+
+              // Ajustes para escenarios específicos
+               if (questionText.includes('jugadores')) {
+                   currentN = getRandomInt(Math.max(11, nMin), nMax); // Asegurar N >= K
+                   currentK = 11; // k fijo
+                   correctAnswer = calculateCnK(currentN, currentK);
+                   questionText = `De ${currentN} jugadores de fútbol, ¿cuántos equipos titulares diferentes de 11 jugadores se pueden formar?`;
+                   principle += ' - Escenario Deportivo';
+                   // Forzar SA si la respuesta es muy grande
+                    if (correctAnswer === Infinity || correctAnswer > 100000) {
+                        return { type: 'sa', questionText, correctAnswer, principle };
+                    }
+
+               } else if (questionText.includes('cartas')) {
+                   currentN = 52;
+                   currentK = 5;
+                   correctAnswer = calculateCnK(currentN, currentK); // C(52, 5) = 2,598,960
+                   questionText = `¿Cuántas manos de 5 cartas se pueden repartir de una baraja estándar de 52 cartas?`;
+                   principle += ' - Baraja de Cartas';
+                   // Forzar SA por el número grande
+                   return { type: 'sa', questionText, correctAnswer, principle };
+               } else if (questionText.includes('al menos un')) {
+                   // Caso Complemento: Total - Ningún hombre
+                   const numHombres = Math.floor(n / 2);
+                   const numMujeres = n - numHombres;
+                   // Asegurar que k sea posible solo con mujeres y que haya hombres
+                   if (k <= numMujeres && numMujeres >= 0 && numHombres > 0 && k > 0) {
+                       const totalComites = calculateCnK(n, k);
+                       const comitesSoloMujeres = calculateCnK(numMujeres, k);
+                       if (totalComites !== Infinity && comitesSoloMujeres !== Infinity && totalComites >= comitesSoloMujeres) {
+                          correctAnswer = totalComites - comitesSoloMujeres;
+                          // Asegurarse que k <= n
+                          currentK = Math.min(k, n);
+                          questionText = `De un grupo de ${n} personas (${numHombres} hombres y ${numMujeres} mujeres), se quiere formar un comité de ${currentK} personas tal que haya *al menos un* hombre. ¿Cuántos comités cumplen la condición?`;
+                          principle = 'Combinaciones (Principio del Complemento)';
+                           // Forzar SA si la respuesta es muy grande o en hard
+                           if (correctAnswer > 10000 || difficulty === 'hard') {
+                                return { type: 'sa', questionText, correctAnswer, principle };
+                           }
+                       } else { // Si los cálculos fallan, usar otro escenario
+                           questionText = easy_scenarios[0].replace(/\$\{k\}/g, currentK).replace(/\$\{n\}/g, currentN);
+                           correctAnswer = calculateCnK(currentN, currentK);
+                           principle = 'Combinaciones C(n,k) (Fallback)';
+                       }
+                   } else { // No se puede aplicar complemento (k > #mujeres o no hay hombres), usar escenario simple
+                       questionText = easy_scenarios[0].replace(/\$\{k\}/g, currentK).replace(/\$\{n\}/g, currentN);
+                       correctAnswer = calculateCnK(currentN, currentK);
+                       principle = 'Combinaciones C(n,k) (Fallback)';
+                   }
+               } else {
+                    // Reemplazar placeholders si no es caso especial
+                   questionText = questionText.replace(/\$\{k\}/g, currentK).replace(/\$\{n\}/g, currentN);
+               }
+
+              // Validar respuesta final antes de generar opciones
+              if (correctAnswer === Infinity || correctAnswer > 100000 || correctAnswer < 0) {
+                  // Generar una pregunta más simple como fallback
+                   const easy_n = getRandomInt(4, 6);
+                   const easy_k = getRandomInt(2, easy_n - 1);
+                   return { type: 'sa', questionText: `¿Cuántos comités de ${easy_k} de un grupo de ${easy_n}?`, correctAnswer: calculateCnK(easy_n, easy_k), principle: 'Combinaciones C(n,k) (Fallback)' };
+              }
+
+
+              const type = (difficulty === 'hard' || (difficulty === 'medium' && Math.random() < 0.5) || correctAnswer > 1000) ? 'sa' : 'mc'; // SA para respuestas grandes o difíciles
+
+              if (type === 'sa') {
+                   return { type: 'sa', questionText, correctAnswer, principle };
+              } else {
+                   let options = [correctAnswer];
+                   const pnk = calculatePnK(currentN, currentK);
+                   if (pnk !== correctAnswer && pnk !== Infinity && pnk > 0 && pnk <= 1000000) options.push(pnk); // Distractor P(n,k)
+
+                   // Otros distractores conceptuales
+                   if (currentK > 1) { const cnk_minus1 = calculateCnK(currentN, currentK-1); if (cnk_minus1 !== Infinity) options.push(cnk_minus1); }
+                   if (currentN > currentK) { const cnk_plus1 = calculateCnK(currentN, currentK+1); if (cnk_plus1 !== Infinity) options.push(cnk_plus1); }
+                   options.push(currentN * currentK); // Multiplicación simple
+
+
+                   options = [...new Set(options.filter(opt => opt !== Infinity && opt >= 0 && opt <= 1000000 && opt !== correctAnswer))]; // Quitar correcta temporalmente
+
+                   // Rellenar
+                   let attempts = 0;
+                   while (options.length < numChoices -1 && attempts < 10) { // -1 porque falta la correcta
+                       let distractor = Math.round(correctAnswer * (0.5 + Math.random()));
+                       if (!options.includes(distractor) && distractor > 0 && distractor <= 1000000 && distractor !== correctAnswer) options.push(distractor);
+                       attempts++;
+                   }
+                   options.push(correctAnswer); // Añadir la correcta
+                   options = [...new Set(options)]; // Asegurar unicidad
+                   while (options.length < numChoices) options.push(correctAnswer + getRandomInt(1, currentN));
+
+
+                   return { type: 'mc', questionText, options: shuffleArray(options.slice(0, numChoices)), correctAnswer: correctAnswer.toString(), principle };
+              }
+          }
+
+           function generatePermutationQuestion(difficulty, nMin, nMax, numChoices) {
+               const n = getRandomInt(Math.max(2, nMin), nMax); // n pequeño para P(n)
+               const correctAnswer = factorial(n);
+
+               if (correctAnswer === Infinity || correctAnswer > 5040) { // Limitar a 7!
+                   return generateTrueFalseQuestion(difficulty); // Fallback
+               }
+
+               const scenarios = [
+                   `¿De cuántas formas se pueden ordenar ${n} libros distintos en un estante?`,
+                   `¿Cuántas "palabras" (con o sin sentido) se pueden formar usando todas las letras de "${"ABCDEFGHIJK".substring(0, n)}"?`, // Usar letras distintas
+                   `¿De cuántas maneras pueden ${n} amigos formar una fila para una foto?`,
+                   `Calcular el número de permutaciones de ${n} elementos distintos.`
+               ];
+               const questionText = scenarios[getRandomInt(0, scenarios.length - 1)];
+               const type = (difficulty === 'hard' || (difficulty === 'medium' && Math.random() < 0.4)) ? 'mc' : 'sa';
+
+
+               if (type === 'sa') {
+                    return { type: 'sa', questionText, correctAnswer, principle: 'Permutaciones P(n) (Ordenar Todo)' };
+               } else {
+                   let options = [correctAnswer];
+                   if (n > 1) options.push(factorial(n - 1));
+                   // P(n, n-1) es igual a n!, así que no es buen distractor aquí. Usemos P(n, n-2) si n>2
+                   if (n > 2) { const pnk_minus2 = calculatePnK(n, n-2); if (pnk_minus2 !== Infinity) options.push(pnk_minus2); }
+                   options.push(Math.pow(2, n)); // 2^n
+                   options.push(n * n); // n^2
+
+                   options = [...new Set(options.filter(opt => opt !== Infinity && opt >= 0 && opt <= 5040 && opt !== correctAnswer))];
+
+                   // Rellenar
+                   let attempts = 0;
+                   while (options.length < numChoices -1 && attempts < 10) {
+                       let distractor = Math.round(correctAnswer * (0.3 + Math.random() * 1.2));
+                       if (!options.includes(distractor) && distractor > 0 && distractor <= 5040 && distractor !== correctAnswer) options.push(distractor);
+                        attempts++;
+                   }
+                   options.push(correctAnswer); // Añadir correcta
+                   options = [...new Set(options)];
+                   while (options.length < numChoices) options.push(correctAnswer + getRandomInt(1, n));
+
+                   return { type: 'mc', questionText, options: shuffleArray(options.slice(0, numChoices)), correctAnswer: correctAnswer.toString(), principle: 'Permutaciones P(n) (Ordenar Todo)' };
+               }
+           }
+
+          function generateTrueFalseQuestion(difficulty) {
+               const easy_statements = [
+                   { text: "En C(n, k), el orden de selección NO importa.", correct: "Verdadero" },
+                   { text: "En P(n, k), el orden de selección SÍ importa.", correct: "Verdadero" },
+                   { text: "0! = 1.", correct: "Verdadero" },
+                   { text: "Para formar un comité, generalmente se usan Combinaciones.", correct: "Verdadero" },
+                   { text: "Para asignar premios distintos (oro, plata), generalmente se usan Arreglos/Permutaciones.", correct: "Verdadero" },
+               ];
+               const medium_statements = [
+                   ...easy_statements,
+                   { text: "P(n, n) es igual a P(n) (permutaciones de n elementos).", correct: "Verdadero" },
+                   { text: "C(n, k) siempre es menor o igual a P(n, k) (para k>=1).", correct: "Verdadero" },
+                   { text: "C(n, k) = C(n, n-k) es una propiedad válida.", correct: "Verdadero" },
+                   { text: "P(5, 2) calcula cuántas formas hay de elegir 2 elementos de 5 SIN importar el orden.", correct: "Falso" },
+                   { text: "C(7, 3) calcula cuántas formas hay de ordenar 3 elementos tomados de 7.", correct: "Falso" },
+               ];
+               const hard_statements = [
+                   ...medium_statements,
+                   { text: "Si k=0, tanto P(n, 0) como C(n, 0) son iguales a 1.", correct: "Verdadero" },
+                   { text: "La fórmula C(n,k) = P(n,k) / k! relaciona combinaciones y arreglos.", correct: "Verdadero" },
+                   { text: "Para calcular 'al menos uno', a menudo es más fácil calcular el total menos los casos 'ninguno'.", correct: "Verdadero" },
+                   { text: "P(n, k) puede ser mayor que n!", correct: "Falso"},
+                   { text: "C(n, k) representa el número de subconjuntos de tamaño k de un conjunto de tamaño n.", correct: "Verdadero"}
+               ];
+
+              let statements;
+              if (difficulty === 'easy') statements = easy_statements;
+              else if (difficulty === 'medium') statements = medium_statements;
+              else statements = hard_statements;
+
+              const selected = statements[getRandomInt(0, statements.length - 1)];
+              // Añadir un prefijo para que quede claro que es una afirmación
+              const questionText = `Indica si la siguiente afirmación es Verdadera o Falsa: "${selected.text}"`;
+              return { type: 'tf', questionText: questionText, correctAnswer: selected.correct, principle: 'Concepto / Propiedad' };
+          }
+
+        // --- Visualización de Preguntas (MODIFICADA para pista oculta) ---
+        function displayQuestions(questions) {
+            const quizContainer = document.getElementById('quiz-container');
+            quizContainer.innerHTML = '<h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Preguntas Generadas</h2>';
+
+            questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.classList.add('question-block', 'mb-6');
+                questionDiv.id = `question-${index}`;
+
+                 let content = `
+                    <p class="text-lg font-medium mb-2">${index + 1}. ${q.questionText}</p>
+                    <!-- Pista oculta por defecto -->
+                    <p class="principle-tag hidden">Principio Clave: ${q.principle}</p>
+                    <!-- Botón para mostrar la pista -->
+                    <button class="show-hint-btn">Mostrar Pista</button>
+
+                    <div class="options-container mt-2 mb-3">`; // Añadido mt-2
+
+                switch (q.type) {
+                    case 'mc':
+                         q.options.forEach((option, i) => {
+                             const formattedOption = (!isNaN(option) && Number(option) >= 1000)
+                                 ? Number(option).toLocaleString('es-ES')
+                                 : option;
+                             content += `
+                                 <div class="mb-1">
+                                     <input type="radio" id="q${index}_opt${i}" name="q${index}" value="${option}">
+                                     <label for="q${index}_opt${i}">${formattedOption}</label>
+                                 </div>`;
+                         });
+                         break;
+                    case 'sa':
+                        content += `
+                            <div>
+                                <label for="q${index}_ans" class="sr-only">Respuesta:</label>
+                                <input type="number" id="q${index}_ans" name="q${index}" class="border border-gray-300 rounded px-3 py-1 w-full md:w-1/2 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Ingresa tu respuesta numérica">
+                            </div>`;
+                        break;
+                    case 'tf':
+                        content += `
+                            <div class="mb-1">
+                                <input type="radio" id="q${index}_true" name="q${index}" value="Verdadero">
+                                <label for="q${index}_true">Verdadero</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="q${index}_false" name="q${index}" value="Falso">
+                                <label for="q${index}_false">Falso</label>
+                            </div>`;
+                        break;
+                }
+
+                content += `</div>`; // Fin options-container
+                content += `<button class="check-btn mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-4 rounded text-sm transition duration-300" data-question-index="${index}">Revisar</button>`;
+                content += `<div class="feedback mt-2"></div>`;
+
+                questionDiv.innerHTML = content;
+                quizContainer.appendChild(questionDiv);
+            });
+        }
+
+        // --- Lógica de Revisión (sin cambios) ---
+         function checkAnswer(button) {
+             const questionIndex = button.dataset.questionIndex;
+             const questionData = currentQuestions[questionIndex];
+             const questionBlock = document.getElementById(`question-${questionIndex}`);
+             const feedbackDiv = questionBlock.querySelector('.feedback');
+             const optionsContainer = questionBlock.querySelector('.options-container');
+             let userAnswer = null;
+             let isCorrect = false;
+
+             switch (questionData.type) {
+                 case 'mc': case 'tf':
+                     const checkedRadio = optionsContainer.querySelector(`input[type="radio"][name="q${questionIndex}"]:checked`);
+                     if (checkedRadio) { userAnswer = checkedRadio.value; isCorrect = userAnswer.toString().toLowerCase() == questionData.correctAnswer.toString().toLowerCase(); }
+                     break;
+                 case 'sa':
+                     const numberInput = optionsContainer.querySelector(`input[type="number"]`);
+                     if (numberInput.value.trim() !== "") {
+                          const parsedAnswer = parseInt(numberInput.value.trim(), 10);
+                          if (!isNaN(parsedAnswer)){ userAnswer = parsedAnswer; isCorrect = (userAnswer === questionData.correctAnswer); }
+                          else { userAnswer = "inválido"; isCorrect = false; }
+                     }
+                     break;
+             }
+
+             feedbackDiv.innerHTML = '';
+             if (userAnswer === null) { feedbackDiv.textContent = 'Por favor, selecciona o ingresa una respuesta.'; feedbackDiv.className = 'feedback incorrect'; }
+             else if (userAnswer === "inválido") { feedbackDiv.textContent = 'Por favor, ingresa una respuesta numérica válida.'; feedbackDiv.className = 'feedback incorrect'; }
+             else if (isCorrect) { feedbackDiv.textContent = '¡Correcto!'; feedbackDiv.className = 'feedback correct'; }
+             else {
+                 const formattedCorrect = (typeof questionData.correctAnswer === 'number' && questionData.correctAnswer >= 1000) ? questionData.correctAnswer.toLocaleString('es-ES') : questionData.correctAnswer;
+                 feedbackDiv.textContent = `Incorrecto. La respuesta correcta era: ${formattedCorrect}`; feedbackDiv.className = 'feedback incorrect';
+             }
+             if (userAnswer !== null && userAnswer !== "inválido") { questionBlock.classList.add('answered'); }
+         }
+
+
+        // --- Inicialización (MODIFICADA para incluir listener de pistas) ---
+        const startButton = document.getElementById('start-quiz-btn');
+        const difficultySelect = document.getElementById('difficulty');
+        const quizContainer = document.getElementById('quiz-container');
+        let currentQuestions = [];
+
+        startButton.addEventListener('click', () => {
+            const difficulty = difficultySelect.value;
+            quizContainer.innerHTML = '<p class="text-center text-gray-600 py-10">Generando preguntas...</p>';
+            setTimeout(() => {
+                try {
+                     currentQuestions = generateQuestions(difficulty);
+                     if (currentQuestions && currentQuestions.length > 0) {
+                         displayQuestions(currentQuestions);
+                     } else {
+                         quizContainer.innerHTML = '<p class="text-center text-red-600 py-10">Error al generar preguntas. Por favor, intenta de nuevo.</p>';
+                     }
+                } catch (error) {
+                     console.error("Error en el proceso de generación/visualización:", error);
+                      quizContainer.innerHTML = '<p class="text-center text-red-600 py-10">Ocurrió un error inesperado. Revisa la consola para detalles.</p>';
+                }
+            }, 50);
+        });
+
+        // Event Delegation para botones "Revisar" Y "Mostrar Pista"
+        quizContainer.addEventListener('click', (event) => {
+            // Revisar Respuesta
+            if (event.target.classList.contains('check-btn')) {
+                checkAnswer(event.target);
+            }
+            // Mostrar Pista
+            else if (event.target.classList.contains('show-hint-btn')) {
+                const button = event.target;
+                // Encontrar el contenedor padre de la pregunta
+                const questionBlock = button.closest('.question-block');
+                if (questionBlock) {
+                    // Encontrar la etiqueta de la pista dentro de ese bloque
+                    const hintElement = questionBlock.querySelector('.principle-tag');
+                    if (hintElement) {
+                        hintElement.classList.remove('hidden'); // Mostrar la pista
+                        button.classList.add('hidden'); // Ocultar el botón "Mostrar Pista"
+                    }
+                }
+            }
+        });
+
+    </script>
+
+</body>
+</html>

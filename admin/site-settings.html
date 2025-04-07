@@ -201,10 +201,14 @@
                                     <button id="loadRepoButton" class="btn btn-outline-info" type="button" onclick="loadFromRepository()">
                                         <i class="fas fa-cloud-download-alt me-2"></i> Cargar desde Repositorio
                                     </button>
+                                    <button id="syncNetlifyCMSButton" class="btn btn-outline-success" type="button" onclick="syncToNetlifyCMS()">
+                                        <i class="fas fa-cloud-upload-alt me-2"></i> Sincronizar con Netlify CMS
+                                    </button>
                                 </div>
                                 <div class="mt-3 small text-muted">
                                     <p>La sincronización guarda los cambios locales en el archivo JSON del repositorio sin perder datos.</p>
                                     <p><strong>Cargar desde Repositorio</strong> sobrescribirá los datos locales con los del archivo JSON (se creará una copia de seguridad).</p>
+                                    <p><strong>Sincronizar con Netlify CMS</strong> genera archivos JSON para subir al repositorio y ser gestionados por Netlify CMS.</p>
                                 </div>
                             </div>
                         </div>
@@ -253,6 +257,7 @@
     <script src="../js/sample-data.js"></script>
     <script src="../js/data-persistence.js"></script>
     <script src="../js/data-manager.js"></script>
+    <script src="../js/netlify-cms-sync.js"></script>
     <script src="../js/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -637,6 +642,20 @@
                 } else {
                     alert('Error al sincronizar los datos. Consulta la consola para más detalles.');
                 }
+            }
+        }
+
+        function syncToNetlifyCMS() {
+            // Verificar si el sistema de sincronización con Netlify CMS está disponible
+            if (typeof NetlifyCMSSync === 'undefined') {
+                alert('Sistema de sincronización con Netlify CMS no disponible');
+                return;
+            }
+
+            // Confirmar sincronización
+            if (confirm('¿Deseas sincronizar los datos con Netlify CMS? Se generarán archivos JSON para subir al repositorio.')) {
+                // Sincronizar datos
+                NetlifyCMSSync.syncToNetlifyCMS();
             }
         }
     </script>

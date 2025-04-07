@@ -13,6 +13,12 @@ async function initializeDataSystem() {
         const isProduction = window.location.hostname.includes('netlify.app') ||
                            window.location.hostname.includes('netlify.com');
 
+        // Inicializar sistema de sincronización con Netlify CMS si está disponible
+        if (typeof NetlifyCMSSync !== 'undefined') {
+            console.log('Inicializando sincronización con Netlify CMS...');
+            await NetlifyCMSSync.init();
+        }
+
         if (isProduction) {
             console.log('Entorno de producción detectado, forzando carga desde el repositorio...');
             // En producción, forzar la carga desde el repositorio

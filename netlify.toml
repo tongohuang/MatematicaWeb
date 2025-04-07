@@ -1,0 +1,22 @@
+[build]
+  publish = "."
+  command = "# No build command"
+
+# Configuración para Netlify Identity
+[template.environment]
+  NETLIFY_IDENTITY_ENABLED = "true"
+
+# Configuración para Netlify CMS
+[[redirects]]
+  from = "/netlify-cms/*"
+  to = "/netlify-cms/index.html"
+  status = 200
+
+# Configuración para la API de Git Gateway
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Content-Security-Policy = "frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión 1: Principios de Conteo</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+        .card {
+            break-inside: avoid;
+        }
+        .example-box {
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #f0f7ff;
+        }
+        .activity-box {
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #ecfdf5;
+        }
+        .exercise-box {
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #fffbeb;
+        }
+        /* Estilos para las fórmulas verticales */
+        .fraction {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 0.25rem;
+        }
+        .fraction .numerator,
+        .fraction .denominator {
+            display: block;
+            padding: 0 0.2rem;
+        }
+        .fraction .frac-line {
+            border-top: 2px solid currentColor;
+            margin: 0.1rem 0;
+        }
+        /* Clases adicionales (algunas pueden solaparse con Tailwind) */
+        .text-blue-600 { color: #2563eb; }
+        .mt-4 { margin-top: 1rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .block { display: block; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .max-w-md { max-width: 28rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-gray-600 { color: #4b5563; }
+        .border { border-width: 1px; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .text-red-500 { color: #ef4444; }
+        .line-through { text-decoration: line-through; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .mx-1 { margin-left: 0.25rem; margin-right: 0.25rem; }
+
+        /* Estilos específicos para SVG eliminados */
+
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <!-- Encabezado -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-blue-700 mb-2">Sesión 1: Introducción a los Principios de Conteo</h1>
+            <p class="text-lg text-gray-600">Fundamentos de Probabilidad</p>
+            <div class="border-b-2 border-blue-500 w-24 mx-auto mt-4"></div>
+        </header>
+
+        <!-- Introducción -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">Objetivos de Aprendizaje</h2>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <p class="mb-4">Al finalizar esta sesión, los estudiantes serán capaces de:</p>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li>Comprender y aplicar el principio de multiplicación en problemas de conteo</li>
+                    <li>Distinguir entre permutaciones, arreglos y combinaciones</li>
+                    <li>Resolver problemas básicos utilizando técnicas de conteo</li>
+                    <li>Interpretar situaciones cotidianas donde se aplican estos principios</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Actividad Inicial -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-green-600 mb-4">Actividad Introductoria: Explorando el Conteo</h2>
+            <div class="activity-box">
+                 <h3 class="text-xl font-semibold mb-3">¿De cuántas formas podemos...?</h3>
+                 <p class="mb-4">Duración: 15 minutos | Modalidad: Parejas</p>
+                 <p class="mb-3">En parejas, analicen las siguientes situaciones y determinen de cuántas formas diferentes se pueden realizar:</p>
+                 <ol class="list-decimal pl-6 space-y-3">
+                     <li>
+                         <p><strong>El menú del día</strong>: Un restaurante ofrece 3 opciones de entrada, 4 opciones de plato principal y 2 opciones de postre. ¿Cuántos menús completos diferentes puede elegir un cliente?</p>
+                     </li>
+                     <li>
+                         <p><strong>El vestuario</strong>: Una persona tiene 4 camisas, 3 pantalones y 2 pares de zapatos. ¿Cuántos conjuntos diferentes puede formar?</p>
+                     </li>
+                     <li>
+                         <p><strong>El código de acceso</strong>: ¿Cuántos códigos de 4 dígitos diferentes se pueden crear si no se permite repetir ningún dígito?</p>
+                     </li>
+                 </ol>
+                 <div class="mt-4 p-3 bg-green-50 rounded-lg">
+                     <p class="font-semibold">Reflexión grupal:</p>
+                     <p>Después de resolver los problemas, compartan sus estrategias con el resto de la clase. ¿Identifican algún patrón común en la resolución?</p>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Contenido Teórico -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">Principios Fundamentales de Conteo</h2>
+
+            <!-- Principio de multiplicación -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                 <h3 class="text-xl font-semibold text-blue-700 mb-3">1. Principio de Multiplicación</h3>
+                 <p class="mb-4">El principio fundamental del conteo establece que si una tarea A puede realizarse de m maneras, y después de completar A, una tarea B puede realizarse de n maneras, entonces la secuencia de tareas A seguida de B puede realizarse de m × n maneras.</p>
+                 <div class="example-box">
+                     <h4 class="font-semibold mb-2">Ejemplo ilustrado:</h4>
+                     <p class="mb-3">Imagina que tienes 3 camisas (roja, azul, verde) y 2 pantalones (negro, gris).</p>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                         <div>
+                             <p class="font-medium">Las posibles combinaciones son:</p>
+                             <ul class="list-disc pl-6">
+                                 <li>Camisa roja + Pantalón negro</li> <li>Camisa roja + Pantalón gris</li>
+                                 <li>Camisa azul + Pantalón negro</li> <li>Camisa azul + Pantalón gris</li>
+                                 <li>Camisa verde + Pantalón negro</li> <li>Camisa verde + Pantalón gris</li>
+                             </ul>
+                         </div>
+                         <div>
+                             <p class="font-medium">Total de combinaciones: 3 × 2 = 6</p>
+                             <div class="mt-2 p-2 bg-blue-50 rounded">
+                                 <p>Esta situación se puede representar como un diagrama de árbol donde cada rama representa una posible elección.</p>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+
+            <!-- Permutaciones (k=n) -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-xl font-semibold text-blue-700 mb-3">2. Permutaciones (Ordenaciones de todos los elementos)</h3>
+                <p class="mb-4">Una <strong>permutación</strong> de un conjunto de <span class="font-semibold">n</span> elementos distintos es una ordenación específica de <span class="font-semibold">todos</span> esos <span class="font-semibold">n</span> elementos. El orden en que se colocan los elementos es crucial.</p>
+                <p class="mb-3">El número de permutaciones posibles de <span class="font-semibold">n</span> elementos distintos se denota como <span class="font-semibold">P(n)</span> o <span class="font-semibold">P<sub>n</sub></span> y se calcula mediante el factorial de n:</p>
+                <div class="flex justify-center my-4"><div class="bg-gray-100 px-4 py-2 rounded-lg text-xl"> P(n) = n! </div></div>
+                <p class="mb-3">Donde <span class="font-semibold">n!</span> (factorial de n) representa el producto de todos los enteros positivos desde 1 hasta n (n! = n × (n-1) × ... × 2 × 1). Por definición, 0! = 1.</p>
+                <div class="example-box">
+                    <h4 class="font-semibold mb-2">Ejemplo: Ordenando letras</h4>
+                    <p class="mb-3">¿De cuántas formas diferentes se pueden ordenar las letras A, B y C?</p>
+                    <div class="p-3 bg-blue-50 rounded-lg">
+                        <p><strong>Solución:</strong> Tenemos n=3 elementos distintos. Queremos ordenarlos todos.</p>
+                        <p>P(3) = 3! = 3 × 2 × 1 = 6</p>
+                        <p class="mt-2">Las permutaciones posibles son: ABC, ACB, BAC, BCA, CAB, CBA.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arreglos (Permutaciones Parciales, k <= n) -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-xl font-semibold text-blue-700 mb-3">3. Arreglos (Permutaciones Parciales)</h3>
+                <p class="mb-4">Un <strong>arreglo</strong> (o permutación parcial) consiste en formar listas ordenadas seleccionando <span class="font-semibold">k</span> elementos distintos de un conjunto que contiene <span class="font-semibold">n</span> elementos distintos, donde <span class="font-semibold">k ≤ n</span>. Al igual que en las permutaciones, el orden de los elementos seleccionados importa.</p>
+                <p class="mb-3">El número de arreglos de <span class="font-semibold">n</span> elementos tomados de a <span class="font-semibold">k</span> se denota como <span class="font-semibold">A(n, k)</span>, <span class="font-semibold">P(n, k)</span> o <span class="font-semibold"><sub>n</sub>P<sub>k</sub></span> y se calcula con la siguiente fórmula:</p>
+                <div class="flex justify-center my-4 text-xl">
+                     <div class="bg-gray-100 px-4 py-2 rounded-lg inline-flex items-center space-x-2">
+                        <span>P(n, k) =</span>
+                        <div class="fraction"> <span class="numerator">n!</span> <div class="frac-line"></div> <span class="denominator">(n-k)!</span> </div>
+                    </div>
+                </div>
+                <p class="mb-3">Esta fórmula se deriva del principio de multiplicación: hay <span class="italic">n</span> opciones para el primer elemento, <span class="italic">(n-1)</span> opciones para el segundo, ..., y <span class="italic">(n-k+1)</span> opciones para el k-ésimo elemento.</p>
+                <p class="mb-3 font-medium text-blue-600">Nota importante: Si <span class="font-semibold">k = n</span>, la fórmula se convierte en P(n, n) = n! / (n-n)! = n! / 0! = n! / 1 = n!. En este caso, un arreglo de n elementos tomados de a n es simplemente una <strong>permutación</strong> de los n elementos.</p>
+                <div class="example-box">
+                    <h4 class="font-semibold mb-2">Ejemplo 1 (k=n): Formando códigos (Permutación)</h4>
+                    <p class="mb-3">¿De cuántas formas diferentes se pueden ordenar los dígitos 1, 2 y 3 para formar un número de 3 dígitos sin repetir?</p>
+                    <div class="p-3 bg-blue-50 rounded-lg mb-4">
+                        <p><strong>Solución:</strong> Aquí n=3 y k=3 (usamos todos los elementos). Es una permutación.</p>
+                        <p>P(3, 3) = 3! / (3-3)! = 3! / 0! = 6 / 1 = 6</p>
+                        <p class="mt-2">Las ordenaciones posibles son: 123, 132, 213, 231, 312, 321.</p>
+                    </div>
+                    <h4 class="font-semibold mb-2">Ejemplo 2 (k<n): Eligiendo directiva (Arreglo)</h4>
+                     <p class="mb-3">De un grupo de 5 estudiantes (A, B, C, D, E), se quiere elegir un Presidente y un Secretario. ¿De cuántas formas se puede hacer?</p>
+                     <div class="p-3 bg-blue-50 rounded-lg">
+                         <p><strong>Solución:</strong> Tenemos n=5 estudiantes y queremos seleccionar k=2 cargos distintos (el orden importa: A presidente y B secretario es diferente de B presidente y A secretario).</p>
+                         <p>P(5, 2) = 5! / (5-2)! = 5! / 3! = (5 × 4 × 3 × 2 × 1) / (3 × 2 × 1) = 5 × 4 = 20</p>
+                         <p class="mt-2">Hay 20 formas diferentes de asignar los cargos.</p>
+                     </div>
+                </div>
+            </div>
+
+            <!-- ================================================== -->
+            <!-- SECCIÓN COMBINACIONES (SIN SVG)                  -->
+            <!-- ================================================== -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold text-blue-700 mb-3">4. Combinaciones (Selecciones donde el orden NO importa)</h3>
+                <p class="mb-4">Una <strong>combinación</strong> es una selección de <span class="font-semibold">k</span> elementos distintos tomados de un conjunto de <span class="font-semibold">n</span> elementos distintos (con k ≤ n), donde el <strong>orden en que se seleccionan los elementos NO es relevante</strong>. Lo único que importa es qué elementos forman parte del grupo seleccionado.</p>
+                <p class="mb-3">Por ejemplo, si seleccionamos un comité de 2 personas {Ana, Beto} de un grupo, es el mismo comité que {Beto, Ana}. Solo hay una combinación, aunque podría haber dos arreglos si importara quién fue elegido primero.</p>
+                <p class="mb-3">La fórmula para calcular el número de combinaciones de <span class="font-semibold">n</span> elementos tomados de a <span class="font-semibold">k</span> se denota como <span class="font-semibold">C(n, k)</span>, <span class="font-semibold"><sup>n</sup>C<sub>k</sub></span>, o más comúnmente como el coeficiente binomial <span class="font-semibold"> (<sup>n</sup><sub>k</sub>) </span> y es:</p>
+                 <div class="flex justify-center my-4 text-xl">
+                     <div class="bg-gray-100 px-4 py-2 rounded-lg inline-flex items-center space-x-2">
+                        <span>C(n, k) =</span>
+                         <span class="font-semibold text-2xl mx-1">(</span>
+                         <div class="fraction text-sm" style="vertical-align: middle;"> <span class="numerator">n</span> <span class="denominator">k</span> </div>
+                          <span class="font-semibold text-2xl mx-1">)</span>
+                        <span>=</span>
+                        <div class="fraction"> <span class="numerator">n!</span> <div class="frac-line"></div> <span class="denominator">k! (n-k)!</span> </div>
+                    </div>
+                </div>
+
+                <h4 class="text-lg font-semibold text-blue-600 mb-2 mt-4">Relación entre Combinaciones y Arreglos</h4>
+                <p class="mb-3">Existe una relación directa entre el número de arreglos (P(n, k)) y el número de combinaciones (C(n, k)). Considera un grupo cualquiera de <span class="font-semibold">k</span> elementos seleccionados (una combinación). ¿De cuántas maneras puedes ordenar esos <span class="font-semibold">k</span> elementos? Puedes ordenarlos de <span class="font-semibold">k!</span> maneras (permutaciones de k elementos).</p>
+                <p class="mb-4">Esto significa que por cada <strong>combinación</strong> de <span class="font-semibold">k</span> elementos, existen <span class="font-semibold">k!</span> <strong>arreglos</strong> posibles formados por esos mismos elementos. Por lo tanto, el número total de arreglos es <span class="font-semibold">k!</span> veces el número total de combinaciones:</p>
+                <p class="text-center font-medium text-lg mb-4">P(n, k) = C(n, k) × k!</p>
+                <p class="mb-4">Despejando C(n, k), obtenemos la fórmula de las combinaciones a partir de la de arreglos:</p>
+                <div class="flex justify-center my-4 text-xl">
+                     <div class="bg-gray-100 px-4 py-2 rounded-lg inline-flex items-center space-x-2">
+                        <span>C(n, k) =</span>
+                        <div class="fraction"> <span class="numerator">P(n, k)</span> <div class="frac-line"></div> <span class="denominator">k!</span> </div>
+                         <span>=</span>
+                         <div class="fraction"> <span class="numerator">n! / (n-k)!</span> <div class="frac-line"></div> <span class="denominator">k!</span> </div>
+                        <span>=</span>
+                        <div class="fraction"> <span class="numerator">n!</span> <div class="frac-line"></div> <span class="denominator">k! (n-k)!</span> </div>
+                    </div>
+                </div>
+
+                <!-- Bloque SVG y su caption eliminados de aquí -->
+
+                <!-- Ejemplo Práctico -->
+                <div class="example-box">
+                    <h4 class="font-semibold mb-2">Ejemplo: Formando equipos</h4>
+                    <p class="mb-3">De un grupo de 5 estudiantes (n=5), ¿de cuántas maneras se puede seleccionar un comité de 3 personas (k=3)?</p>
+                    <div class="p-3 bg-blue-50 rounded-lg">
+                        <p><strong>Solución:</strong> El orden en que se eligen los miembros del comité no importa (el comité {A, B, C} es el mismo que {C, A, B}). Por lo tanto, usamos combinaciones.</p>
+                        <div class="inline-flex items-center space-x-1 my-2">
+                            <span>C(5, 3) =</span>
+                            <div class="fraction text-lg"> <span class="numerator">5!</span> <div class="frac-line"></div> <span class="denominator">3! (5-3)!</span> </div> <span>=</span>
+                            <div class="fraction text-lg"> <span class="numerator">5!</span> <div class="frac-line"></div> <span class="denominator">3! 2!</span> </div> <span>=</span>
+                            <div class="fraction text-lg"> <span class="numerator">5 × 4 × <span class="text-red-500 line-through">3 × 2 × 1</span></span> <div class="frac-line"></div> <span class="denominator">(<span class="text-red-500 line-through">3 × 2 × 1</span>) × (2 × 1)</span> </div> <span>=</span>
+                            <div class="fraction text-lg"> <span class="numerator">5 × 4</span> <div class="frac-line"></div> <span class="denominator">2 × 1</span> </div> <span>=</span>
+                            <div class="fraction text-lg"> <span class="numerator">20</span> <div class="frac-line"></div> <span class="denominator">2</span> </div> <span>= 10</span>
+                        </div>
+                        <p class="mt-2">Hay 10 posibles comités diferentes que se pueden formar.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- ================================================== -->
+            <!-- FIN SECCIÓN COMBINACIONES ACTUALIZADA              -->
+            <!-- ================================================== -->
+        </section>
+
+        <!-- Actividad de Práctica Guiada -->
+         <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-green-600 mb-4">Actividad: Aplicando los Principios</h2>
+             <div class="activity-box">
+                 <h3 class="text-xl font-semibold mb-3">Desafíos de conteo</h3>
+                 <p class="mb-4">Duración: 20 minutos | Modalidad: Grupos de 3-4 personas</p>
+                 <div class="mb-6"> <h4 class="font-semibold mb-2">Instrucciones:</h4> <p>En grupos, resuelvan los siguientes problemas identificando qué principio de conteo deben aplicar en cada caso (Multiplicación, Arreglo, Combinación).</p> </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-green-50 rounded-lg"> <h4 class="font-semibold">Problema 1: La contraseña</h4> <p class="my-2">Una contraseña debe contener exactamente 4 caracteres: 2 letras distintas (de 26 posibles) seguidas de 2 dígitos distintos (0-9). ¿Cuántas contraseñas diferentes se pueden crear? (Pista: ¿Importa el orden dentro de las letras? ¿Dentro de los dígitos? ¿Se usa el principio multiplicativo?)</p> </div>
+                    <div class="p-4 bg-green-50 rounded-lg"> <h4 class="font-semibold">Problema 2: El sorteo</h4> <p class="my-2">En un sorteo con 20 participantes, se seleccionarán al azar 3 ganadores para el primer, segundo y tercer premio. ¿De cuántas formas diferentes pueden asignarse los premios? (¿Importa el orden?)</p> </div>
+                    <div class="p-4 bg-green-50 rounded-lg"> <h4 class="font-semibold">Problema 3: El comité</h4> <p class="my-2">De un grupo de 8 personas, se debe formar un comité de 4 integrantes. ¿Cuántos comités diferentes pueden formarse? (¿Importa el orden?)</p> </div>
+                    <div class="p-4 bg-green-50 rounded-lg"> <h4 class="font-semibold">Problema 4: La pizzería</h4> <p class="my-2">Una pizzería ofrece 3 tamaños, 2 tipos de masa y 5 ingredientes diferentes. Si un cliente debe elegir un tamaño, un tipo de masa y exactamente 3 ingredientes diferentes, ¿cuántas pizzas distintas puede pedir? (Pista: Hay elecciones secuenciales y una selección donde el orden no importa).</p> </div>
+                 </div>
+                 <div class="mt-6 p-4 bg-yellow-50 rounded-lg"> <h4 class="font-semibold mb-2">Puesta en común:</h4> <p>Cada grupo presentará las soluciones de uno de los problemas, explicando su razonamiento y el principio aplicado.</p> </div>
+             </div>
+        </section>
+
+        <!-- Ejercicios para realizar en clase -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-yellow-600 mb-4">Ejercicios Prácticos</h2>
+             <div class="exercise-box">
+                 <h3 class="text-xl font-semibold mb-3">Ejercicios para resolver en parejas</h3>
+                 <p class="mb-4">Duración: 30 minutos | Modalidad: Trabajo en parejas</p>
+                 <ol class="list-decimal pl-6 space-y-4">
+                     <li> <div class="p-3 bg-white rounded"> <p class="mb-2">Una empresa tiene 5 puestos vacantes distintos. Si 8 personas calificadas aplican, ¿de cuántas formas se pueden llenar las vacantes? (Asume que cada persona puede ocupar solo un puesto).</p> </div> </li>
+                     <li> <div class="p-3 bg-white rounded"> <p class="mb-2">En una carrera participan 6 corredores. ¿De cuántas formas diferentes pueden ocuparse los tres primeros lugares (oro, plata, bronce)?</p> </div> </li>
+                     <li> <div class="p-3 bg-white rounded"> <p class="mb-2">¿Cuántos números de 4 dígitos pueden formarse con los dígitos 1, 2, 3, 4, 5, 6 si:</p> <ul class="list-disc pl-6"> <li>No se permite repetir dígitos</li> <li>Se permite repetir dígitos</li> </ul> </div> </li>
+                     <li> <div class="p-3 bg-white rounded"> <p class="mb-2">Un estudiante debe responder 8 de 10 preguntas en un examen. ¿De cuántas formas puede elegir qué preguntas responder?</p> </div> </li>
+                     <li> <div class="p-3 bg-white rounded"> <p class="mb-2">Un grupo de 10 amigos quiere tomarse una foto en fila. ¿De cuántas maneras pueden ordenarse si:</p> <ul class="list-disc pl-6"> <li>Dos personas específicas (A y B) deben estar juntas</li> <li>Dos personas específicas (A y B) no pueden estar juntas</li> </ul> </div> </li>
+                 </ol>
+                 <div class="mt-6 p-4 bg-yellow-50 rounded-lg">
+                     <h4 class="font-semibold">Estrategia de resolución:</h4>
+                     <ol class="list-decimal pl-6 space-y-1">
+                         <li>Identifiquen si el problema requiere Arreglo (orden importa, k<=n), Combinación (orden no importa), Permutación (orden importa, k=n) o el Principio Multiplicativo.</li>
+                         <li>Determinen los valores de n y k cuando sea necesario.</li> <li>Apliquen la fórmula correspondiente.</li>
+                         <li>Verifiquen que su respuesta tenga sentido en el contexto del problema.</li>
+                     </ol>
+                 </div>
+             </div>
+        </section>
+
+        <!-- Material de Apoyo y Cierre -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">Material de Apoyo y Recursos</h2>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                 <h3 class="text-xl font-semibold text-blue-700 mb-3">Recursos para reforzar el aprendizaje</h3>
+                 <div class="mb-4"> <h4 class="font-semibold mb-2">Referencias Esenciales:</h4> <ul class="list-disc pl-6 space-y-1"> <li>Cuadro resumen con fórmulas de arreglos y combinaciones</li> <li>Lista de problemas resueltos (disponibles en el aula virtual)</li> <li>Glosario de términos clave en probabilidad y conteo</li> </ul> </div>
+                 <div class="p-4 bg-blue-50 rounded-lg mb-4"> <h4 class="font-semibold mb-2">Consejos para resolver problemas de conteo:</h4> <ul class="list-disc pl-6"> <li>Identifique primero si el orden importa (arreglo/permutación) o no (combinación)</li> <li>Dibuje un diagrama de árbol para visualizar las posibilidades (si es práctico)</li> <!-- Modificado --> <li>Divida problemas complejos en subproblemas más simples</li> <li>Verifique si hay restricciones que limiten las posibilidades</li> </ul> </div>
+                 <div class="mb-4"> <h4 class="font-semibold mb-2">Aplicaciones prácticas:</h4> <p>Los principios de conteo son fundamentales en diversos campos:</p> <ul class="list-disc pl-6 space-y-1"> <li>Criptografía y seguridad informática</li> <li>Diseño de experimentos</li> <li>Análisis estadístico</li> <li>Juegos de azar y probabilidades</li> <li>Optimización de procesos</li> <li>Genética (combinaciones de genes)</li> </ul> </div>
+            </div>
+        </section>
+
+        <!-- Tarea para casa -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-purple-600 mb-4">Actividad para Realizar en Casa</h2>
+            <div class="border-2 border-purple-400 rounded-lg p-6 bg-purple-50">
+                 <h3 class="text-xl font-semibold mb-3">Tarea: Aplicación de Principios de Conteo</h3>
+                 <p class="mb-4">Para la próxima clase, resolver los siguientes problemas:</p>
+                 <ol class="list-decimal pl-6 space-y-3">
+                      <li> <p>En una competencia de atletismo participan 8 corredores. ¿De cuántas formas pueden ocuparse los tres primeros lugares con medalla de oro, plata y bronce?</p> </li>
+                      <li> <p>¿Cuántas "palabras" diferentes (tengan significado o no) pueden formarse usando <span class="font-semibold">exactamente una vez</span> cada una de las letras de la palabra "MURCIELAGO"? (Nota: todas las letras son distintas)</p> </li>
+                      <li> <p>Un administrador de sistemas debe crear contraseñas para 5 usuarios. Cada contraseña debe tener 4 letras (del alfabeto de 26 letras) seguidas de 2 dígitos (0-9). Se permite la repetición de letras y dígitos. ¿Cuántas contraseñas diferentes son posibles en total?</p> </li>
+                      <li> <p>De un grupo de 7 hombres y 5 mujeres, se debe formar un comité de 4 personas que incluya al menos una mujer. ¿Cuántos comités diferentes pueden formarse?</p> </li>
+                 </ol>
+                 <div class="mt-6 p-4 bg-purple-100 rounded-lg"> <p class="font-semibold">Formato de entrega:</p> <p>Presentar los ejercicios de forma ordenada, mostrando los cálculos realizados y explicando brevemente la estrategia utilizada en cada caso (qué principio o fórmula se aplicó y por qué).</p> </div>
+            </div>
+        </section>
+
+        <!-- Glosario -->
+        <section class="mb-10 card">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Glosario de Términos</h2>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <dl class="space-y-4">
+                     <div> <dt class="font-semibold text-blue-800">Principio de multiplicación</dt> <dd class="pl-4">Si una operación puede realizarse de m maneras, y otra operación puede realizarse de n maneras, entonces ambas operaciones pueden realizarse en secuencia de m × n maneras.</dd> </div>
+                     <div> <dt class="font-semibold text-blue-800">Factorial</dt> <dd class="pl-4">Notación n! que representa el producto de todos los enteros positivos desde 1 hasta n (ejemplo: 4! = 4×3×2×1 = 24). Se define 0! = 1.</dd> </div>
+                     <div> <dt class="font-semibold text-blue-800">Permutación (de n elementos)</dt> <dd class="pl-4">Una ordenación específica de <span class="font-semibold">todos</span> los <span class="font-semibold">n</span> elementos distintos de un conjunto. El número de permutaciones es P(n) = n!.</dd> </div>
+                     <div> <dt class="font-semibold text-blue-800">Arreglo (Permutación Parcial)</dt> <dd class="pl-4">Una lista ordenada de <span class="font-semibold">k</span> elementos distintos seleccionados de un conjunto de <span class="font-semibold">n</span> elementos distintos (k ≤ n). El orden importa. El número de arreglos es P(n, k) = n!/(n-k)!.</dd> </div>
+                     <div> <dt class="font-semibold text-blue-800">Combinación</dt> <dd class="pl-4">Una selección de <span class="font-semibold">k</span> elementos distintos de un conjunto de <span class="font-semibold">n</span> elementos distintos (k ≤ n), donde el <strong>orden no importa</strong>. El número de combinaciones es C(n, k) = n!/[k!(n-k)!].</dd> </div>
+                     <div> <dt class="font-semibold text-blue-800">Diagrama de árbol</dt> <dd class="pl-4">Representación gráfica de posibles resultados en problemas de conteo, donde cada rama representa una posible elección o etapa.</dd> </div>
+                     <!-- Eliminada la entrada del glosario para SVG -->
+                 </dl>
+            </div>
+        </section>
+
+        <!-- Pie de página -->
+        <footer class="text-center text-gray-600 text-sm mt-10 pt-6 border-t border-gray-200">
+            <p>Curso de Probabilidad - Sesión 1: Principios de Conteo</p>
+            <p class="mt-1">© 2023 - Todos los derechos reservados</p>
+        </footer>
+    </div>
+</body>
+</html>
