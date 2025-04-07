@@ -459,8 +459,21 @@ const DataPersistence = {
             return false;
         }
 
-        // 1. Generar JSON solo con datos persistentes
-        const result = this.generateRepoJSON(currentData.persistent, silent);
+        // Obtener la configuración del sitio desde localStorage
+        const settings = {
+            site_name: localStorage.getItem('site_name') || 'MatemáticaWeb',
+            site_description: localStorage.getItem('site_description') || 'Plataforma educativa para el aprendizaje de matemáticas',
+            primary_color: localStorage.getItem('primary_color') || '#0d6efd',
+            font_family: localStorage.getItem('font_family') || "'Roboto', sans-serif",
+            site_logo: localStorage.getItem('site_logo') || '',
+            use_logo: localStorage.getItem('use_logo') === 'true'
+        };
+
+        // Añadir la configuración a los datos persistentes
+        const dataToSync = { ...currentData.persistent, settings };
+
+        // 1. Generar JSON con datos persistentes y configuración
+        const result = this.generateRepoJSON(dataToSync, silent);
 
         if (result) {
             // 2. Limpiar solo el registro de no sincronizados
@@ -526,7 +539,7 @@ const DataPersistence = {
 
             // Solo mostramos la alerta si se solicita explícitamente y no estamos en modo silencioso
             if (!silent && window.location.pathname.includes('/admin/')) {
-                alert('Se han generado los archivos JSON para el repositorio. Por favor, guárdelos en las carpetas correspondientes del proyecto:\n\n- courseData.json en /data/\n- courses.json en /data/\n- topics.json en /data/\n\nY haga commit de los cambios.');
+                alert('Se han generado los archivos JSON para el repositorio. Por favor, guárdelos en las carpetas correspondientes del proyecto:\n\n- courseData.json en /data/\n- courses.json en /data/\n- topics.json en /data/\n- settings.json en /data/\n\nY haga commit de los cambios.');
             }
 
             // Guardar una copia en localStorage para referencia

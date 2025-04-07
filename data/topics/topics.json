@@ -158,19 +158,19 @@
     "id": 303,
     "courseId": 5,
     "title": "Conteo",
-    "description": "Principio de multiplicación y herramientas de conteo.",
-    "icon": "fas fa-edit",
+    "description": "asdasd",
+    "icon": "fas fa-book",
     "sections": [
       {
-        "id": "1744054420749",
-        "title": "Teórico y práctico",
+        "id": "1744059855870",
+        "title": "Terórico practicp",
         "content": "conteo.html",
         "topicId": 303,
         "order": "0",
         "type": "html"
       },
       {
-        "id": "1744055539613",
+        "id": "1744059930887",
         "title": "Actividades interactivas",
         "content": "conteo-actividades.html",
         "topicId": 303,

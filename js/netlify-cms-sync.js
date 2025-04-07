@@ -176,7 +176,11 @@ const NetlifyCMSSync = {
             this.generateJSONFile(settings, 'settings.json', 'Configuración');
 
             // Mostrar instrucciones claras al usuario
-            alert(`Se han generado los archivos JSON para sincronizar con Netlify CMS.
+            alert(`Se han generado los siguientes archivos JSON para sincronizar con Netlify CMS:
+
+1. settings.json - Configuración del sitio
+2. courses.json - Cursos
+3. topics.json - Temas
 
 Para actualizar tu sitio en Netlify:
 
@@ -187,7 +191,9 @@ Para actualizar tu sitio en Netlify:
 
 2. Haz commit y push de estos cambios.
 
-3. Netlify desplegará automáticamente los cambios.`);
+3. Netlify desplegará automáticamente los cambios.
+
+Nota: Si no ves alguno de estos archivos en tus descargas, revisa la carpeta de descargas de tu navegador.`);
 
             return true;
         } catch (error) {

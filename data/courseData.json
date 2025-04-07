@@ -31,9 +31,9 @@
     "5": {
       "id": 5,
       "title": "Probabilidad",
-      "description": "Material del curso de probabilidad",
-      "color": "#00CED1",
-      "icon": "fas fa-less-than-equal"
+      "description": "asdasd",
+      "color": "#4CAF50",
+      "icon": "fas fa-book"
     }
   },
   "topics": {
@@ -196,19 +196,19 @@
       "id": 303,
       "courseId": 5,
       "title": "Conteo",
-      "description": "Principio de multiplicación y herramientas de conteo.",
-      "icon": "fas fa-edit",
+      "description": "asdasd",
+      "icon": "fas fa-book",
       "sections": [
         {
-          "id": "1744054420749",
-          "title": "Teórico y práctico",
+          "id": "1744059855870",
+          "title": "Terórico practicp",
           "content": "conteo.html",
           "topicId": 303,
           "order": "0",
           "type": "html"
         },
         {
-          "id": "1744055539613",
+          "id": "1744059930887",
           "title": "Actividades interactivas",
           "content": "conteo-actividades.html",
           "topicId": 303,
@@ -327,6 +327,22 @@
       "topicId": 101,
       "order": "0",
       "type": "text"
+    },
+    "1744059855870": {
+      "id": "1744059855870",
+      "title": "Terórico practicp",
+      "content": "conteo.html",
+      "topicId": 303,
+      "order": "0",
+      "type": "html"
+    },
+    "1744059930887": {
+      "id": "1744059930887",
+      "title": "Actividades interactivas",
+      "content": "conteo-actividades.html",
+      "topicId": 303,
+      "order": "0",
+      "type": "html"
     }
   }
 }
