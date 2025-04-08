@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
     <script src="../js/netlify-debug.js"></script>
+    <script src="../js/content-loader.js"></script>
 </head>
 <body>
     <div id="header"></div>
@@ -341,55 +342,23 @@
                     if (isNetlify) {
                         console.log('Entorno Netlify detectado, cargando HTML con iframe');
 
+                        // Crear un ID único para el contenedor
+                        const containerId = 'html-container-section';
+
+                        // Crear el contenedor para el contenido HTML
                         contentHtml = `
                             <div class="section-preview-content">
                                 <div class="html-container">
-                                    <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
-                                            id="html-iframe-section"></iframe>
+                                    <div id="${containerId}" class="html-content" style="min-height:400px;"></div>
                                 </div>
                             </div>
                         `;
 
-                        // Verificar si el archivo existe después de cargar
+                        // Cargar el contenido HTML usando AJAX en lugar de iframe
                         setTimeout(() => {
-                            const iframe = document.getElementById('html-iframe-section');
-                            if (iframe) {
-                                try {
-                                    console.log('Verificando existencia de archivo HTML:', htmlPath);
-
-                                    // Agregar mensaje de depuración en el iframe
-                                    iframe.onload = function() {
-                                        console.log('Iframe HTML cargado correctamente');
-                                    };
-
-                                    iframe.onerror = function() {
-                                        console.error('Error al cargar iframe HTML, usando fallback');
-                                        iframe.src = fallbackHtmlPath;
-                                    };
-
-                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
-                                    const xhr = new XMLHttpRequest();
-                                    xhr.open('HEAD', htmlPath, true);
-                                    xhr.onreadystatechange = function() {
-                                        if (xhr.readyState === 4) {
-                                            console.log('XMLHttpRequest completado con estado:', xhr.status);
-                                            if (xhr.status !== 200) {
-                                                console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                                iframe.src = fallbackHtmlPath;
-                                            }
-                                        }
-                                    };
-                                    xhr.onerror = function() {
-                                        console.error('Error verificando archivo ' + htmlPath + ':', xhr.statusText);
-                                        iframe.src = fallbackHtmlPath;
-                                    };
-                                    xhr.send();
-                                } catch (error) {
-                                    console.error('Error al verificar archivo HTML:', error);
-                                    iframe.src = fallbackHtmlPath;
-                                }
-                            }
-                        }, 500);
+                            console.log('Cargando contenido HTML usando AJAX:', htmlPath);
+                            loadHTMLContent(htmlPath, containerId, fallbackHtmlPath);
+                        }, 100);
                     } else {
                         // En local, usar iframe como antes
                         contentHtml = `
@@ -450,55 +419,23 @@
                     if (isNetlifyActivity) {
                         console.log('Entorno Netlify detectado, cargando Actividad con iframe');
 
+                        // Crear un ID único para el contenedor
+                        const containerId = 'activity-container-section';
+
+                        // Crear el contenedor para el contenido de la actividad
                         contentHtml = `
                             <div class="section-preview-content">
                                 <div class="activity-container">
-                                    <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
-                                            id="activity-iframe-section"></iframe>
+                                    <div id="${containerId}" class="activity-content" style="min-height:400px;"></div>
                                 </div>
                             </div>
                         `;
 
-                        // Verificar si el archivo existe
+                        // Cargar el contenido de la actividad usando AJAX en lugar de iframe
                         setTimeout(() => {
-                            const iframe = document.getElementById('activity-iframe-section');
-                            if (iframe) {
-                                try {
-                                    console.log('Verificando existencia de archivo de actividad:', activityPath);
-
-                                    // Agregar mensaje de depuración en el iframe
-                                    iframe.onload = function() {
-                                        console.log('Iframe de actividad cargado correctamente');
-                                    };
-
-                                    iframe.onerror = function() {
-                                        console.error('Error al cargar iframe de actividad, usando fallback');
-                                        iframe.src = fallbackActivityPath;
-                                    };
-
-                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
-                                    const xhr = new XMLHttpRequest();
-                                    xhr.open('HEAD', activityPath, true);
-                                    xhr.onreadystatechange = function() {
-                                        if (xhr.readyState === 4) {
-                                            console.log('XMLHttpRequest completado con estado:', xhr.status);
-                                            if (xhr.status !== 200) {
-                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                                iframe.src = fallbackActivityPath;
-                                            }
-                                        }
-                                    };
-                                    xhr.onerror = function() {
-                                        console.error('Error verificando archivo ' + activityPath + ':', xhr.statusText);
-                                        iframe.src = fallbackActivityPath;
-                                    };
-                                    xhr.send();
-                                } catch (error) {
-                                    console.error('Error al verificar archivo de actividad:', error);
-                                    iframe.src = fallbackActivityPath;
-                                }
-                            }
-                        }, 500);
+                            console.log('Cargando contenido de actividad usando AJAX:', activityPath);
+                            loadHTMLContent(activityPath, containerId, fallbackActivityPath);
+                        }, 100);
                     } else {
                         // En local, usar iframe como antes
                         contentHtml = `
