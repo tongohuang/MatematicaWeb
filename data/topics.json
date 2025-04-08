@@ -39,5 +39,38 @@
     "description": "12313123",
     "icon": "fas fa-square",
     "sections": []
+  },
+  {
+    "id": 306,
+    "courseId": 6,
+    "title": "dfsad",
+    "description": "sdzsdzsd",
+    "icon": "fas fa-book",
+    "sections": [
+      {
+        "id": "1744127510970",
+        "title": "asgdsfd",
+        "content": "asdasdasd<font color=\"#ff0000\">sdfsdfsdf</font>sdfs<font color=\"#6666ff\">sdfsdfsdf<i>sdfsdf</i></font>df",
+        "topicId": 306,
+        "order": 200,
+        "type": "text"
+      },
+      {
+        "id": "1744127523376",
+        "title": "123123",
+        "content": "wIHxiMMuo2g",
+        "topicId": 306,
+        "order": 300,
+        "type": "youtube"
+      },
+      {
+        "id": "1744127546326",
+        "title": "fdsd",
+        "content": "activity-loader.html?id=activity_1744127542415",
+        "topicId": 306,
+        "order": 100,
+        "type": "activity"
+      }
+    ]
   }
 ]
