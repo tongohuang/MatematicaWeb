@@ -280,34 +280,56 @@
                     const htmlPath = '../activities/html/' + currentSection.content;
                     const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
 
-                    // Crear el contenedor HTML directamente
+                    // Detectar si estamos en Netlify
+                    const isNetlify = window.location.hostname.includes('netlify.app') ||
+                                     window.location.hostname.includes('netlify.com');
+
+                    console.log('Cargando HTML en ' + (isNetlify ? 'Netlify' : 'Local') + ': ' + htmlPath);
+
+                    // Crear el contenedor HTML directamente con manejo especial para Netlify
                     contentHtml = `
                         <div class="section-preview-content">
                             <div class="html-container">
                                 <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
-                                        onerror="this.src='${fallbackHtmlPath}'"
                                         id="html-iframe-section"></iframe>
                             </div>
                         </div>
                     `;
 
                     // Agregar script para verificar si el archivo existe después de cargar
+                    // Usar un tiempo de espera más largo para Netlify
                     setTimeout(() => {
                         const iframe = document.getElementById('html-iframe-section');
                         if (iframe) {
-                            fetch(htmlPath, { method: 'HEAD' })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                        iframe.src = fallbackHtmlPath;
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error verificando archivo ' + htmlPath + ':', error);
-                                    iframe.src = fallbackHtmlPath;
-                                });
+                            try {
+                                // En Netlify, intentar cargar el archivo directamente sin verificación
+                                if (isNetlify) {
+                                    console.log('Entorno Netlify detectado, cargando HTML directamente');
+                                    // Intentar cargar el archivo, si falla usar el fallback
+                                    iframe.onerror = function() {
+                                        console.warn('Error al cargar ' + htmlPath + ', usando fallback');
+                                        this.src = fallbackHtmlPath;
+                                    };
+                                } else {
+                                    // En local, usar fetch para verificar
+                                    fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                                iframe.src = fallbackHtmlPath;
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error verificando archivo ' + htmlPath + ':', error);
+                                            iframe.src = fallbackHtmlPath;
+                                        });
+                                }
+                            } catch (error) {
+                                console.error('Error general al cargar HTML:', error);
+                                iframe.src = fallbackHtmlPath;
+                            }
                         }
-                    }, 500);
+                    }, isNetlify ? 1000 : 500);
                     break;
 
                 case 'activity':
@@ -315,34 +337,56 @@
                     const activityPath = '../activities/templates/' + currentSection.content;
                     const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
 
-                    // Crear el contenedor de actividad directamente
+                    // Detectar si estamos en Netlify
+                    const isNetlifyActivity = window.location.hostname.includes('netlify.app') ||
+                                             window.location.hostname.includes('netlify.com');
+
+                    console.log('Cargando Actividad en ' + (isNetlifyActivity ? 'Netlify' : 'Local') + ': ' + activityPath);
+
+                    // Crear el contenedor de actividad directamente con manejo especial para Netlify
                     contentHtml = `
                         <div class="section-preview-content">
                             <div class="activity-container">
                                 <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
-                                        onerror="this.src='${fallbackActivityPath}'"
                                         id="activity-iframe-section"></iframe>
                             </div>
                         </div>
                     `;
 
                     // Agregar script para verificar si el archivo existe después de cargar
+                    // Usar un tiempo de espera más largo para Netlify
                     setTimeout(() => {
                         const iframe = document.getElementById('activity-iframe-section');
                         if (iframe) {
-                            fetch(activityPath, { method: 'HEAD' })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                        iframe.src = fallbackActivityPath;
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error verificando archivo ' + activityPath + ':', error);
-                                    iframe.src = fallbackActivityPath;
-                                });
+                            try {
+                                // En Netlify, intentar cargar el archivo directamente sin verificación
+                                if (isNetlifyActivity) {
+                                    console.log('Entorno Netlify detectado, cargando Actividad directamente');
+                                    // Intentar cargar el archivo, si falla usar el fallback
+                                    iframe.onerror = function() {
+                                        console.warn('Error al cargar ' + activityPath + ', usando fallback');
+                                        this.src = fallbackActivityPath;
+                                    };
+                                } else {
+                                    // En local, usar fetch para verificar
+                                    fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                                iframe.src = fallbackActivityPath;
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error verificando archivo ' + activityPath + ':', error);
+                                            iframe.src = fallbackActivityPath;
+                                        });
+                                }
+                            } catch (error) {
+                                console.error('Error general al cargar Actividad:', error);
+                                iframe.src = fallbackActivityPath;
+                            }
                         }
-                    }, 500);
+                    }, isNetlifyActivity ? 1000 : 500);
                     break;
 
                 default:
