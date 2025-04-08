@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
+    <script src="../js/netlify-debug.js"></script>
 </head>
 <body>
     <div id="header"></div>
@@ -387,8 +388,20 @@
 
                 case 'html':
                     // Verificar si el archivo existe
-                    const htmlPath = '../activities/html/' + section.content;
-                    const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
+                    // Usar rutas absolutas para Netlify
+                    const isNetlifyEnv = window.location.hostname.includes('netlify.app') ||
+                                       window.location.hostname.includes('netlify.com');
+
+                    // Construir la ruta base dependiendo del entorno
+                    const basePath = isNetlifyEnv ?
+                        (window.location.origin + '/activities/html/') :
+                        '../activities/html/';
+
+                    const htmlPath = basePath + section.content;
+                    const fallbackHtmlPath = basePath + 'ejemplo-simple.html';
+
+                    console.log('Ruta HTML:', htmlPath);
+                    console.log('Ruta fallback HTML:', fallbackHtmlPath);
 
                     // Detectar si estamos en Netlify
                     const isNetlify = window.location.hostname.includes('netlify.app') ||
@@ -414,11 +427,24 @@
                             const iframe = document.getElementById(`html-iframe-${section.id}`);
                             if (iframe) {
                                 try {
+                                    console.log('Verificando existencia de archivo HTML:', htmlPath);
+
+                                    // Agregar mensaje de depuración en el iframe
+                                    iframe.onload = function() {
+                                        console.log('Iframe HTML cargado correctamente');
+                                    };
+
+                                    iframe.onerror = function() {
+                                        console.error('Error al cargar iframe HTML, usando fallback');
+                                        iframe.src = fallbackHtmlPath;
+                                    };
+
                                     // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
                                     const xhr = new XMLHttpRequest();
                                     xhr.open('HEAD', htmlPath, true);
                                     xhr.onreadystatechange = function() {
                                         if (xhr.readyState === 4) {
+                                            console.log('XMLHttpRequest completado con estado:', xhr.status);
                                             if (xhr.status !== 200) {
                                                 console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
                                                 iframe.src = fallbackHtmlPath;
@@ -467,8 +493,20 @@
 
                 case 'activity':
                     // Verificar si el archivo existe
-                    const activityPath = '../activities/templates/' + section.content;
-                    const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
+                    // Usar rutas absolutas para Netlify
+                    const isNetlifyEnvActivity = window.location.hostname.includes('netlify.app') ||
+                                               window.location.hostname.includes('netlify.com');
+
+                    // Construir la ruta base dependiendo del entorno
+                    const basePathActivity = isNetlifyEnvActivity ?
+                        (window.location.origin + '/activities/templates/') :
+                        '../activities/templates/';
+
+                    const activityPath = basePathActivity + section.content;
+                    const fallbackActivityPath = basePathActivity + 'ejemplo-simple.html';
+
+                    console.log('Ruta Actividad:', activityPath);
+                    console.log('Ruta fallback Actividad:', fallbackActivityPath);
 
                     // Detectar si estamos en Netlify
                     const isNetlifyActivity = window.location.hostname.includes('netlify.app') ||
@@ -494,11 +532,24 @@
                             const iframe = document.getElementById(`activity-iframe-${section.id}`);
                             if (iframe) {
                                 try {
+                                    console.log('Verificando existencia de archivo de actividad:', activityPath);
+
+                                    // Agregar mensaje de depuración en el iframe
+                                    iframe.onload = function() {
+                                        console.log('Iframe de actividad cargado correctamente');
+                                    };
+
+                                    iframe.onerror = function() {
+                                        console.error('Error al cargar iframe de actividad, usando fallback');
+                                        iframe.src = fallbackActivityPath;
+                                    };
+
                                     // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
                                     const xhr = new XMLHttpRequest();
                                     xhr.open('HEAD', activityPath, true);
                                     xhr.onreadystatechange = function() {
                                         if (xhr.readyState === 4) {
+                                            console.log('XMLHttpRequest completado con estado:', xhr.status);
                                             if (xhr.status !== 200) {
                                                 console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
                                                 iframe.src = fallbackActivityPath;
