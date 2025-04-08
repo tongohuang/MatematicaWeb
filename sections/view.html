@@ -108,28 +108,55 @@
 
         function loadData() {
             try {
+                console.log('Cargando datos para sección ID:', currentSectionId, 'en tema ID:', currentTopicId);
+
                 // Obtener el tema
                 currentTopic = DataManager.getTopicById(currentTopicId);
                 if (!currentTopic) {
+                    console.error('Tema no encontrado en DataManager:', currentTopicId);
                     showError('Tema no encontrado', 'El tema solicitado no existe.');
                     return;
                 }
 
-                // Obtener la sección
-                // Primero intentar obtener la sección desde el tema
-                if (currentTopic.sections && Array.isArray(currentTopic.sections)) {
-                    currentSection = currentTopic.sections.find(s => s.id == currentSectionId);
-                }
+                console.log('Tema encontrado:', currentTopic.title);
 
-                // Si no se encuentra en el tema, intentar obtenerla desde el sistema de persistencia
-                if (!currentSection && typeof DataPersistence !== 'undefined') {
-                    console.log('Buscando sección en el sistema de persistencia...');
-                    currentSection = DataPersistence.getData('sections', currentSectionId);
+                // Obtener la sección usando la nueva función de DataManager
+                if (typeof DataManager !== 'undefined') {
+                    console.log('Usando DataManager.getSectionById para buscar la sección...');
+                    currentSection = DataManager.getSectionById(currentSectionId, currentTopicId);
 
-                    // Verificar que la sección pertenezca al tema actual
-                    if (currentSection && currentSection.topicId && currentSection.topicId != currentTopicId) {
-                        console.warn(`La sección ${currentSectionId} pertenece al tema ${currentSection.topicId}, no al tema ${currentTopicId}`);
-                        currentSection = null;
+                    if (currentSection) {
+                        console.log('Sección encontrada:', currentSection.title);
+                    }
+                } else {
+                    // Fallback al método anterior
+                    console.log('DataManager no disponible, usando método alternativo...');
+
+                    // Primero intentar obtener la sección desde el tema
+                    if (currentTopic.sections && Array.isArray(currentTopic.sections)) {
+                        console.log('Buscando sección en las secciones del tema...');
+                        currentSection = currentTopic.sections.find(s => s.id == currentSectionId);
+                        if (currentSection) {
+                            console.log('Sección encontrada en el tema:', currentSection.title);
+                        }
+                    }
+
+                    // Si no se encuentra en el tema, intentar obtenerla desde el sistema de persistencia
+                    if (!currentSection && typeof DataPersistence !== 'undefined') {
+                        console.log('Buscando sección en el sistema de persistencia...');
+                        currentSection = DataPersistence.getData('sections', currentSectionId);
+
+                        if (currentSection) {
+                            console.log('Sección encontrada en persistencia:', currentSection.title);
+
+                            // Verificar que la sección pertenezca al tema actual
+                            if (currentSection.topicId && currentSection.topicId != currentTopicId) {
+                                console.warn(`La sección ${currentSectionId} pertenece al tema ${currentSection.topicId}, no al tema ${currentTopicId}`);
+                                currentSection = null;
+                            }
+                        } else {
+                            console.error('Sección no encontrada en persistencia:', currentSectionId);
+                        }
                     }
                 }
 
@@ -207,6 +234,7 @@
         }
 
         function renderSectionContent() {
+            console.log('Renderizando contenido de la sección:', currentSection.title);
             const sectionPreview = document.getElementById('sectionPreview');
 
             // Crear el encabezado de la sección
@@ -285,165 +313,65 @@
                                      window.location.hostname.includes('netlify.com');
 
                     console.log('Cargando HTML en ' + (isNetlify ? 'Netlify' : 'Local') + ': ' + htmlPath);
+                    console.log('Tipo de contenido de la sección:', currentSection.type);
+                    console.log('Contenido de la sección:', currentSection.content);
 
-                    // Crear el contenedor HTML
-                    const htmlContainer = document.createElement('div');
-                    htmlContainer.className = 'section-preview-content';
-
-                    const innerContainer = document.createElement('div');
-                    innerContainer.className = 'html-container';
-                    htmlContainer.appendChild(innerContainer);
-
-                    // En Netlify, cargar el contenido usando fetch en lugar de iframe
+                    // En Netlify, mostrar un mensaje informativo directamente
                     if (isNetlify) {
-                        console.log('Entorno Netlify detectado, cargando HTML usando fetch');
+                        console.log('Entorno Netlify detectado, mostrando mensaje informativo para HTML');
 
-                        // Mostrar indicador de carga
-                        innerContainer.innerHTML = `
-                            <div class="text-center p-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
+                        contentHtml = `
+                            <div class="section-preview-content">
+                                <div class="html-container">
+                                    <div class="p-4 border rounded">
+                                        <h4 class="mb-3">Contenido HTML: ${currentSection.title}</h4>
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Información:</strong> Este contenido HTML está disponible en la versión local del sitio.
+                                        </div>
+                                        <p>El contenido HTML interactivo requiere componentes que no están disponibles en esta versión alojada en Netlify.</p>
+                                        <p>Para acceder a todas las funcionalidades, por favor utilice la versión local del sitio.</p>
+                                        <div class="mt-3 text-center">
+                                            <img src="../img/html-placeholder.png" alt="Imagen de contenido HTML"
+                                                 onerror="this.src='../img/placeholder.png'"
+                                                 style="max-width: 100%; height: auto; max-height: 300px;">
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="mt-2">Cargando contenido...</p>
                             </div>
                         `;
 
-                        // Función para cargar el contenido HTML directamente
-                        const loadHtmlContent = () => {
-                            console.log('Intentando cargar HTML desde:', htmlPath);
-
-                            // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('GET', htmlPath, true);
-
-                            xhr.onload = function() {
-                                if (xhr.status >= 200 && xhr.status < 400) {
-                                    console.log('HTML cargado correctamente');
-                                    displayHtmlContent(xhr.responseText);
-                                } else {
-                                    console.warn('Archivo ' + htmlPath + ' no encontrado (status: ' + xhr.status + '), usando fallback');
-                                    loadFallbackContent();
-                                }
-                            };
-
-                            xhr.onerror = function() {
-                                console.error('Error de red al cargar HTML');
-                                loadFallbackContent();
-                            };
-
-                            xhr.send();
-                        };
-
-                        // Función para cargar el contenido de respaldo
-                        const loadFallbackContent = () => {
-                            console.log('Cargando contenido de respaldo desde:', fallbackHtmlPath);
-
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('GET', fallbackHtmlPath, true);
-
-                            xhr.onload = function() {
-                                if (xhr.status >= 200 && xhr.status < 400) {
-                                    console.log('Contenido de respaldo cargado correctamente');
-                                    displayHtmlContent(xhr.responseText);
-                                } else {
-                                    console.error('No se pudo cargar el contenido de respaldo');
-                                    showErrorMessage();
-                                }
-                            };
-
-                            xhr.onerror = function() {
-                                console.error('Error de red al cargar el contenido de respaldo');
-                                showErrorMessage();
-                            };
-
-                            xhr.send();
-                        };
-
-                        // Función para mostrar el contenido HTML
-                        const displayHtmlContent = (html) => {
-                            try {
-                                console.log('Mostrando contenido HTML');
-
-                                // Crear un contenedor seguro para el HTML
-                                const safeContainer = document.createElement('div');
-                                safeContainer.className = 'html-content';
-                                safeContainer.style.width = '100%';
-                                safeContainer.style.minHeight = '500px';
-                                safeContainer.style.border = '1px solid #dee2e6';
-                                safeContainer.style.borderRadius = '0.25rem';
-                                safeContainer.style.padding = '1rem';
-
-                                // Insertar el HTML en el contenedor
-                                safeContainer.innerHTML = html;
-
-                                // Reemplazar el indicador de carga con el contenido
-                                innerContainer.innerHTML = '';
-                                innerContainer.appendChild(safeContainer);
-
-                                // Ejecutar scripts si hay alguno
-                                const scripts = safeContainer.querySelectorAll('script');
-                                scripts.forEach(oldScript => {
-                                    try {
-                                        const newScript = document.createElement('script');
-                                        Array.from(oldScript.attributes).forEach(attr => {
-                                            newScript.setAttribute(attr.name, attr.value);
-                                        });
-                                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                        oldScript.parentNode.replaceChild(newScript, oldScript);
-                                    } catch (scriptError) {
-                                        console.error('Error al ejecutar script:', scriptError);
-                                    }
-                                });
-
-                                console.log('Contenido HTML mostrado correctamente');
-                            } catch (displayError) {
-                                console.error('Error al mostrar el contenido HTML:', displayError);
-                                showErrorMessage();
-                            }
-                        };
-
-                        // Función para mostrar mensaje de error
-                        const showErrorMessage = () => {
-                            innerContainer.innerHTML = `
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Error al cargar el contenido HTML. Por favor, inténtelo de nuevo más tarde.
-                                </div>
-                            `;
-                        };
-
-                        // Iniciar la carga del contenido
-                        loadHtmlContent();
+                        // Actualizar inmediatamente el contenido
+                        document.getElementById('sectionPreview').innerHTML = headerHtml + contentHtml;
                     } else {
                         // En local, usar iframe como antes
-                        const iframe = document.createElement('iframe');
-                        iframe.src = htmlPath;
-                        iframe.frameBorder = '0';
-                        iframe.style.width = '100%';
-                        iframe.style.height = '500px';
-                        iframe.id = 'html-iframe-section';
-                        innerContainer.appendChild(iframe);
+                        contentHtml = `
+                            <div class="section-preview-content">
+                                <div class="html-container">
+                                    <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
+                                            id="html-iframe-section"></iframe>
+                                </div>
+                            </div>
+                        `;
 
                         // Verificar si el archivo existe
                         setTimeout(() => {
-                            fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                            const iframe = document.getElementById('html-iframe-section');
+                            if (iframe) {
+                                fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                            iframe.src = fallbackHtmlPath;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error verificando archivo ' + htmlPath + ':', error);
                                         iframe.src = fallbackHtmlPath;
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error verificando archivo ' + htmlPath + ':', error);
-                                    iframe.src = fallbackHtmlPath;
-                                });
+                                    });
+                            }
                         }, 500);
                     }
-
-                    // Convertir el elemento DOM a HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.appendChild(htmlContainer);
-                    contentHtml = tempDiv.innerHTML;
                     break;
 
                 case 'activity':
@@ -456,165 +384,65 @@
                                              window.location.hostname.includes('netlify.com');
 
                     console.log('Cargando Actividad en ' + (isNetlifyActivity ? 'Netlify' : 'Local') + ': ' + activityPath);
+                    console.log('Tipo de contenido de la sección:', currentSection.type);
+                    console.log('Contenido de la sección:', currentSection.content);
 
-                    // Crear el contenedor de actividad
-                    const activityContainer = document.createElement('div');
-                    activityContainer.className = 'section-preview-content';
-
-                    const innerActivityContainer = document.createElement('div');
-                    innerActivityContainer.className = 'activity-container';
-                    activityContainer.appendChild(innerActivityContainer);
-
-                    // En Netlify, cargar el contenido usando fetch en lugar de iframe
+                    // En Netlify, mostrar un mensaje informativo directamente
                     if (isNetlifyActivity) {
-                        console.log('Entorno Netlify detectado, cargando Actividad usando fetch');
+                        console.log('Entorno Netlify detectado, mostrando mensaje informativo para actividad');
 
-                        // Mostrar indicador de carga
-                        innerActivityContainer.innerHTML = `
-                            <div class="text-center p-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
+                        contentHtml = `
+                            <div class="section-preview-content">
+                                <div class="activity-container">
+                                    <div class="p-4 border rounded">
+                                        <h4 class="mb-3">Actividad: ${currentSection.title}</h4>
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Información:</strong> Esta actividad está disponible en la versión local del sitio.
+                                        </div>
+                                        <p>Las actividades interactivas requieren componentes que no están disponibles en esta versión alojada en Netlify.</p>
+                                        <p>Para acceder a todas las funcionalidades, por favor utilice la versión local del sitio.</p>
+                                        <div class="mt-3 text-center">
+                                            <img src="../img/activity-placeholder.png" alt="Imagen de actividad"
+                                                 onerror="this.src='../img/placeholder.png'"
+                                                 style="max-width: 100%; height: auto; max-height: 300px;">
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="mt-2">Cargando actividad...</p>
                             </div>
                         `;
 
-                        // Función para cargar el contenido de la actividad directamente
-                        const loadActivityContent = () => {
-                            console.log('Intentando cargar Actividad desde:', activityPath);
-
-                            // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('GET', activityPath, true);
-
-                            xhr.onload = function() {
-                                if (xhr.status >= 200 && xhr.status < 400) {
-                                    console.log('Actividad cargada correctamente');
-                                    displayActivityContent(xhr.responseText);
-                                } else {
-                                    console.warn('Archivo ' + activityPath + ' no encontrado (status: ' + xhr.status + '), usando fallback');
-                                    loadFallbackActivityContent();
-                                }
-                            };
-
-                            xhr.onerror = function() {
-                                console.error('Error de red al cargar Actividad');
-                                loadFallbackActivityContent();
-                            };
-
-                            xhr.send();
-                        };
-
-                        // Función para cargar el contenido de respaldo
-                        const loadFallbackActivityContent = () => {
-                            console.log('Cargando contenido de respaldo desde:', fallbackActivityPath);
-
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('GET', fallbackActivityPath, true);
-
-                            xhr.onload = function() {
-                                if (xhr.status >= 200 && xhr.status < 400) {
-                                    console.log('Contenido de respaldo cargado correctamente');
-                                    displayActivityContent(xhr.responseText);
-                                } else {
-                                    console.error('No se pudo cargar el contenido de respaldo');
-                                    showActivityErrorMessage();
-                                }
-                            };
-
-                            xhr.onerror = function() {
-                                console.error('Error de red al cargar el contenido de respaldo');
-                                showActivityErrorMessage();
-                            };
-
-                            xhr.send();
-                        };
-
-                        // Función para mostrar el contenido de la actividad
-                        const displayActivityContent = (html) => {
-                            try {
-                                console.log('Mostrando contenido de la Actividad');
-
-                                // Crear un contenedor seguro para el HTML
-                                const safeContainer = document.createElement('div');
-                                safeContainer.className = 'activity-content';
-                                safeContainer.style.width = '100%';
-                                safeContainer.style.minHeight = '600px';
-                                safeContainer.style.border = '1px solid #dee2e6';
-                                safeContainer.style.borderRadius = '0.25rem';
-                                safeContainer.style.padding = '1rem';
-
-                                // Insertar el HTML en el contenedor
-                                safeContainer.innerHTML = html;
-
-                                // Reemplazar el indicador de carga con el contenido
-                                innerActivityContainer.innerHTML = '';
-                                innerActivityContainer.appendChild(safeContainer);
-
-                                // Ejecutar scripts si hay alguno
-                                const scripts = safeContainer.querySelectorAll('script');
-                                scripts.forEach(oldScript => {
-                                    try {
-                                        const newScript = document.createElement('script');
-                                        Array.from(oldScript.attributes).forEach(attr => {
-                                            newScript.setAttribute(attr.name, attr.value);
-                                        });
-                                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                        oldScript.parentNode.replaceChild(newScript, oldScript);
-                                    } catch (scriptError) {
-                                        console.error('Error al ejecutar script:', scriptError);
-                                    }
-                                });
-
-                                console.log('Contenido de la Actividad mostrado correctamente');
-                            } catch (displayError) {
-                                console.error('Error al mostrar el contenido de la Actividad:', displayError);
-                                showActivityErrorMessage();
-                            }
-                        };
-
-                        // Función para mostrar mensaje de error
-                        const showActivityErrorMessage = () => {
-                            innerActivityContainer.innerHTML = `
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Error al cargar la actividad. Por favor, inténtelo de nuevo más tarde.
-                                </div>
-                            `;
-                        };
-
-                        // Iniciar la carga del contenido
-                        loadActivityContent();
+                        // Actualizar inmediatamente el contenido
+                        document.getElementById('sectionPreview').innerHTML = headerHtml + contentHtml;
                     } else {
                         // En local, usar iframe como antes
-                        const iframe = document.createElement('iframe');
-                        iframe.src = activityPath;
-                        iframe.frameBorder = '0';
-                        iframe.style.width = '100%';
-                        iframe.style.height = '600px';
-                        iframe.id = 'activity-iframe-section';
-                        innerActivityContainer.appendChild(iframe);
+                        contentHtml = `
+                            <div class="section-preview-content">
+                                <div class="activity-container">
+                                    <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
+                                            id="activity-iframe-section"></iframe>
+                                </div>
+                            </div>
+                        `;
 
                         // Verificar si el archivo existe
                         setTimeout(() => {
-                            fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                            const iframe = document.getElementById('activity-iframe-section');
+                            if (iframe) {
+                                fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                            iframe.src = fallbackActivityPath;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error verificando archivo ' + activityPath + ':', error);
                                         iframe.src = fallbackActivityPath;
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error verificando archivo ' + activityPath + ':', error);
-                                    iframe.src = fallbackActivityPath;
-                                });
+                                    });
+                            }
                         }, 500);
                     }
-
-                    // Convertir el elemento DOM a HTML
-                    const tempDivActivity = document.createElement('div');
-                    tempDivActivity.appendChild(activityContainer);
-                    contentHtml = tempDivActivity.innerHTML;
                     break;
 
                 default:
@@ -625,7 +453,14 @@
                     `;
             }
 
-            sectionPreview.innerHTML = headerHtml + contentHtml;
+            // Mostrar el contenido (si no se ha actualizado ya en los casos especiales)
+            if (!(currentSection.type === 'html' && isNetlify) &&
+                !(currentSection.type === 'activity' && isNetlifyActivity)) {
+                console.log('Actualizando contenido en el DOM');
+                sectionPreview.innerHTML = headerHtml + contentHtml;
+            } else {
+                console.log('El contenido ya fue actualizado directamente');
+            }
         }
 
         function showError(title, message) {

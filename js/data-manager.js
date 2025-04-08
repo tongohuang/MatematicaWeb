@@ -12,18 +12,35 @@ const DataManager = {
         if (typeof DataPersistence !== 'undefined') {
             console.log('Usando sistema de persistencia avanzado...');
 
-            // Inicializar el sistema de persistencia
-            await DataPersistence.init();
+            try {
+                // Inicializar el sistema de persistencia
+                await DataPersistence.init();
 
-            // Migrar datos antiguos si existen
-            this._migrateOldData();
+                // Migrar datos antiguos si existen
+                this._migrateOldData();
 
-            // Verificar que se hayan cargado los datos
-            const courses = this.getCourses();
-            const topics = this.getTopics();
-            console.log(`DataManager inicializado con ${courses.length} cursos y ${topics.length} temas`);
+                // Verificar que se hayan cargado los datos
+                const courses = this.getCourses();
+                const topics = this.getTopics();
+                console.log(`DataManager inicializado con ${courses.length} cursos y ${topics.length} temas`);
 
-            return;
+                // Verificar si estamos en Netlify
+                const isNetlify = window.location.hostname.includes('netlify.app') ||
+                                 window.location.hostname.includes('netlify.com');
+
+                if (isNetlify) {
+                    console.log('Entorno Netlify detectado, verificando datos...');
+                    if (courses.length === 0 || topics.length === 0) {
+                        console.warn('No se encontraron datos en Netlify, intentando cargar desde JSON...');
+                        // Forzar recarga desde JSON
+                        await DataPersistence.init(true);
+                    }
+                }
+
+                return;
+            } catch (error) {
+                console.error('Error al inicializar el sistema de persistencia:', error);
+            }
         }
 
         // Fallback al sistema antiguo
@@ -378,14 +395,36 @@ const DataManager = {
 
     // Obtener un tema por ID
     getTopicById(topicId) {
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            return DataPersistence.getData('topics', topicId);
+        console.log(`Buscando tema con ID: ${topicId}`);
+
+        // Asegurarse de que topicId sea numérico para comparaciones consistentes
+        if (typeof topicId === 'string' && !isNaN(topicId)) {
+            topicId = parseInt(topicId);
+            console.log(`ID convertido a número: ${topicId}`);
         }
 
-        // Fallback al sistema antiguo
+        // Usar el sistema de persistencia si está disponible
+        if (typeof DataPersistence !== 'undefined') {
+            const topic = DataPersistence.getData('topics', topicId);
+            if (topic) {
+                console.log(`Tema encontrado en DataPersistence: ${topic.title}`);
+                return topic;
+            } else {
+                console.log('Tema no encontrado en DataPersistence, buscando en array...');
+            }
+        }
+
+        // Fallback al sistema antiguo o búsqueda adicional
         const topics = this.getTopics();
-        return topics.find(topic => topic.id === topicId);
+        const topic = topics.find(topic => topic.id === topicId || topic.id === parseInt(topicId));
+
+        if (topic) {
+            console.log(`Tema encontrado en array: ${topic.title}`);
+        } else {
+            console.warn(`No se encontró ningún tema con ID: ${topicId}`);
+        }
+
+        return topic;
     },
 
     // Guardar un tema (crear o actualizar)
@@ -549,6 +588,55 @@ const DataManager = {
             return [];
         }
         return topic.sections;
+    },
+
+    // Obtener una sección por ID
+    getSectionById(sectionId, topicId = null) {
+        console.log(`Buscando sección con ID: ${sectionId}`);
+
+        // Asegurarse de que sectionId sea numérico para comparaciones consistentes
+        if (typeof sectionId === 'string' && !isNaN(sectionId)) {
+            sectionId = parseInt(sectionId);
+            console.log(`ID convertido a número: ${sectionId}`);
+        }
+
+        // Usar el sistema de persistencia si está disponible
+        if (typeof DataPersistence !== 'undefined') {
+            const section = DataPersistence.getData('sections', sectionId);
+            if (section) {
+                console.log(`Sección encontrada en DataPersistence: ${section.title}`);
+                return section;
+            } else {
+                console.log('Sección no encontrada en DataPersistence, buscando en temas...');
+            }
+        }
+
+        // Si se proporciona un ID de tema, buscar solo en ese tema
+        if (topicId) {
+            const topic = this.getTopicById(topicId);
+            if (topic && topic.sections && Array.isArray(topic.sections)) {
+                const section = topic.sections.find(s => s.id === sectionId || s.id === parseInt(sectionId));
+                if (section) {
+                    console.log(`Sección encontrada en tema ${topicId}: ${section.title}`);
+                    return section;
+                }
+            }
+        } else {
+            // Buscar en todos los temas
+            const topics = this.getTopics();
+            for (const topic of topics) {
+                if (topic.sections && Array.isArray(topic.sections)) {
+                    const section = topic.sections.find(s => s.id === sectionId || s.id === parseInt(sectionId));
+                    if (section) {
+                        console.log(`Sección encontrada en tema ${topic.id}: ${section.title}`);
+                        return section;
+                    }
+                }
+            }
+        }
+
+        console.warn(`No se encontró ninguna sección con ID: ${sectionId}`);
+        return null;
     },
 
     // Eliminar una sección

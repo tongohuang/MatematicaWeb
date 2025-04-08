@@ -38,7 +38,9 @@ const DataPersistence = {
 
         try {
             // Determinar si estamos en producción (Netlify)
-            const isProduction = window.location.hostname.includes('netlify.app');
+            const isProduction = window.location.hostname.includes('netlify.app') ||
+                               window.location.hostname.includes('netlify.com') ||
+                               window.location.hostname !== 'localhost';
 
             // En producción, siempre forzar la carga desde el repositorio
             const shouldForceRepoData = isProduction || forceRepoData;
