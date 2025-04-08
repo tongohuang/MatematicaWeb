@@ -11,7 +11,7 @@
             padding: 0;
             background-color: #f5f5f5;
         }
-        .container {
+        .activity-content {
             max-width: 800px;
             margin: 0 auto;
             background-color: white;
@@ -83,11 +83,13 @@
             border-color: #0062cc;
         }
     </style>
+    <!-- Polyfill local para compatibilidad -->
+    <script src="../js/polyfill.min.js"></script>
 </head>
 <body>
-    <div class="container">
+    <div class="activity-content" id="activity-content">
         <h1>Ejemplo de Actividad Interactiva</h1>
-        
+
         <div class="question">
             <h3>Pregunta 1: ¿Cuál es el resultado de 2 + 2?</h3>
             <div class="options">
@@ -105,7 +107,7 @@
                 </label>
             </div>
         </div>
-        
+
         <div class="question">
             <h3>Pregunta 2: ¿Cuál es el resultado de 5 - 3?</h3>
             <div class="options">
@@ -123,38 +125,38 @@
                 </label>
             </div>
         </div>
-        
+
         <button id="checkBtn" class="btn">Verificar Respuestas</button>
-        
+
         <div id="result" class="result"></div>
     </div>
-    
+
     <script>
         document.getElementById('checkBtn').addEventListener('click', function() {
             const q1Answer = document.querySelector('input[name="q1"]:checked');
             const q2Answer = document.querySelector('input[name="q2"]:checked');
-            
+
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
-            
+
             if (!q1Answer || !q2Answer) {
                 resultDiv.className = 'result incorrect';
                 resultDiv.innerHTML = 'Por favor, responde todas las preguntas.';
                 return;
             }
-            
+
             const correctAnswers = {
                 q1: '4',
                 q2: '2'
             };
-            
+
             const score = [
                 q1Answer.value === correctAnswers.q1,
                 q2Answer.value === correctAnswers.q2
             ].filter(Boolean).length;
-            
+
             const percentage = (score / 2) * 100;
-            
+
             if (percentage === 100) {
                 resultDiv.className = 'result correct';
                 resultDiv.innerHTML = `

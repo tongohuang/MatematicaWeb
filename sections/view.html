@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="../css/section-editor.css">
     <script src="../js/netlify-debug.js"></script>
     <script src="../js/content-loader.js"></script>
+    <script src="../js/error-handler.js"></script>
+    <script src="../js/polyfill.min.js"></script>
 </head>
 <body>
     <div id="header"></div>
@@ -434,7 +436,8 @@
                         // Cargar el contenido de la actividad usando AJAX en lugar de iframe
                         setTimeout(() => {
                             console.log('Cargando contenido de actividad usando AJAX:', activityPath);
-                            loadHTMLContent(activityPath, containerId, fallbackActivityPath);
+                            // Pasar true como cuarto parámetro para indicar que es una actividad
+                            loadHTMLContent(activityPath, containerId, fallbackActivityPath, true);
                         }, 100);
                     } else {
                         // En local, usar iframe como antes
