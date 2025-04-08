@@ -94,8 +94,16 @@
 
             // Obtener los IDs de la URL
             const urlParams = new URLSearchParams(window.location.search);
-            currentSectionId = parseInt(urlParams.get('id'));
-            currentTopicId = parseInt(urlParams.get('topicId'));
+            const idParam = urlParams.get('id');
+            const topicIdParam = urlParams.get('topicId');
+
+            console.log('Parámetros de URL:', { id: idParam, topicId: topicIdParam });
+
+            // Convertir a números si es posible
+            currentSectionId = idParam ? parseInt(idParam) : null;
+            currentTopicId = topicIdParam ? parseInt(topicIdParam) : null;
+
+            console.log('IDs convertidos:', { currentSectionId, currentTopicId });
 
             if (!currentSectionId || !currentTopicId) {
                 showError('Parámetros incorrectos', 'No se pudo cargar la sección porque faltan parámetros.');
@@ -333,17 +341,27 @@
                         setTimeout(() => {
                             const iframe = document.getElementById('html-iframe-section');
                             if (iframe) {
-                                fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                            iframe.src = fallbackHtmlPath;
+                                try {
+                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open('HEAD', htmlPath, true);
+                                    xhr.onreadystatechange = function() {
+                                        if (xhr.readyState === 4) {
+                                            if (xhr.status !== 200) {
+                                                console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                                iframe.src = fallbackHtmlPath;
+                                            }
                                         }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error verificando archivo ' + htmlPath + ':', error);
+                                    };
+                                    xhr.onerror = function() {
+                                        console.error('Error verificando archivo ' + htmlPath + ':', xhr.statusText);
                                         iframe.src = fallbackHtmlPath;
-                                    });
+                                    };
+                                    xhr.send();
+                                } catch (error) {
+                                    console.error('Error al verificar archivo HTML:', error);
+                                    iframe.src = fallbackHtmlPath;
+                                }
                             }
                         }, 500);
                     } else {
@@ -407,17 +425,27 @@
                         setTimeout(() => {
                             const iframe = document.getElementById('activity-iframe-section');
                             if (iframe) {
-                                fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                            iframe.src = fallbackActivityPath;
+                                try {
+                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open('HEAD', activityPath, true);
+                                    xhr.onreadystatechange = function() {
+                                        if (xhr.readyState === 4) {
+                                            if (xhr.status !== 200) {
+                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                                iframe.src = fallbackActivityPath;
+                                            }
                                         }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error verificando archivo ' + activityPath + ':', error);
+                                    };
+                                    xhr.onerror = function() {
+                                        console.error('Error verificando archivo ' + activityPath + ':', xhr.statusText);
                                         iframe.src = fallbackActivityPath;
-                                    });
+                                    };
+                                    xhr.send();
+                                } catch (error) {
+                                    console.error('Error al verificar archivo de actividad:', error);
+                                    iframe.src = fallbackActivityPath;
+                                }
                             }
                         }, 500);
                     } else {
@@ -435,17 +463,27 @@
                         setTimeout(() => {
                             const iframe = document.getElementById('activity-iframe-section');
                             if (iframe) {
-                                fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                            iframe.src = fallbackActivityPath;
+                                try {
+                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open('HEAD', activityPath, true);
+                                    xhr.onreadystatechange = function() {
+                                        if (xhr.readyState === 4) {
+                                            if (xhr.status !== 200) {
+                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                                iframe.src = fallbackActivityPath;
+                                            }
                                         }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error verificando archivo ' + activityPath + ':', error);
+                                    };
+                                    xhr.onerror = function() {
+                                        console.error('Error verificando archivo ' + activityPath + ':', xhr.statusText);
                                         iframe.src = fallbackActivityPath;
-                                    });
+                                    };
+                                    xhr.send();
+                                } catch (error) {
+                                    console.error('Error al verificar archivo de actividad:', error);
+                                    iframe.src = fallbackActivityPath;
+                                }
                             }
                         }, 500);
                     }

@@ -600,12 +600,23 @@ const DataManager = {
             console.log(`ID convertido a número: ${sectionId}`);
         }
 
+        // Asegurarse de que topicId sea numérico para comparaciones consistentes
+        if (topicId && typeof topicId === 'string' && !isNaN(topicId)) {
+            topicId = parseInt(topicId);
+            console.log(`Topic ID convertido a número: ${topicId}`);
+        }
+
         // Usar el sistema de persistencia si está disponible
         if (typeof DataPersistence !== 'undefined') {
             const section = DataPersistence.getData('sections', sectionId);
             if (section) {
                 console.log(`Sección encontrada en DataPersistence: ${section.title}`);
-                return section;
+                // Si se proporciona un ID de tema, verificar que la sección pertenezca a ese tema
+                if (topicId && section.topicId && section.topicId !== topicId) {
+                    console.warn(`La sección ${sectionId} pertenece al tema ${section.topicId}, no al tema ${topicId}`);
+                } else {
+                    return section;
+                }
             } else {
                 console.log('Sección no encontrada en DataPersistence, buscando en temas...');
             }
@@ -615,18 +626,38 @@ const DataManager = {
         if (topicId) {
             const topic = this.getTopicById(topicId);
             if (topic && topic.sections && Array.isArray(topic.sections)) {
-                const section = topic.sections.find(s => s.id === sectionId || s.id === parseInt(sectionId));
+                console.log(`Buscando sección ${sectionId} en tema ${topicId} (${topic.title})`);
+                console.log(`El tema tiene ${topic.sections.length} secciones`);
+
+                // Imprimir todas las secciones para depuración
+                topic.sections.forEach(s => {
+                    console.log(`- Sección ID: ${s.id}, Título: ${s.title}`);
+                });
+
+                const section = topic.sections.find(s => {
+                    const sectionIdNum = typeof s.id === 'string' ? parseInt(s.id) : s.id;
+                    return sectionIdNum === sectionId;
+                });
+
                 if (section) {
                     console.log(`Sección encontrada en tema ${topicId}: ${section.title}`);
                     return section;
                 }
+            } else {
+                console.warn(`Tema ${topicId} no encontrado o no tiene secciones`);
             }
         } else {
             // Buscar en todos los temas
             const topics = this.getTopics();
+            console.log(`Buscando sección ${sectionId} en ${topics.length} temas`);
+
             for (const topic of topics) {
                 if (topic.sections && Array.isArray(topic.sections)) {
-                    const section = topic.sections.find(s => s.id === sectionId || s.id === parseInt(sectionId));
+                    const section = topic.sections.find(s => {
+                        const sectionIdNum = typeof s.id === 'string' ? parseInt(s.id) : s.id;
+                        return sectionIdNum === sectionId;
+                    });
+
                     if (section) {
                         console.log(`Sección encontrada en tema ${topic.id}: ${section.title}`);
                         return section;
