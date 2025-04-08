@@ -3103,8 +3103,17 @@ function saveSection() {
         } else if (sectionData.type === 'activity') {
             // Para actividades, obtenemos el ID de la actividad
             const activityId = document.getElementById('activityId');
-            if (activityId) {
-                sectionData.content = activityId.value;
+            if (activityId && activityId.value) {
+                // Extraer el ID de la actividad si viene en formato URL
+                if (activityId.value.includes('?id=')) {
+                    const urlParams = new URLSearchParams(activityId.value.split('?')[1]);
+                    sectionData.content = urlParams.get('id');
+                } else {
+                    sectionData.content = activityId.value;
+                }
+                console.log(`ID de actividad extraído: ${sectionData.content}`);
+            } else {
+                console.warn('No se encontró un ID de actividad válido');
             }
         } else {
             // Para otros tipos, buscamos un campo con el nombre del tipo
@@ -3550,6 +3559,15 @@ function saveActivity() {
             return null;
     }
 
+    // Crear una copia del archivo de plantilla en activities/templates
+    try {
+        // En un entorno real, aquí se copiaría la plantilla
+        // y se personalizaría con los datos de la actividad
+        console.log(`Creando archivo de actividad basado en ${templateFile}`);
+    } catch (error) {
+        console.error('Error al crear archivo de actividad:', error);
+    }
+
     // Crear el nombre del archivo de la actividad
     const activityFilename = `activity-${activityId}.html`;
 
@@ -3618,7 +3636,16 @@ function saveActivity() {
     if (activityInfo && activityInfoText && activityIdInput) {
         activityInfo.classList.remove('d-none');
         activityInfoText.textContent = `Actividad creada con éxito: ${activityData.title}`;
-        activityIdInput.value = `activity-loader.html?id=${activityId}`;
+        activityIdInput.value = activityId;
+
+        // Agregar botón para ver/editar la actividad
+        const viewActivityBtn = document.getElementById('viewActivityBtn');
+        if (viewActivityBtn) {
+            viewActivityBtn.classList.remove('d-none');
+            viewActivityBtn.onclick = function() {
+                window.open(`../admin/activity-loader.html?id=${activityId}`, '_blank');
+            };
+        }
     }
 
     return activityId;

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Actividades - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    
+    <!-- MathJax para ecuaciones -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['\\(', '\\)'], ['$', '$']],
+            displayMath: [['\\[', '\\]'], ['$$', '$$']],
+            processEscapes: true,
+            processEnvironments: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        }
+    };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="../admin/index.html">Panel de Administración</a></li>
+                        <li class="breadcrumb-item"><a href="../admin/section-editor.html">Editor de Secciones</a></li>
+                        <li class="breadcrumb-item active">Editor de Actividad</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" id="pageTitle">Editor de Actividad</h5>
+                        <div>
+                            <button class="btn btn-success" id="saveActivityBtn">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.history.back()">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="activityLoading" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-3">Cargando actividad...</p>
+                        </div>
+                        
+                        <div id="activityError" class="alert alert-danger d-none">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="errorMessage">Error al cargar la actividad</span>
+                        </div>
+                        
+                        <div id="activityForm" class="d-none">
+                            <form id="activityEditorForm">
+                                <input type="hidden" id="activityId" name="activityId">
+                                
+                                <div class="mb-3">
+                                    <label for="activityTitle" class="form-label">Título de la Actividad</label>
+                                    <input type="text" class="form-control" id="activityTitle" name="activityTitle" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="activityDescription" class="form-label">Descripción (opcional)</label>
+                                    <textarea class="form-control" id="activityDescription" name="activityDescription" rows="2"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="activityType" class="form-label">Tipo de Actividad</label>
+                                    <select class="form-select" id="activityType" name="activityType" required>
+                                        <option value="">Seleccione un tipo</option>
+                                        <option value="multiple-choice">Opción múltiple</option>
+                                        <option value="true-false">Verdadero/Falso</option>
+                                        <option value="short-answer">Respuesta corta</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5>Preguntas</h5>
+                                        <button type="button" class="btn btn-primary" id="addQuestionBtn">
+                                            <i class="fas fa-plus"></i> Agregar Pregunta
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="questionsContainer" class="mt-3">
+                                        <!-- Aquí se cargarán las preguntas -->
+                                    </div>
+                                    
+                                    <div id="noQuestionsMessage" class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No hay preguntas. Haga clic en "Agregar Pregunta" para comenzar.
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/data-persistence.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/logger.js"></script>
+    
+    <script>
+        // Variables globales
+        let activityId = '';
+        let activityData = null;
+        let questionCounter = 0;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verificar si el usuario está autenticado y es administrador
+            if (!auth.isAdmin()) {
+                window.location.href = '../login.html';
+                return;
+            }
+            
+            // Obtener el ID de la actividad de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            activityId = urlParams.get('id');
+            
+            // Configurar el formulario
+            setupForm();
+            
+            // Si hay un ID, cargar la actividad existente
+            if (activityId) {
+                document.getElementById('pageTitle').textContent = 'Editar Actividad';
+                loadActivity();
+            } else {
+                // Nueva actividad
+                document.getElementById('pageTitle').textContent = 'Nueva Actividad';
+                document.getElementById('activityLoading').classList.add('d-none');
+                document.getElementById('activityForm').classList.remove('d-none');
+                
+                // Inicializar con una actividad vacía
+                activityData = {
+                    title: '',
+                    description: '',
+                    type: '',
+                    questions: []
+                };
+            }
+        });
+        
+        // Función para configurar el formulario
+        function setupForm() {
+            // Configurar el tipo de actividad
+            document.getElementById('activityType').addEventListener('change', function() {
+                updateQuestionForms();
+            });
+            
+            // Configurar el botón de agregar pregunta
+            document.getElementById('addQuestionBtn').addEventListener('click', function() {
+                addQuestion();
+            });
+            
+            // Configurar el botón de guardar
+            document.getElementById('saveActivityBtn').addEventListener('click', function() {
+                saveActivity();
+            });
+        }
+        
+        // Función para cargar una actividad existente
+        function loadActivity() {
+            try {
+                console.log('Cargando actividad desde localStorage...');
+                
+                // 1. Intentar cargar la actividad desde localStorage
+                const activityDataStr = localStorage.getItem(`activity_data_${activityId}`);
+                
+                if (!activityDataStr) {
+                    console.log('No se encontró la actividad en localStorage, intentando con clave alternativa...');
+                    
+                    // 2. Intentar con la clave alternativa
+                    const alternativeDataStr = localStorage.getItem(activityId);
+                    
+                    if (!alternativeDataStr) {
+                        console.error('No se encontró la actividad con ninguna clave');
+                        showError('No se encontró la actividad especificada');
+                        return;
+                    }
+                    
+                    activityData = JSON.parse(alternativeDataStr);
+                } else {
+                    activityData = JSON.parse(activityDataStr);
+                }
+                
+                console.log('Actividad cargada:', activityData);
+                
+                // Llenar el formulario con los datos de la actividad
+                fillForm();
+                
+                // Ocultar el indicador de carga
+                document.getElementById('activityLoading').classList.add('d-none');
+                document.getElementById('activityForm').classList.remove('d-none');
+            } catch (error) {
+                console.error('Error al cargar la actividad:', error);
+                showError('Error al cargar la actividad: ' + error.message);
+            }
+        }
+        
+        // Función para llenar el formulario con los datos de la actividad
+        function fillForm() {
+            document.getElementById('activityId').value = activityId;
+            document.getElementById('activityTitle').value = activityData.title || '';
+            document.getElementById('activityDescription').value = activityData.description || '';
+            document.getElementById('activityType').value = activityData.type || '';
+            
+            // Actualizar los formularios de preguntas
+            updateQuestionForms();
+            
+            // Cargar las preguntas existentes
+            if (activityData.questions && activityData.questions.length > 0) {
+                document.getElementById('noQuestionsMessage').classList.add('d-none');
+                
+                activityData.questions.forEach((question, index) => {
+                    addQuestion(question);
+                });
+            }
+        }
+        
+        // Función para actualizar los formularios de preguntas según el tipo de actividad
+        function updateQuestionForms() {
+            const activityType = document.getElementById('activityType').value;
+            
+            // Actualizar el tipo de actividad en los datos
+            activityData.type = activityType;
+            
+            // Actualizar los formularios de preguntas existentes
+            const questionCards = document.querySelectorAll('.question-card');
+            questionCards.forEach(card => {
+                updateQuestionForm(card, activityType);
+            });
+        }
+        
+        // Función para actualizar un formulario de pregunta según el tipo de actividad
+        function updateQuestionForm(questionCard, activityType) {
+            const questionId = questionCard.dataset.questionId;
+            const optionsContainer = questionCard.querySelector('.question-options-container');
+            
+            if (!optionsContainer) return;
+            
+            // Limpiar las opciones existentes
+            optionsContainer.innerHTML = '';
+            
+            // Generar las opciones según el tipo de actividad
+            switch (activityType) {
+                case 'multiple-choice':
+                    optionsContainer.innerHTML = `
+                        <div class="mb-3">
+                            <label class="form-label">Opciones</label>
+                            <div class="options-list" id="options-list-${questionId}">
+                                <!-- Aquí se cargarán las opciones -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addOption('${questionId}')">
+                                <i class="fas fa-plus"></i> Agregar Opción
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Cargar las opciones existentes
+                    const question = findQuestionById(questionId);
+                    if (question && question.options && question.options.length > 0) {
+                        question.options.forEach((option, index) => {
+                            addOption(questionId, option, question.correctOption === index);
+                        });
+                    } else {
+                        // Agregar al menos dos opciones por defecto
+                        addOption(questionId);
+                        addOption(questionId);
+                    }
+                    break;
+                    
+                case 'true-false':
+                    optionsContainer.innerHTML = `
+                        <div class="mb-3">
+                            <label class="form-label">Respuesta Correcta</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="correctAnswer-${questionId}" id="true-${questionId}" value="true">
+                                <label class="form-check-label" for="true-${questionId}">
+                                    Verdadero
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="correctAnswer-${questionId}" id="false-${questionId}" value="false">
+                                <label class="form-check-label" for="false-${questionId}">
+                                    Falso
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Establecer la respuesta correcta
+                    const tfQuestion = findQuestionById(questionId);
+                    if (tfQuestion && tfQuestion.correctAnswer !== undefined) {
+                        const radioValue = tfQuestion.correctAnswer ? 'true' : 'false';
+                        document.querySelector(`input[name="correctAnswer-${questionId}"][value="${radioValue}"]`).checked = true;
+                    }
+                    break;
+                    
+                case 'short-answer':
+                    optionsContainer.innerHTML = `
+                        <div class="mb-3">
+                            <label for="correctAnswers-${questionId}" class="form-label">Respuestas Correctas</label>
+                            <input type="text" class="form-control" id="correctAnswers-${questionId}" placeholder="Separar múltiples respuestas con comas">
+                            <div class="form-text">Ingrese una o más respuestas correctas separadas por comas.</div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="caseSensitive-${questionId}">
+                            <label class="form-check-label" for="caseSensitive-${questionId}">
+                                Sensible a mayúsculas/minúsculas
+                            </label>
+                        </div>
+                    `;
+                    
+                    // Establecer las respuestas correctas
+                    const saQuestion = findQuestionById(questionId);
+                    if (saQuestion && saQuestion.correctAnswers) {
+                        document.getElementById(`correctAnswers-${questionId}`).value = saQuestion.correctAnswers.join(', ');
+                        
+                        if (saQuestion.caseSensitive) {
+                            document.getElementById(`caseSensitive-${questionId}`).checked = true;
+                        }
+                    }
+                    break;
+                    
+                default:
+                    optionsContainer.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Seleccione un tipo de actividad para configurar las opciones de la pregunta.
+                        </div>
+                    `;
+            }
+        }
+        
+        // Función para agregar una nueva pregunta
+        function addQuestion(questionData = null) {
+            const questionsContainer = document.getElementById('questionsContainer');
+            const noQuestionsMessage = document.getElementById('noQuestionsMessage');
+            
+            // Ocultar el mensaje de no hay preguntas
+            noQuestionsMessage.classList.add('d-none');
+            
+            // Incrementar el contador de preguntas
+            questionCounter++;
+            
+            // Crear un ID único para la pregunta
+            const questionId = questionData ? questionData.id : `question_${Date.now()}_${questionCounter}`;
+            
+            // Crear el elemento de la pregunta
+            const questionCard = document.createElement('div');
+            questionCard.className = 'card mb-3 question-card';
+            questionCard.dataset.questionId = questionId;
+            
+            questionCard.innerHTML = `
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Pregunta ${questionCounter}</h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion('${questionId}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="questionText-${questionId}" class="form-label">Texto de la Pregunta</label>
+                        <textarea class="form-control" id="questionText-${questionId}" rows="2" required>${questionData ? questionData.text || '' : ''}</textarea>
+                    </div>
+                    <div class="question-options-container">
+                        <!-- Aquí se cargarán las opciones según el tipo de actividad -->
+                    </div>
+                </div>
+            `;
+            
+            // Agregar la pregunta al contenedor
+            questionsContainer.appendChild(questionCard);
+            
+            // Actualizar el formulario de la pregunta según el tipo de actividad
+            updateQuestionForm(questionCard, document.getElementById('activityType').value);
+            
+            // Si es una nueva pregunta, agregarla a los datos de la actividad
+            if (!questionData) {
+                activityData.questions = activityData.questions || [];
+                activityData.questions.push({
+                    id: questionId,
+                    text: ''
+                });
+            }
+            
+            return questionId;
+        }
+        
+        // Función para eliminar una pregunta
+        function removeQuestion(questionId) {
+            if (confirm('¿Está seguro de que desea eliminar esta pregunta?')) {
+                // Eliminar la pregunta del DOM
+                const questionCard = document.querySelector(`.question-card[data-question-id="${questionId}"]`);
+                if (questionCard) {
+                    questionCard.remove();
+                }
+                
+                // Eliminar la pregunta de los datos de la actividad
+                if (activityData && activityData.questions) {
+                    activityData.questions = activityData.questions.filter(q => q.id !== questionId);
+                }
+                
+                // Mostrar el mensaje de no hay preguntas si no quedan preguntas
+                if (activityData.questions.length === 0) {
+                    document.getElementById('noQuestionsMessage').classList.remove('d-none');
+                }
+            }
+        }
+        
+        // Función para agregar una opción a una pregunta de opción múltiple
+        function addOption(questionId, optionText = '', isCorrect = false) {
+            const optionsList = document.getElementById(`options-list-${questionId}`);
+            if (!optionsList) return;
+            
+            // Crear un ID único para la opción
+            const optionId = `option_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Crear el elemento de la opción
+            const optionElement = document.createElement('div');
+            optionElement.className = 'input-group mb-2 option-item';
+            optionElement.dataset.optionId = optionId;
+            
+            optionElement.innerHTML = `
+                <div class="input-group-text">
+                    <input class="form-check-input mt-0 option-radio" type="radio" name="correctOption-${questionId}" ${isCorrect ? 'checked' : ''}>
+                </div>
+                <input type="text" class="form-control option-text" value="${optionText}" placeholder="Texto de la opción">
+                <button class="btn btn-outline-danger" type="button" onclick="removeOption('${questionId}', '${optionId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            // Agregar la opción al contenedor
+            optionsList.appendChild(optionElement);
+        }
+        
+        // Función para eliminar una opción
+        function removeOption(questionId, optionId) {
+            const optionElement = document.querySelector(`.option-item[data-option-id="${optionId}"]`);
+            if (optionElement) {
+                optionElement.remove();
+            }
+        }
+        
+        // Función para encontrar una pregunta por su ID
+        function findQuestionById(questionId) {
+            if (!activityData || !activityData.questions) return null;
+            return activityData.questions.find(q => q.id === questionId);
+        }
+        
+        // Función para recopilar los datos del formulario
+        function collectFormData() {
+            // Recopilar los datos básicos de la actividad
+            activityData.title = document.getElementById('activityTitle').value;
+            activityData.description = document.getElementById('activityDescription').value;
+            activityData.type = document.getElementById('activityType').value;
+            
+            // Validar los datos básicos
+            if (!activityData.title) {
+                alert('Por favor, ingrese un título para la actividad');
+                return null;
+            }
+            
+            if (!activityData.type) {
+                alert('Por favor, seleccione un tipo de actividad');
+                return null;
+            }
+            
+            // Recopilar los datos de las preguntas
+            const questionCards = document.querySelectorAll('.question-card');
+            activityData.questions = [];
+            
+            for (const card of questionCards) {
+                const questionId = card.dataset.questionId;
+                const questionText = card.querySelector(`#questionText-${questionId}`).value;
+                
+                if (!questionText) {
+                    alert('Por favor, ingrese el texto para todas las preguntas');
+                    return null;
+                }
+                
+                const questionData = {
+                    id: questionId,
+                    text: questionText
+                };
+                
+                // Recopilar datos específicos según el tipo de actividad
+                switch (activityData.type) {
+                    case 'multiple-choice':
+                        // Recopilar las opciones
+                        const optionItems = card.querySelectorAll('.option-item');
+                        const options = [];
+                        let correctOptionIndex = -1;
+                        
+                        for (let i = 0; i < optionItems.length; i++) {
+                            const optionText = optionItems[i].querySelector('.option-text').value;
+                            const isCorrect = optionItems[i].querySelector('.option-radio').checked;
+                            
+                            if (!optionText) {
+                                alert('Por favor, ingrese el texto para todas las opciones');
+                                return null;
+                            }
+                            
+                            options.push(optionText);
+                            
+                            if (isCorrect) {
+                                correctOptionIndex = i;
+                            }
+                        }
+                        
+                        if (options.length < 2) {
+                            alert('Por favor, agregue al menos dos opciones para cada pregunta de opción múltiple');
+                            return null;
+                        }
+                        
+                        if (correctOptionIndex === -1) {
+                            alert('Por favor, seleccione una opción correcta para cada pregunta de opción múltiple');
+                            return null;
+                        }
+                        
+                        questionData.options = options;
+                        questionData.correctOption = correctOptionIndex;
+                        break;
+                        
+                    case 'true-false':
+                        // Recopilar la respuesta correcta
+                        const trueRadio = card.querySelector(`#true-${questionId}`);
+                        if (!trueRadio) {
+                            alert('Error al recopilar datos de la pregunta verdadero/falso');
+                            return null;
+                        }
+                        
+                        const isTrueChecked = trueRadio.checked;
+                        const isFalseChecked = card.querySelector(`#false-${questionId}`).checked;
+                        
+                        if (!isTrueChecked && !isFalseChecked) {
+                            alert('Por favor, seleccione una respuesta correcta para cada pregunta verdadero/falso');
+                            return null;
+                        }
+                        
+                        questionData.correctAnswer = isTrueChecked;
+                        break;
+                        
+                    case 'short-answer':
+                        // Recopilar las respuestas correctas
+                        const correctAnswersInput = card.querySelector(`#correctAnswers-${questionId}`);
+                        if (!correctAnswersInput || !correctAnswersInput.value) {
+                            alert('Por favor, ingrese al menos una respuesta correcta para cada pregunta de respuesta corta');
+                            return null;
+                        }
+                        
+                        const correctAnswers = correctAnswersInput.value.split(',').map(answer => answer.trim()).filter(answer => answer);
+                        if (correctAnswers.length === 0) {
+                            alert('Por favor, ingrese al menos una respuesta correcta para cada pregunta de respuesta corta');
+                            return null;
+                        }
+                        
+                        questionData.correctAnswers = correctAnswers;
+                        questionData.caseSensitive = card.querySelector(`#caseSensitive-${questionId}`).checked;
+                        break;
+                }
+                
+                activityData.questions.push(questionData);
+            }
+            
+            if (activityData.questions.length === 0) {
+                alert('Por favor, agregue al menos una pregunta a la actividad');
+                return null;
+            }
+            
+            return activityData;
+        }
+        
+        // Función para guardar la actividad
+        function saveActivity() {
+            try {
+                // Recopilar los datos del formulario
+                const formData = collectFormData();
+                if (!formData) return;
+                
+                // Generar un ID único para la actividad si no existe
+                if (!activityId) {
+                    activityId = `activity_${Date.now()}`;
+                }
+                
+                console.log('Guardando actividad con ID:', activityId);
+                console.log('Datos de la actividad:', formData);
+                
+                // Guardar la actividad en localStorage
+                localStorage.setItem(`activity_data_${activityId}`, JSON.stringify(formData));
+                localStorage.setItem(activityId, JSON.stringify(formData));
+                
+                // Actualizar el registro de actividades
+                let activityRegistry = [];
+                try {
+                    activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                } catch (parseError) {
+                    console.warn('Error al parsear el registro de actividades, creando uno nuevo:', parseError);
+                }
+                
+                // Buscar si la actividad ya está en el registro
+                const existingIndex = activityRegistry.findIndex(a => a.id === activityId);
+                
+                if (existingIndex !== -1) {
+                    // Actualizar la actividad existente
+                    activityRegistry[existingIndex] = {
+                        id: activityId,
+                        title: formData.title,
+                        type: formData.type,
+                        updated: Date.now()
+                    };
+                } else {
+                    // Agregar la nueva actividad al registro
+                    activityRegistry.push({
+                        id: activityId,
+                        title: formData.title,
+                        type: formData.type,
+                        created: Date.now()
+                    });
+                }
+                
+                // Guardar el registro actualizado
+                localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+                
+                // Guardar también en el sistema de persistencia si está disponible
+                if (typeof DataPersistence !== 'undefined') {
+                    try {
+                        DataPersistence.saveData('activities', activityId, formData, true);
+                    } catch (persistenceError) {
+                        console.warn('Error al guardar en el sistema de persistencia:', persistenceError);
+                    }
+                }
+                
+                // Crear o actualizar el archivo de actividad en activities/templates
+                createActivityFile(activityId, formData);
+                
+                // Mostrar mensaje de éxito
+                alert('Actividad guardada correctamente');
+                
+                // Redirigir al visualizador de actividades
+                window.location.href = `activity-loader.html?id=${activityId}`;
+            } catch (error) {
+                console.error('Error al guardar la actividad:', error);
+                alert('Error al guardar la actividad: ' + error.message);
+            }
+        }
+        
+        // Función para crear o actualizar el archivo de actividad en activities/templates
+        function createActivityFile(activityId, activityData) {
+            // Esta función es un placeholder para la implementación real
+            // En un entorno de producción, esto se haría mediante una API o un servicio de backend
+            console.log('Creando archivo de actividad para:', activityId);
+            
+            // En este punto, la actividad ya está guardada en localStorage
+            // y se puede acceder desde activity-loader.html
+        }
+        
+        // Función para mostrar un error
+        function showError(message) {
+            document.getElementById('activityLoading').classList.add('d-none');
+            
+            const errorElement = document.getElementById('activityError');
+            errorElement.classList.remove('d-none');
+            
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>
