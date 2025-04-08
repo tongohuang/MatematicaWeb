@@ -13,6 +13,8 @@ async function initializeDataSystem() {
         const isProduction = window.location.hostname.includes('netlify.app') ||
                            window.location.hostname.includes('netlify.com');
 
+        console.log('Entorno de producción (Netlify):', isProduction ? 'Sí' : 'No');
+
         // Inicializar sistema de sincronización con Netlify CMS si está disponible
         if (typeof NetlifyCMSSync !== 'undefined') {
             console.log('Inicializando sincronización con Netlify CMS...');
@@ -29,11 +31,11 @@ async function initializeDataSystem() {
                 console.error('Error al cargar datos desde el repositorio:', error);
             }
         } else {
-            // En desarrollo, comportamiento normal
-            console.log('Entorno de desarrollo detectado, cargando datos normalmente...');
+            // En desarrollo, usar exclusivamente localStorage
+            console.log('Entorno de desarrollo detectado, usando exclusivamente localStorage...');
             try {
-                await DataPersistence.init();
-                console.log('Datos inicializados correctamente');
+                await DataPersistence.init(false);
+                console.log('Datos inicializados correctamente desde localStorage');
             } catch (error) {
                 console.error('Error al inicializar datos:', error);
             }
@@ -44,6 +46,15 @@ async function initializeDataSystem() {
             const courses = DataManager.getCourses();
             const topics = DataManager.getTopics();
             console.log(`Datos cargados: ${courses.length} cursos, ${topics.length} temas`);
+
+            // Verificar si hay datos en el sistema antiguo
+            try {
+                const oldCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                const oldTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+                console.log(`Datos en sistema antiguo: ${oldCourses.length} cursos, ${oldTopics.length} temas`);
+            } catch (error) {
+                console.warn('Error al verificar datos del sistema antiguo:', error);
+            }
         }
     } else {
         console.warn('Sistema de persistencia no disponible');

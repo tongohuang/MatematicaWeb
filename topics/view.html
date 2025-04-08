@@ -207,6 +207,32 @@
         function loadSections() {
             const sectionsContainer = document.getElementById('sectionsContainer');
 
+            // Obtener secciones del tema y del sistema de persistencia
+            let sections = [];
+
+            // Primero intentar obtener las secciones del tema
+            if (currentTopic.sections && Array.isArray(currentTopic.sections) && currentTopic.sections.length > 0) {
+                sections = [...currentTopic.sections];
+                console.log(`Encontradas ${sections.length} secciones en el tema`);
+            }
+
+            // Si no hay secciones en el tema o son pocas, intentar obtenerlas del sistema de persistencia
+            if (sections.length === 0 && typeof DataPersistence !== 'undefined') {
+                console.log('Buscando secciones en el sistema de persistencia...');
+                const allSections = DataPersistence.getAllDataAsArray('sections');
+
+                // Filtrar secciones que pertenezcan al tema actual
+                const persistenceSections = allSections.filter(s => s.topicId == currentTopicId);
+                console.log(`Encontradas ${persistenceSections.length} secciones en el sistema de persistencia`);
+
+                if (persistenceSections.length > 0) {
+                    sections = persistenceSections;
+                }
+            }
+
+            // Asignar las secciones al tema actual para procesamiento posterior
+            currentTopic.sections = sections;
+
             // Verificar si el tema tiene secciones
             if (!currentTopic.sections || currentTopic.sections.length === 0) {
                 sectionsContainer.innerHTML = `
@@ -362,35 +388,32 @@
                     const htmlPath = '../activities/html/' + section.content;
                     const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
 
-                    // Crear el iframe sin script inline
-                    const iframeHtml = document.createElement('iframe');
-                    iframeHtml.src = htmlPath;
-                    iframeHtml.frameBorder = '0';
-                    iframeHtml.style.width = '100%';
-                    iframeHtml.style.height = '500px';
+                    // Crear el contenedor HTML directamente
+                    contentHtml = `
+                        <div class="html-container">
+                            <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
+                                    onerror="this.src='${fallbackHtmlPath}'"
+                                    id="html-iframe-${section.id}"></iframe>
+                        </div>
+                    `;
 
-                    // Crear el contenedor
-                    const containerHtml = document.createElement('div');
-                    containerHtml.className = 'html-container';
-                    containerHtml.appendChild(iframeHtml);
-
-                    // Verificar si el archivo existe
-                    fetch(htmlPath, { method: 'HEAD' })
-                        .then(response => {
-                            if (!response.ok) {
-                                console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                iframeHtml.src = fallbackHtmlPath;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error verificando archivo ' + htmlPath + ':', error);
-                            iframeHtml.src = fallbackHtmlPath;
-                        });
-
-                    // Convertir el elemento DOM a HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.appendChild(containerHtml);
-                    contentHtml = tempDiv.innerHTML;
+                    // Agregar script para verificar si el archivo existe después de cargar
+                    setTimeout(() => {
+                        const iframe = document.getElementById(`html-iframe-${section.id}`);
+                        if (iframe) {
+                            fetch(htmlPath, { method: 'HEAD' })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                        iframe.src = fallbackHtmlPath;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error verificando archivo ' + htmlPath + ':', error);
+                                    iframe.src = fallbackHtmlPath;
+                                });
+                        }
+                    }, 500);
                     break;
 
                 case 'activity':
@@ -398,35 +421,32 @@
                     const activityPath = '../activities/templates/' + section.content;
                     const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
 
-                    // Crear el iframe sin script inline
-                    const iframeActivity = document.createElement('iframe');
-                    iframeActivity.src = activityPath;
-                    iframeActivity.frameBorder = '0';
-                    iframeActivity.style.width = '100%';
-                    iframeActivity.style.height = '600px';
+                    // Crear el contenedor de actividad directamente
+                    contentHtml = `
+                        <div class="activity-container">
+                            <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
+                                    onerror="this.src='${fallbackActivityPath}'"
+                                    id="activity-iframe-${section.id}"></iframe>
+                        </div>
+                    `;
 
-                    // Crear el contenedor
-                    const containerActivity = document.createElement('div');
-                    containerActivity.className = 'activity-container';
-                    containerActivity.appendChild(iframeActivity);
-
-                    // Verificar si el archivo existe
-                    fetch(activityPath, { method: 'HEAD' })
-                        .then(response => {
-                            if (!response.ok) {
-                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                iframeActivity.src = fallbackActivityPath;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error verificando archivo ' + activityPath + ':', error);
-                            iframeActivity.src = fallbackActivityPath;
-                        });
-
-                    // Convertir el elemento DOM a HTML
-                    const tempDivActivity = document.createElement('div');
-                    tempDivActivity.appendChild(containerActivity);
-                    contentHtml = tempDivActivity.innerHTML;
+                    // Agregar script para verificar si el archivo existe después de cargar
+                    setTimeout(() => {
+                        const iframe = document.getElementById(`activity-iframe-${section.id}`);
+                        if (iframe) {
+                            fetch(activityPath, { method: 'HEAD' })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                        iframe.src = fallbackActivityPath;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error verificando archivo ' + activityPath + ':', error);
+                                    iframe.src = fallbackActivityPath;
+                                });
+                        }
+                    }, 500);
                     break;
 
                 default:

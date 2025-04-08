@@ -222,11 +222,31 @@
                             <div class="accordion-body p-0">
                 `;
 
-                // Verificar si el tema tiene secciones
-                if (topic.sections && topic.sections.length > 0) {
+                // Obtener secciones del tema y del sistema de persistencia
+                let sections = [];
+
+                // Primero intentar obtener las secciones del tema
+                if (topic.sections && Array.isArray(topic.sections) && topic.sections.length > 0) {
+                    sections = [...topic.sections];
+                }
+
+                // Si no hay secciones en el tema, intentar obtenerlas del sistema de persistencia
+                if (sections.length === 0 && typeof DataPersistence !== 'undefined') {
+                    const allSections = DataPersistence.getAllDataAsArray('sections');
+
+                    // Filtrar secciones que pertenezcan al tema actual
+                    const persistenceSections = allSections.filter(s => s.topicId == topic.id);
+
+                    if (persistenceSections.length > 0) {
+                        sections = persistenceSections;
+                    }
+                }
+
+                // Verificar si hay secciones para mostrar
+                if (sections.length > 0) {
                     html += '<ul class="nav flex-column nav-pills">';
 
-                    topic.sections.forEach(section => {
+                    sections.forEach(section => {
                         html += `
                             <li class="nav-item">
                                 <a class="nav-link" href="../sections/view.html?id=${section.id}&topicId=${topic.id}">

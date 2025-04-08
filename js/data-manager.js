@@ -71,14 +71,29 @@ const DataManager = {
 
         console.log('Migrando datos del formato antiguo al nuevo...');
 
+        // Obtener datos actuales del nuevo sistema
+        const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
+        if (!currentData.persistent) currentData.persistent = { courses: {}, topics: {}, sections: {} };
+
+        let migrated = false;
+        let coursesCount = 0;
+        let topicsCount = 0;
+        let sectionsCount = 0;
+
         // Migrar cursos
         if (oldCoursesData) {
             try {
                 const courses = JSON.parse(oldCoursesData);
                 courses.forEach(course => {
-                    DataPersistence.saveData('courses', course.id, course);
+                    // Verificar si el curso ya existe en el nuevo sistema
+                    if (!currentData.persistent.courses[course.id]) {
+                        console.log(`Migrando curso ${course.id}: ${course.title}`);
+                        currentData.persistent.courses[course.id] = course;
+                        coursesCount++;
+                        migrated = true;
+                    }
                 });
-                console.log(`Migrados ${courses.length} cursos`);
+                console.log(`Migrados ${coursesCount} cursos nuevos`);
             } catch (error) {
                 console.error('Error migrando cursos:', error);
             }
@@ -94,25 +109,40 @@ const DataManager = {
                         topic.sections = [];
                     }
 
-                    // Guardar el tema con sus secciones
-                    DataPersistence.saveData('topics', topic.id, topic);
+                    // Verificar si el tema ya existe en el nuevo sistema
+                    if (!currentData.persistent.topics[topic.id]) {
+                        console.log(`Migrando tema ${topic.id}: ${topic.title}`);
+                        currentData.persistent.topics[topic.id] = topic;
+                        topicsCount++;
+                        migrated = true;
 
-                    // También guardar cada sección individualmente si es necesario
-                    if (topic.sections && topic.sections.length > 0) {
-                        topic.sections.forEach(section => {
-                            if (section.id) {
-                                DataPersistence.saveData('sections', section.id, {
-                                    ...section,
-                                    topicId: topic.id
-                                });
-                            }
-                        });
+                        // También guardar cada sección individualmente
+                        if (topic.sections && topic.sections.length > 0) {
+                            topic.sections.forEach(section => {
+                                if (section.id && !currentData.persistent.sections[section.id]) {
+                                    console.log(`Migrando sección ${section.id}: ${section.title}`);
+                                    currentData.persistent.sections[section.id] = {
+                                        ...section,
+                                        topicId: topic.id
+                                    };
+                                    sectionsCount++;
+                                }
+                            });
+                        }
                     }
                 });
-                console.log(`Migrados ${topics.length} temas`);
+                console.log(`Migrados ${topicsCount} temas nuevos y ${sectionsCount} secciones nuevas`);
             } catch (error) {
                 console.error('Error migrando temas:', error);
             }
+        }
+
+        // Guardar los cambios si se migró algo
+        if (migrated) {
+            localStorage.setItem('courseData', JSON.stringify(currentData));
+            console.log('Migración completada y guardada en localStorage');
+        } else {
+            console.log('No se migraron datos nuevos');
         }
     },
 
@@ -619,15 +649,76 @@ const DataManager = {
     // Reiniciar todos los datos (volver a los datos de muestra)
     resetData() {
         if (confirm('¿Estás seguro de que deseas reiniciar todos los datos? Esta acción no se puede deshacer.')) {
-            // Crear copia de seguridad antes de reiniciar
-            if (typeof DataPersistence !== 'undefined') {
-                DataPersistence.createDataBackup();
-            }
+            try {
+                console.log('Reiniciando todos los datos...');
 
-            this.saveCourses(SAMPLE_COURSES);
-            this.saveTopics(SAMPLE_TOPICS);
-            alert('Datos reiniciados correctamente');
-            return true;
+                // Crear copia de seguridad antes de reiniciar
+                if (typeof DataPersistence !== 'undefined') {
+                    DataPersistence.createDataBackup();
+                    console.log('Copia de seguridad creada');
+                }
+
+                // Limpiar localStorage
+                localStorage.removeItem('courseData');
+                localStorage.removeItem(this.COURSES_KEY);
+                localStorage.removeItem(this.TOPICS_KEY);
+                console.log('Datos antiguos eliminados');
+
+                // Inicializar estructura de datos
+                const newData = {
+                    persistent: {
+                        courses: {},
+                        topics: {},
+                        sections: {}
+                    },
+                    unsynced: {}
+                };
+
+                // Agregar datos de muestra
+                if (typeof SAMPLE_COURSES !== 'undefined' && Array.isArray(SAMPLE_COURSES)) {
+                    SAMPLE_COURSES.forEach(course => {
+                        newData.persistent.courses[course.id] = course;
+                    });
+                    console.log(`${SAMPLE_COURSES.length} cursos de muestra agregados`);
+                }
+
+                if (typeof SAMPLE_TOPICS !== 'undefined' && Array.isArray(SAMPLE_TOPICS)) {
+                    SAMPLE_TOPICS.forEach(topic => {
+                        newData.persistent.topics[topic.id] = topic;
+
+                        // Guardar secciones individualmente
+                        if (topic.sections && Array.isArray(topic.sections)) {
+                            topic.sections.forEach(section => {
+                                if (section.id) {
+                                    newData.persistent.sections[section.id] = {
+                                        ...section,
+                                        topicId: topic.id
+                                    };
+                                }
+                            });
+                        }
+                    });
+                    console.log(`${SAMPLE_TOPICS.length} temas de muestra agregados`);
+                }
+
+                // Guardar en localStorage
+                localStorage.setItem('courseData', JSON.stringify(newData));
+
+                // Guardar también en el sistema antiguo para compatibilidad
+                localStorage.setItem(this.COURSES_KEY, JSON.stringify(SAMPLE_COURSES || []));
+                localStorage.setItem(this.TOPICS_KEY, JSON.stringify(SAMPLE_TOPICS || []));
+
+                console.log('Datos reiniciados correctamente');
+                alert('Datos reiniciados correctamente');
+
+                // Recargar la página para aplicar los cambios
+                window.location.reload();
+                return true;
+            } catch (error) {
+                console.error('Error al reiniciar datos:', error);
+                alert('Error al reiniciar datos: ' + error.message);
+                return false;
+            }
         }
         return false;
     },

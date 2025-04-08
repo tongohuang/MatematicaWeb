@@ -73,17 +73,14 @@ const DataPersistence = {
             const isProduction = window.location.hostname.includes('netlify.app') ||
                                window.location.hostname.includes('netlify.com');
 
-            // En producción o si se fuerza, siempre intentar cargar desde el repositorio
-            const shouldPrioritizeRepo = isProduction || forceRepoData;
-
             console.log('Entorno de producción (Netlify):', isProduction ? 'Sí' : 'No');
-            console.log('Priorizar repositorio:', shouldPrioritizeRepo ? 'Sí' : 'No');
 
             // Variables para almacenar datos del repositorio
             let repoData = {};
             let repoDataLoaded = false;
 
-            // Si estamos en producción o se fuerza, cargar datos desde el repositorio
+            // NUEVA ESTRUCTURA: En producción, cargar datos desde el repositorio
+            // En desarrollo, usar exclusivamente localStorage
             if (isProduction || forceRepoData) {
                 try {
                     // Usar cache: 'no-store' para evitar problemas de caché en producción
@@ -153,7 +150,7 @@ const DataPersistence = {
                     console.warn('Error cargando datos del repositorio:', error);
                 }
             } else {
-                console.log('Modo desarrollo: No se cargarán datos desde archivos JSON');
+                console.log('Modo desarrollo: Usando exclusivamente datos del localStorage');
             }
 
             // 2. Cargar datos locales
@@ -166,7 +163,7 @@ const DataPersistence = {
             let merged;
 
             // En producción o si se fuerza, priorizar datos del repositorio
-            const shouldUseRepoData = shouldPrioritizeRepo && repoDataLoaded;
+            const shouldUseRepoData = (isProduction || forceRepoData) && repoDataLoaded;
 
             if (shouldUseRepoData) {
                 merged = {
@@ -182,12 +179,12 @@ const DataPersistence = {
                 // Verificar si hay secciones de tipo HTML o Activity y registrarlas
                 this._checkSpecialSectionTypes(repoData);
             } else {
-                // En desarrollo, usar datos locales
+                // En desarrollo, usar EXCLUSIVAMENTE datos locales
                 merged = localData;
                 if (!merged.persistent) {
                     merged.persistent = { courses: {}, topics: {}, sections: {} };
                 }
-                console.log('Usando datos locales como fuente principal');
+                console.log('Usando EXCLUSIVAMENTE datos locales como fuente principal');
 
                 // Verificar si hay secciones de tipo HTML o Activity y registrarlas
                 this._checkSpecialSectionTypes(merged.persistent);
@@ -235,21 +232,57 @@ const DataPersistence = {
         if (!syncImmediately) {
             if (!currentData.unsynced) currentData.unsynced = {};
             currentData.unsynced[`${type}_${id}`] = Date.now();
+            console.log(`Datos marcados como no sincronizados: ${type}_${id}`);
         }
 
         // 3. Guardar en localStorage
         localStorage.setItem('courseData', JSON.stringify(currentData));
+        console.log(`Datos guardados en localStorage correctamente`);
 
         // 4. Si es sincronización inmediata, generar JSON
         if (syncImmediately) {
+            console.log('Sincronización inmediata solicitada, generando JSON...');
             this.synchronizeData(silent);
         }
 
-        // Ya no mostramos sugerencias automáticas de sincronización
-        // Solo se sincronizará cuando el usuario lo solicite explícitamente
-        // a través del panel de administración
+        // 5. Guardar también en el sistema antiguo para compatibilidad
+        try {
+            this._saveToOldSystem(type, id, content);
+        } catch (error) {
+            console.warn('Error al guardar en el sistema antiguo:', error);
+        }
 
         return content;
+    },
+
+    /**
+     * Guarda datos en el sistema antiguo para compatibilidad
+     * @private
+     * @param {string} type - Tipo de dato (courses, topics, sections)
+     * @param {string|number} id - Identificador único del elemento
+     * @param {object} content - Contenido a guardar
+     */
+    _saveToOldSystem(type, id, content) {
+        // Solo manejar courses y topics en el sistema antiguo
+        if (type !== 'courses' && type !== 'topics') return;
+
+        const key = type === 'courses' ? 'matematicaweb_courses' : 'matematicaweb_topics';
+        const oldData = JSON.parse(localStorage.getItem(key) || '[]');
+
+        // Buscar si ya existe el elemento
+        const index = oldData.findIndex(item => item.id == id);
+
+        if (index !== -1) {
+            // Actualizar
+            oldData[index] = content;
+        } else {
+            // Agregar
+            oldData.push(content);
+        }
+
+        // Guardar
+        localStorage.setItem(key, JSON.stringify(oldData));
+        console.log(`Datos guardados también en el sistema antiguo (${key})`);
     },
 
     /**
@@ -406,36 +439,76 @@ const DataPersistence = {
      * @param {string} type - Tipo de dato (courses, topics, sections)
      * @param {string|number} id - Identificador único del elemento
      * @param {boolean} syncImmediately - Si es true, sincroniza inmediatamente con el JSON
+     * @param {boolean} silent - Si es true, no muestra alertas durante la sincronización
      */
-    deleteData(type, id, syncImmediately = false) {
+    deleteData(type, id, syncImmediately = false, silent = false) {
+        console.log(`Eliminando ${type} con ID ${id}...`);
         const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
 
         if (!currentData.persistent || !currentData.persistent[type]) {
+            console.warn(`No hay datos de tipo ${type} para eliminar`);
             return false;
         }
 
         // Eliminar el dato
         if (currentData.persistent[type][id]) {
             delete currentData.persistent[type][id];
+            console.log(`Dato eliminado del sistema de persistencia: ${type} con ID ${id}`);
 
             // Marcar como no sincronizado
             if (!syncImmediately) {
                 if (!currentData.unsynced) currentData.unsynced = {};
                 currentData.unsynced[`${type}_${id}_deleted`] = Date.now();
+                console.log(`Eliminación marcada como no sincronizada: ${type}_${id}_deleted`);
             }
 
             // Guardar en localStorage
             localStorage.setItem('courseData', JSON.stringify(currentData));
+            console.log(`Cambios guardados en localStorage`);
 
             // Si es sincronización inmediata, generar JSON
             if (syncImmediately) {
-                this.generateRepoJSON(currentData.persistent);
+                console.log('Sincronización inmediata solicitada, generando JSON...');
+                this.synchronizeData(silent);
+            }
+
+            // Eliminar también del sistema antiguo para compatibilidad
+            try {
+                this._deleteFromOldSystem(type, id);
+            } catch (error) {
+                console.warn('Error al eliminar del sistema antiguo:', error);
             }
 
             return true;
         }
 
+        console.warn(`No se encontró el dato ${type} con ID ${id} para eliminar`);
         return false;
+    },
+
+    /**
+     * Elimina datos del sistema antiguo para compatibilidad
+     * @private
+     * @param {string} type - Tipo de dato (courses, topics, sections)
+     * @param {string|number} id - Identificador único del elemento
+     */
+    _deleteFromOldSystem(type, id) {
+        // Solo manejar courses y topics en el sistema antiguo
+        if (type !== 'courses' && type !== 'topics') return;
+
+        const key = type === 'courses' ? 'matematicaweb_courses' : 'matematicaweb_topics';
+        const oldData = JSON.parse(localStorage.getItem(key) || '[]');
+
+        // Filtrar para eliminar el elemento
+        const newData = oldData.filter(item => item.id != id);
+
+        if (newData.length < oldData.length) {
+            // Guardar
+            localStorage.setItem(key, JSON.stringify(newData));
+            console.log(`Dato eliminado también del sistema antiguo (${key})`);
+        } else {
+            console.warn(`No se encontró el dato con ID ${id} en el sistema antiguo (${key})`);
+        }
     },
 
     /**
@@ -444,6 +517,7 @@ const DataPersistence = {
      * @param {boolean} download - Si es true, descarga los archivos JSON
      */
     synchronizeData(silent = false, download = false) {
+        console.log(`Sincronizando datos con el repositorio (silent: ${silent}, download: ${download})...`);
         const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
 
         if (!currentData.persistent) {
@@ -468,6 +542,12 @@ const DataPersistence = {
         // Añadir la configuración a los datos persistentes
         const dataToSync = { ...currentData.persistent, settings };
 
+        // Contar elementos para el log
+        const coursesCount = Object.keys(dataToSync.courses || {}).length;
+        const topicsCount = Object.keys(dataToSync.topics || {}).length;
+        const sectionsCount = Object.keys(dataToSync.sections || {}).length;
+        console.log(`Sincronizando ${coursesCount} cursos, ${topicsCount} temas y ${sectionsCount} secciones...`);
+
         // 1. Generar JSON con datos persistentes y configuración
         const result = this.generateRepoJSON(dataToSync, silent, download);
 
@@ -475,6 +555,7 @@ const DataPersistence = {
             // 2. Limpiar solo el registro de no sincronizados
             currentData.unsynced = {};
             localStorage.setItem('courseData', JSON.stringify(currentData));
+            console.log('Registro de cambios no sincronizados limpiado');
 
             // Registrar en el log
             if (typeof Logger !== 'undefined') {
@@ -491,6 +572,7 @@ const DataPersistence = {
             return true;
         }
 
+        console.error('Error al generar JSON para el repositorio');
         return false;
     },
 
@@ -511,8 +593,11 @@ const DataPersistence = {
                 return false;
             }
 
+            console.log('Generando archivos JSON para el repositorio...');
+
             // 1. Generar archivo combinado (para compatibilidad)
             const combinedJsonData = JSON.stringify(data, null, 2);
+            console.log('Archivo combinado generado correctamente');
 
             // 2. Preparar archivos separados
             let coursesJsonData = null;
@@ -524,6 +609,9 @@ const DataPersistence = {
                 // Convertir objeto a array
                 const coursesArray = Object.values(data.courses);
                 coursesJsonData = JSON.stringify(coursesArray, null, 2);
+                console.log(`Archivo de cursos generado con ${coursesArray.length} cursos`);
+            } else {
+                console.warn('No hay cursos para generar JSON');
             }
 
             // Temas
@@ -531,11 +619,17 @@ const DataPersistence = {
                 // Convertir objeto a array
                 const topicsArray = Object.values(data.topics);
                 topicsJsonData = JSON.stringify(topicsArray, null, 2);
+                console.log(`Archivo de temas generado con ${topicsArray.length} temas`);
+            } else {
+                console.warn('No hay temas para generar JSON');
             }
 
             // Configuración (si existe)
             if (data.settings) {
                 settingsJsonData = JSON.stringify(data.settings, null, 2);
+                console.log('Archivo de configuración generado correctamente');
+            } else {
+                console.warn('No hay configuración para generar JSON');
             }
 
             // Guardar los datos JSON en localStorage para su posterior sincronización
@@ -543,9 +637,11 @@ const DataPersistence = {
             if (coursesJsonData) localStorage.setItem('jsonData_courses', coursesJsonData);
             if (topicsJsonData) localStorage.setItem('jsonData_topics', topicsJsonData);
             if (settingsJsonData) localStorage.setItem('jsonData_settings', settingsJsonData);
+            console.log('Datos JSON guardados en localStorage para su posterior sincronización');
 
             // Si se solicita la descarga, descargar los archivos
             if (download) {
+                console.log('Descargando archivos JSON...');
                 if (combinedJsonData) this._downloadJsonFile(combinedJsonData, 'courseData.json', 'repository-data');
                 if (coursesJsonData) this._downloadJsonFile(coursesJsonData, 'courses.json', 'courses-data');
                 if (topicsJsonData) this._downloadJsonFile(topicsJsonData, 'topics.json', 'topics-data');
@@ -556,12 +652,13 @@ const DataPersistence = {
                     alert('Se han generado los archivos JSON para el repositorio. Por favor, guárdelos en las carpetas correspondientes del proyecto:\n\n- courseData.json en /data/\n- courses.json en /data/\n- topics.json en /data/\n- settings.json en /data/\n\nY haga commit de los cambios.');
                 }
             } else {
-                console.log('Datos JSON generados y guardados en localStorage para su posterior sincronización');
+                console.log('Archivos JSON generados pero no descargados (download=false)');
             }
 
             // Guardar una copia en localStorage para referencia
             localStorage.setItem('lastGeneratedJSON', combinedJsonData);
             localStorage.setItem('lastJSONGenerationTime', new Date().toISOString());
+            console.log('Generación de JSON completada correctamente');
 
             return true;
         } catch (error) {

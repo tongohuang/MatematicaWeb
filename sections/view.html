@@ -116,14 +116,26 @@
                 }
 
                 // Obtener la sección
-                if (!currentTopic.sections) {
-                    showError('Sección no encontrada', 'Este tema no tiene secciones.');
-                    return;
+                // Primero intentar obtener la sección desde el tema
+                if (currentTopic.sections && Array.isArray(currentTopic.sections)) {
+                    currentSection = currentTopic.sections.find(s => s.id == currentSectionId);
                 }
 
-                currentSection = currentTopic.sections.find(s => s.id === currentSectionId);
+                // Si no se encuentra en el tema, intentar obtenerla desde el sistema de persistencia
+                if (!currentSection && typeof DataPersistence !== 'undefined') {
+                    console.log('Buscando sección en el sistema de persistencia...');
+                    currentSection = DataPersistence.getData('sections', currentSectionId);
+
+                    // Verificar que la sección pertenezca al tema actual
+                    if (currentSection && currentSection.topicId && currentSection.topicId != currentTopicId) {
+                        console.warn(`La sección ${currentSectionId} pertenece al tema ${currentSection.topicId}, no al tema ${currentTopicId}`);
+                        currentSection = null;
+                    }
+                }
+
+                // Si aún no se encuentra, mostrar error
                 if (!currentSection) {
-                    showError('Sección no encontrada', 'La sección solicitada no existe.');
+                    showError('Sección no encontrada', 'La sección solicitada no existe o no pertenece a este tema.');
                     return;
                 }
 
@@ -157,16 +169,31 @@
                 `;
 
                 // Mostrar otras secciones del tema
-                const otherSectionsHtml = currentTopic.sections
-                    .filter(s => s.id !== currentSectionId)
-                    .map(section => `
-                        <div class="other-section-item">
-                            <a href="view.html?id=${section.id}&topicId=${currentTopicId}" class="other-section-link">
-                                <i class="${getSectionIcon(section.type)}"></i>
-                                ${section.title}
-                            </a>
-                        </div>
-                    `).join('');
+                let otherSections = [];
+
+                // Obtener secciones del tema
+                if (currentTopic.sections && Array.isArray(currentTopic.sections)) {
+                    otherSections = currentTopic.sections.filter(s => s.id != currentSectionId);
+                }
+
+                // Si no hay secciones en el tema o son pocas, intentar obtenerlas del sistema de persistencia
+                if (otherSections.length === 0 && typeof DataPersistence !== 'undefined') {
+                    console.log('Buscando otras secciones en el sistema de persistencia...');
+                    const allSections = DataPersistence.getAllDataAsArray('sections');
+
+                    // Filtrar secciones que pertenezcan al tema actual y no sean la sección actual
+                    otherSections = allSections.filter(s => s.topicId == currentTopicId && s.id != currentSectionId);
+                    console.log(`Encontradas ${otherSections.length} secciones adicionales en el sistema de persistencia`);
+                }
+
+                const otherSectionsHtml = otherSections.map(section => `
+                    <div class="other-section-item">
+                        <a href="view.html?id=${section.id}&topicId=${currentTopicId}" class="other-section-link">
+                            <i class="${getSectionIcon(section.type)}"></i>
+                            ${section.title}
+                        </a>
+                    </div>
+                `).join('');
 
                 document.getElementById('otherSections').innerHTML = otherSectionsHtml ||
                     '<p class="text-muted">No hay más secciones en este tema.</p>';
@@ -253,40 +280,34 @@
                     const htmlPath = '../activities/html/' + currentSection.content;
                     const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
 
-                    // Crear el iframe sin script inline
-                    const iframeHtml = document.createElement('iframe');
-                    iframeHtml.src = htmlPath;
-                    iframeHtml.frameBorder = '0';
-                    iframeHtml.style.width = '100%';
-                    iframeHtml.style.height = '500px';
+                    // Crear el contenedor HTML directamente
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <div class="html-container">
+                                <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
+                                        onerror="this.src='${fallbackHtmlPath}'"
+                                        id="html-iframe-section"></iframe>
+                            </div>
+                        </div>
+                    `;
 
-                    // Crear el contenedor HTML
-                    const htmlContainer = document.createElement('div');
-                    htmlContainer.className = 'html-container';
-                    htmlContainer.appendChild(iframeHtml);
-
-                    // Crear el contenedor de la sección
-                    const sectionPreviewHtml = document.createElement('div');
-                    sectionPreviewHtml.className = 'section-preview-content';
-                    sectionPreviewHtml.appendChild(htmlContainer);
-
-                    // Verificar si el archivo existe
-                    fetch(htmlPath, { method: 'HEAD' })
-                        .then(response => {
-                            if (!response.ok) {
-                                console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                iframeHtml.src = fallbackHtmlPath;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error verificando archivo ' + htmlPath + ':', error);
-                            iframeHtml.src = fallbackHtmlPath;
-                        });
-
-                    // Convertir el elemento DOM a HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.appendChild(sectionPreviewHtml);
-                    contentHtml = tempDiv.innerHTML;
+                    // Agregar script para verificar si el archivo existe después de cargar
+                    setTimeout(() => {
+                        const iframe = document.getElementById('html-iframe-section');
+                        if (iframe) {
+                            fetch(htmlPath, { method: 'HEAD' })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                        iframe.src = fallbackHtmlPath;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error verificando archivo ' + htmlPath + ':', error);
+                                    iframe.src = fallbackHtmlPath;
+                                });
+                        }
+                    }, 500);
                     break;
 
                 case 'activity':
@@ -294,40 +315,34 @@
                     const activityPath = '../activities/templates/' + currentSection.content;
                     const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
 
-                    // Crear el iframe sin script inline
-                    const iframeActivity = document.createElement('iframe');
-                    iframeActivity.src = activityPath;
-                    iframeActivity.frameBorder = '0';
-                    iframeActivity.style.width = '100%';
-                    iframeActivity.style.height = '600px';
+                    // Crear el contenedor de actividad directamente
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <div class="activity-container">
+                                <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
+                                        onerror="this.src='${fallbackActivityPath}'"
+                                        id="activity-iframe-section"></iframe>
+                            </div>
+                        </div>
+                    `;
 
-                    // Crear el contenedor de actividad
-                    const activityContainer = document.createElement('div');
-                    activityContainer.className = 'activity-container';
-                    activityContainer.appendChild(iframeActivity);
-
-                    // Crear el contenedor de la sección
-                    const sectionPreviewActivity = document.createElement('div');
-                    sectionPreviewActivity.className = 'section-preview-content';
-                    sectionPreviewActivity.appendChild(activityContainer);
-
-                    // Verificar si el archivo existe
-                    fetch(activityPath, { method: 'HEAD' })
-                        .then(response => {
-                            if (!response.ok) {
-                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                iframeActivity.src = fallbackActivityPath;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error verificando archivo ' + activityPath + ':', error);
-                            iframeActivity.src = fallbackActivityPath;
-                        });
-
-                    // Convertir el elemento DOM a HTML
-                    const tempDivActivity = document.createElement('div');
-                    tempDivActivity.appendChild(sectionPreviewActivity);
-                    contentHtml = tempDivActivity.innerHTML;
+                    // Agregar script para verificar si el archivo existe después de cargar
+                    setTimeout(() => {
+                        const iframe = document.getElementById('activity-iframe-section');
+                        if (iframe) {
+                            fetch(activityPath, { method: 'HEAD' })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                        iframe.src = fallbackActivityPath;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error verificando archivo ' + activityPath + ':', error);
+                                    iframe.src = fallbackActivityPath;
+                                });
+                        }
+                    }, 500);
                     break;
 
                 default:
