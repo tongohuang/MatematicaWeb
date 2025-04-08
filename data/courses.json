@@ -1,30 +1,16 @@
 [
   {
-    "id": 2,
-    "title": "Geometría",
-    "description": "Estudio de figuras, formas y propiedades espaciales",
-    "color": "#2196F3",
-    "icon": "fas fa-shapes"
-  },
-  {
-    "id": 3,
-    "title": "Cálculo Diferencial",
-    "description": "Introducción al cálculo y análisis matemático",
-    "color": "#9C27B0",
-    "icon": "fas fa-chart-line"
-  },
-  {
-    "id": 5,
-    "title": "Probabilidad",
-    "description": "asdasd",
-    "color": "#4CAF50",
-    "icon": "fas fa-book"
-  },
-  {
     "id": 6,
     "title": "adad",
     "description": "sadasd",
     "color": "#98FB98",
     "icon": "fas fa-book"
+  },
+  {
+    "id": 9,
+    "title": "Probabilidad",
+    "description": "Introducción a técnicas de conteo, eventos equiprobables, probabilidad clásica, probabilidad condicional.",
+    "color": "#1E90FF",
+    "icon": "fas fa-cube"
   }
 ]

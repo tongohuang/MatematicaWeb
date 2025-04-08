@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad de Respuesta Corta - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/main.css">
+    <link rel="stylesheet" href="../../css/components.css">
+    
+    <!-- MathJax para ecuaciones -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['\\(', '\\)'], ['$', '$']],
+            displayMath: [['\\[', '\\]'], ['$$', '$$']],
+            processEscapes: true,
+            processEnvironments: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        }
+    };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        .activity-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .question-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #e9ecef;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="activity-container">
+        <h1 class="mb-4" id="activityTitle">Actividad de Respuesta Corta</h1>
+        
+        <div class="alert alert-info mb-4" id="activityDescription">
+            <i class="fas fa-info-circle me-2"></i>
+            Responde brevemente a cada pregunta.
+        </div>
+        
+        <form id="activityForm">
+            <div id="questionsContainer">
+                <!-- Las preguntas se cargarán dinámicamente aquí -->
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-primary" id="checkAnswersBtn">
+                    <i class="fas fa-check-circle me-2"></i>Verificar Respuestas
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="resetBtn">
+                    <i class="fas fa-redo me-2"></i>Reiniciar
+                </button>
+            </div>
+        </form>
+        
+        <div class="result-container mt-4" id="resultContainer">
+            <h4 class="mb-3">Resultados</h4>
+            <p id="scoreText">Puntuación: <span id="score">0</span> de <span id="totalQuestions">0</span></p>
+            <div class="progress mb-3">
+                <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            </div>
+            <div id="feedbackSummary"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Datos de la actividad (se reemplazarán con los datos reales)
+        const activityData = {
+            id: "ACTIVITY_ID",
+            title: "Actividad de Respuesta Corta",
+            description: "Responde brevemente a cada pregunta.",
+            type: "short-answer",
+            questions: [
+                {
+                    id: "q1",
+                    text: "¿Cuál es la capital de España?",
+                    correctAnswers: ["Madrid", "madrid"],
+                    caseSensitive: false
+                },
+                {
+                    id: "q2",
+                    text: "Resuelve la ecuación: 2x + 3 = 7",
+                    correctAnswers: ["2", "2.0"],
+                    caseSensitive: false
+                }
+                // Más preguntas se agregarán aquí
+            ]
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar datos de la actividad
+            loadActivity();
+            
+            // Configurar botones
+            document.getElementById('checkAnswersBtn').addEventListener('click', checkAnswers);
+            document.getElementById('resetBtn').addEventListener('click', resetActivity);
+            
+            // Renderizar ecuaciones matemáticas
+            if (window.MathJax) {
+                MathJax.typeset();
+            }
+        });
+        
+        // Función para cargar la actividad
+        function loadActivity() {
+            // Establecer título y descripción
+            document.getElementById('activityTitle').textContent = activityData.title;
+            document.getElementById('activityDescription').innerHTML = `<i class="fas fa-info-circle me-2"></i>${activityData.description}`;
+            
+            // Cargar preguntas
+            const questionsContainer = document.getElementById('questionsContainer');
+            questionsContainer.innerHTML = '';
+            
+            activityData.questions.forEach((question, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question-container';
+                questionElement.id = `question-${question.id}`;
+                
+                questionElement.innerHTML = `
+                    <h5>Pregunta ${index + 1}</h5>
+                    <p>${question.text}</p>
+                    
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="${question.id}_answer" placeholder="Tu respuesta">
+                    </div>
+                    
+                    <div class="feedback" id="feedback-${question.id}"></div>
+                `;
+                
+                questionsContainer.appendChild(questionElement);
+            });
+            
+            // Actualizar el total de preguntas
+            document.getElementById('totalQuestions').textContent = activityData.questions.length;
+        }
+        
+        // Función para verificar respuestas
+        function checkAnswers() {
+            let score = 0;
+            let feedbackSummary = '';
+            
+            activityData.questions.forEach((question, index) => {
+                const userAnswer = document.getElementById(`${question.id}_answer`).value.trim();
+                const feedbackElement = document.getElementById(`feedback-${question.id}`);
+                
+                if (userAnswer) {
+                    let isCorrect = false;
+                    
+                    // Verificar si la respuesta es correcta
+                    for (const correctAnswer of question.correctAnswers) {
+                        if (question.caseSensitive) {
+                            // Comparación sensible a mayúsculas/minúsculas
+                            if (userAnswer === correctAnswer) {
+                                isCorrect = true;
+                                break;
+                            }
+                        } else {
+                            // Comparación insensible a mayúsculas/minúsculas
+                            if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                                isCorrect = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (isCorrect) {
+                        feedbackElement.innerHTML = `<i class="fas fa-check-circle me-2"></i>¡Correcto!`;
+                        feedbackElement.className = 'feedback correct';
+                        score++;
+                        feedbackSummary += `<p><i class="fas fa-check-circle text-success me-2"></i>Pregunta ${index + 1}: Correcta</p>`;
+                    } else {
+                        feedbackElement.innerHTML = `<i class="fas fa-times-circle me-2"></i>Incorrecto. Respuesta(s) aceptada(s): ${question.correctAnswers.join(', ')}`;
+                        feedbackElement.className = 'feedback incorrect';
+                        feedbackSummary += `<p><i class="fas fa-times-circle text-danger me-2"></i>Pregunta ${index + 1}: Incorrecta</p>`;
+                    }
+                    feedbackElement.style.display = 'block';
+                } else {
+                    feedbackElement.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Por favor, ingresa una respuesta.';
+                    feedbackElement.className = 'feedback';
+                    feedbackElement.style.display = 'block';
+                    feedbackSummary += `<p><i class="fas fa-exclamation-circle text-warning me-2"></i>Pregunta ${index + 1}: Sin responder</p>`;
+                }
+            });
+            
+            // Mostrar resultados
+            const totalQuestions = activityData.questions.length;
+            document.getElementById('score').textContent = score;
+            document.getElementById('progressBar').style.width = `${(score / totalQuestions) * 100}%`;
+            document.getElementById('progressBar').textContent = `${Math.round((score / totalQuestions) * 100)}%`;
+            document.getElementById('feedbackSummary').innerHTML = feedbackSummary;
+            document.getElementById('resultContainer').style.display = 'block';
+            
+            // Renderizar ecuaciones matemáticas en el feedback
+            if (window.MathJax) {
+                MathJax.typeset();
+            }
+        }
+        
+        // Función para reiniciar la actividad
+        function resetActivity() {
+            // Limpiar respuestas
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.value = '';
+            });
+            
+            // Ocultar feedback
+            document.querySelectorAll('.feedback').forEach(feedback => {
+                feedback.style.display = 'none';
+            });
+            
+            // Ocultar resultados
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

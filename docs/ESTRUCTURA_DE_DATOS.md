@@ -70,6 +70,28 @@ Cursos
 }
 ```
 
+#### Actividad
+```javascript
+{
+  id: String,           // Identificador único de la actividad (ej: "activity_1234567890")
+  title: String,        // Título de la actividad
+  description: String,  // Descripción de la actividad
+  type: String,         // Tipo de actividad (multiple-choice, true-false, short-answer)
+  questions: [          // Array de preguntas
+    {
+      id: String,       // Identificador único de la pregunta
+      text: String,      // Texto de la pregunta
+      // Campos específicos según el tipo de actividad
+      options: Array,    // Para multiple-choice: Array de opciones
+      correctOption: Number, // Para multiple-choice: Índice de la opción correcta
+      correctAnswer: Boolean, // Para true-false: Valor correcto
+      correctAnswers: Array,  // Para short-answer: Array de respuestas aceptadas
+      caseSensitive: Boolean  // Para short-answer: Si es sensible a mayúsculas/minúsculas
+    }
+  ]
+}
+```
+
 ## Flujo de Datos
 
 ### Guardado de Datos
@@ -142,6 +164,30 @@ Cursos
 - Actividades interactivas (opción múltiple, verdadero/falso, respuesta corta).
 - Se guardan en localStorage con claves específicas.
 - En Netlify se utilizan versiones estáticas.
+
+#### Gestión de Actividades
+
+1. **Creación de Actividades**:
+   - Las actividades se crean desde el panel de administración en `admin/section-editor.html`.
+   - Al crear una actividad, se genera un ID único con formato `activity_[timestamp]`.
+   - Los datos de la actividad se guardan en localStorage con la clave `activity_data_[ID]`.
+   - Se registra la actividad en el registro global con la clave `activity_registry`.
+
+2. **Plantillas de Actividades**:
+   - Las actividades utilizan plantillas HTML estáticas ubicadas en `activities/templates/`.
+   - Existen tres tipos principales de actividades:
+     - Opción múltiple: `activity_template_multiple_choice.html`
+     - Verdadero/Falso: `activity_template_true_false.html`
+     - Respuesta corta: `activity_template_short_answer.html`
+
+3. **Visualización de Actividades**:
+   - En el panel de administración: `admin/activity-loader.html?id=[ID]`
+   - En la navegación del sitio: Se carga la plantilla correspondiente y se inyectan los datos desde localStorage.
+
+4. **Compatibilidad con Netlify**:
+   - Las actividades funcionan completamente en el cliente sin necesidad de backend.
+   - Los datos de las actividades se almacenan en localStorage.
+   - Las plantillas HTML son estáticas y compatibles con el despliegue en Netlify.
 
 ## Configuración de Archivos para Carga Coherente de Datos
 

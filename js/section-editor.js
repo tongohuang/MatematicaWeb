@@ -906,7 +906,13 @@ function showContentFields() {
 
                 <div id="activityInfo" class="mt-3 d-none alert alert-info">
                     <span id="activityInfoText"></span>
+                    <div class="mt-2">
+                        <button type="button" id="viewActivityBtn" class="btn btn-sm btn-primary d-none">
+                            <i class="fas fa-eye"></i> Ver/Editar Actividad
+                        </button>
+                    </div>
                 </div>
+                <input type="hidden" id="activityId">
             `;
             break;
 
@@ -1269,12 +1275,21 @@ function editSection(sectionId) {
             // Mostrar la información de la actividad
             const activityInfo = document.getElementById('activityInfo');
             const activityInfoText = document.getElementById('activityInfoText');
+            const viewActivityBtn = document.getElementById('viewActivityBtn');
 
             if (activityInfo && activityInfoText) {
                 // Extraer el nombre de la actividad del contenido
-                const activityPath = section.content;
-                activityInfoText.textContent = `Actividad asignada: ${activityPath}`;
+                const activityId = section.content;
+                activityInfoText.textContent = `Actividad asignada con ID: ${activityId}`;
                 activityInfo.classList.remove('d-none');
+
+                // Mostrar el botón para ver/editar la actividad
+                if (viewActivityBtn && activityId) {
+                    viewActivityBtn.classList.remove('d-none');
+                    viewActivityBtn.onclick = function() {
+                        window.open(`../admin/activity-loader.html?id=${activityId}`, '_blank');
+                    };
+                }
             }
             break;
     }
@@ -3694,7 +3709,16 @@ function createNewActivity() {
     if (activityInfo && activityInfoText && activityIdInput) {
         activityInfo.classList.remove('d-none');
         activityInfoText.textContent = `Se ha creado una nueva actividad con ID: ${activityId}. Por favor, complete la actividad en la ventana abierta.`;
-        activityIdInput.value = `activity-loader.html?id=${activityId}`;
+        activityIdInput.value = activityId;
+
+        // Agregar botón para ver/editar la actividad
+        const viewActivityBtn = document.getElementById('viewActivityBtn');
+        if (viewActivityBtn) {
+            viewActivityBtn.classList.remove('d-none');
+            viewActivityBtn.onclick = function() {
+                window.open(`../admin/activity-loader.html?id=${activityId}`, '_blank');
+            };
+        }
     }
 
     return activityId;

@@ -31,7 +31,8 @@ const DataPersistence = {
     JSON_FILES: {
         courses: '/data/courses.json',
         topics: '/data/topics.json',
-        settings: '/data/settings.json'
+        settings: '/data/settings.json',
+        activities: '/data/activities.json'
     },
 
     // Ruta al archivo JSON combinado (para compatibilidad)
@@ -513,12 +514,11 @@ const DataPersistence = {
 
     /**
      * Descarga un archivo JSON
-     * @private
      * @param {string} jsonData - Datos JSON a descargar
      * @param {string} filename - Nombre del archivo
      * @param {string} dataType - Tipo de datos para el atributo data-download-type
      */
-    _downloadJsonFile(jsonData, filename, dataType) {
+    downloadJsonFile(jsonData, filename, dataType) {
         try {
             // Crear un blob y descargar
             const blob = new Blob([jsonData], { type: 'application/json' });
@@ -738,6 +738,7 @@ const DataPersistence = {
             let coursesJsonData = null;
             let topicsJsonData = null;
             let settingsJsonData = null;
+            let activitiesJsonData = null;
 
             // Cursos
             if (data.courses && Object.keys(data.courses).length > 0) {
@@ -767,20 +768,55 @@ const DataPersistence = {
                 console.warn('No hay configuración para generar JSON');
             }
 
+            // Actividades (si existen)
+            if (data.activities && Object.keys(data.activities).length > 0) {
+                // Convertir objeto a array
+                const activitiesArray = Object.values(data.activities);
+                activitiesJsonData = JSON.stringify(activitiesArray, null, 2);
+                console.log(`Archivo de actividades generado con ${activitiesArray.length} actividades`);
+            } else {
+                // Intentar recuperar actividades desde localStorage
+                try {
+                    const activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                    if (activityRegistry.length > 0) {
+                        const activities = [];
+                        activityRegistry.forEach(activityInfo => {
+                            const activityData = JSON.parse(localStorage.getItem(`activity_data_${activityInfo.id}`) || 'null');
+                            if (activityData) {
+                                activities.push(activityData);
+                            }
+                        });
+
+                        if (activities.length > 0) {
+                            activitiesJsonData = JSON.stringify(activities, null, 2);
+                            console.log(`Archivo de actividades generado con ${activities.length} actividades recuperadas`);
+                        } else {
+                            console.warn('No se encontraron actividades para generar JSON');
+                        }
+                    } else {
+                        console.warn('No hay registro de actividades para generar JSON');
+                    }
+                } catch (error) {
+                    console.warn('Error al recuperar actividades:', error);
+                }
+            }
+
             // Guardar los datos JSON en localStorage para su posterior sincronización
             localStorage.setItem('jsonData_courseData', combinedJsonData);
             if (coursesJsonData) localStorage.setItem('jsonData_courses', coursesJsonData);
             if (topicsJsonData) localStorage.setItem('jsonData_topics', topicsJsonData);
             if (settingsJsonData) localStorage.setItem('jsonData_settings', settingsJsonData);
+            if (activitiesJsonData) localStorage.setItem('jsonData_activities', activitiesJsonData);
             console.log('Datos JSON guardados en localStorage para su posterior sincronización');
 
             // Si se solicita la descarga, descargar los archivos
             if (download) {
                 console.log('Descargando archivos JSON...');
-                if (combinedJsonData) this._downloadJsonFile(combinedJsonData, 'courseData.json', 'repository-data');
-                if (coursesJsonData) this._downloadJsonFile(coursesJsonData, 'courses.json', 'courses-data');
-                if (topicsJsonData) this._downloadJsonFile(topicsJsonData, 'topics.json', 'topics-data');
-                if (settingsJsonData) this._downloadJsonFile(settingsJsonData, 'settings.json', 'settings-data');
+                if (combinedJsonData) this.downloadJsonFile(combinedJsonData, 'courseData.json', 'repository-data');
+                if (coursesJsonData) this.downloadJsonFile(coursesJsonData, 'courses.json', 'courses-data');
+                if (topicsJsonData) this.downloadJsonFile(topicsJsonData, 'topics.json', 'topics-data');
+                if (settingsJsonData) this.downloadJsonFile(settingsJsonData, 'settings.json', 'settings-data');
+                if (activitiesJsonData) this.downloadJsonFile(activitiesJsonData, 'activities.json', 'activities-data');
 
                 // Solo mostramos la alerta si se solicita explícitamente y no estamos en modo silencioso
                 if (!silent && window.location.pathname.includes('/admin/')) {
