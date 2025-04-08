@@ -69,14 +69,92 @@ const DataPersistence = {
      */
     async loadApplicationData(forceRepoData = false) {
         try {
-            // MODIFICACIÓN: Ya no cargamos datos desde JSON, solo usamos localStorage
-            console.log('IMPORTANTE: Sistema modificado para trabajar exclusivamente con localStorage');
-            console.log('No se cargarán datos desde archivos JSON');
+            // Determinar si estamos en producción (Netlify)
+            const isProduction = window.location.hostname.includes('netlify.app') ||
+                               window.location.hostname.includes('netlify.com');
 
-            // Variables para mantener compatibilidad con el resto del código
+            // En producción o si se fuerza, siempre intentar cargar desde el repositorio
+            const shouldPrioritizeRepo = isProduction || forceRepoData;
+
+            console.log('Entorno de producción (Netlify):', isProduction ? 'Sí' : 'No');
+            console.log('Priorizar repositorio:', shouldPrioritizeRepo ? 'Sí' : 'No');
+
+            // Variables para almacenar datos del repositorio
             let repoData = {};
             let repoDataLoaded = false;
-            const shouldPrioritizeRepo = false; // Nunca priorizar repositorio
+
+            // Si estamos en producción o se fuerza, cargar datos desde el repositorio
+            if (isProduction || forceRepoData) {
+                try {
+                    // Usar cache: 'no-store' para evitar problemas de caché en producción
+                    const fetchOptions = { cache: 'no-store' };
+
+                    // Intentar cargar desde archivos separados primero
+                    console.log('Intentando cargar datos desde archivos separados...');
+                    try {
+                        const coursesPromise = fetch(this.JSON_FILES.courses, fetchOptions);
+                        const topicsPromise = fetch(this.JSON_FILES.topics, fetchOptions);
+
+                        const [coursesResponse, topicsResponse] = await Promise.all([coursesPromise, topicsPromise]);
+
+                        if (coursesResponse.ok && topicsResponse.ok) {
+                            // Si ambos archivos existen, cargar desde ellos
+                            const coursesData = await coursesResponse.json();
+                            const topicsData = await topicsResponse.json();
+
+                            repoData = {
+                                courses: {},
+                                topics: {},
+                                sections: {}
+                            };
+
+                            // Convertir arrays a objetos indexados por ID
+                            if (Array.isArray(coursesData)) {
+                                coursesData.forEach(course => {
+                                    repoData.courses[course.id] = course;
+                                });
+                            } else {
+                                repoData.courses = coursesData;
+                            }
+
+                            if (Array.isArray(topicsData)) {
+                                topicsData.forEach(topic => {
+                                    repoData.topics[topic.id] = topic;
+                                });
+                            } else {
+                                repoData.topics = topicsData;
+                            }
+
+                            repoDataLoaded = true;
+                            console.log('Datos del repositorio cargados desde archivos separados');
+                            console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
+                            console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
+                        }
+                    } catch (error) {
+                        console.warn('Error cargando datos desde archivos separados:', error);
+                    }
+
+                    // Si no se pudieron cargar los archivos separados, intentar con el archivo combinado
+                    if (!repoDataLoaded) {
+                        console.log('Intentando cargar datos desde archivo combinado:', this.JSON_FILE_PATH);
+                        const repoResponse = await fetch(this.JSON_FILE_PATH, fetchOptions);
+
+                        if (repoResponse.ok) {
+                            repoData = await repoResponse.json();
+                            repoDataLoaded = true;
+                            console.log('Datos del repositorio cargados desde archivo combinado');
+                            console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
+                            console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
+                        } else {
+                            console.warn('No se pudo cargar el archivo JSON del repositorio, status:', repoResponse.status);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Error cargando datos del repositorio:', error);
+                }
+            } else {
+                console.log('Modo desarrollo: No se cargarán datos desde archivos JSON');
+            }
 
             // 2. Cargar datos locales
             const localData = JSON.parse(localStorage.getItem('courseData') || '{}');
@@ -84,18 +162,36 @@ const DataPersistence = {
             console.log('Cursos en localStorage:', Object.keys(localData.persistent?.courses || {}).length);
             console.log('Temas en localStorage:', Object.keys(localData.persistent?.topics || {}).length);
 
-            // 3. Siempre usar datos locales
-            let merged = localData;
-            if (!merged.persistent) {
-                merged.persistent = { courses: {}, topics: {}, sections: {} };
+            // 3. Combinación inteligente
+            let merged;
+
+            // En producción o si se fuerza, priorizar datos del repositorio
+            const shouldUseRepoData = shouldPrioritizeRepo && repoDataLoaded;
+
+            if (shouldUseRepoData) {
+                merged = {
+                    persistent: repoData,
+                    unsynced: localData.unsynced || {}
+                };
+                console.log('Usando datos del repositorio como fuente principal');
+
+                // Actualizar localStorage con los datos del repositorio
+                localStorage.setItem('courseData', JSON.stringify(merged));
+                console.log('localStorage actualizado con datos del repositorio');
+
+                // Verificar si hay secciones de tipo HTML o Activity y registrarlas
+                this._checkSpecialSectionTypes(repoData);
+            } else {
+                // En desarrollo, usar datos locales
+                merged = localData;
+                if (!merged.persistent) {
+                    merged.persistent = { courses: {}, topics: {}, sections: {} };
+                }
+                console.log('Usando datos locales como fuente principal');
+
+                // Verificar si hay secciones de tipo HTML o Activity y registrarlas
+                this._checkSpecialSectionTypes(merged.persistent);
             }
-            console.log('Usando EXCLUSIVAMENTE datos locales como fuente principal');
-
-            // Verificar si hay secciones de tipo HTML o Activity y registrarlas
-            this._checkSpecialSectionTypes(merged.persistent);
-
-            // Guardar la combinación en localStorage para uso futuro
-            localStorage.setItem('courseData', JSON.stringify(merged));
 
             // Registrar el resultado final
             console.log('Datos finales combinados:');
@@ -103,6 +199,7 @@ const DataPersistence = {
             console.log('Temas:', Object.keys(merged.persistent.topics || {}).length);
             console.log('Cambios no sincronizados:', Object.keys(merged.unsynced || {}).length);
 
+            // Devolver los datos combinados
             return merged;
         } catch (error) {
             console.warn('Error cargando datos:', error);
