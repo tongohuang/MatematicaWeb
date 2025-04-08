@@ -394,48 +394,103 @@
 
                     console.log('Cargando HTML en ' + (isNetlify ? 'Netlify' : 'Local') + ': ' + htmlPath);
 
-                    // Crear el contenedor HTML directamente con manejo especial para Netlify
-                    contentHtml = `
-                        <div class="html-container">
-                            <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
-                                    id="html-iframe-${section.id}"></iframe>
-                        </div>
-                    `;
+                    // En Netlify, cargar el contenido usando fetch en lugar de iframe
+                    if (isNetlify) {
+                        console.log('Entorno Netlify detectado, cargando HTML usando fetch');
 
-                    // Agregar script para verificar si el archivo existe después de cargar
-                    // Usar un tiempo de espera más largo para Netlify
-                    setTimeout(() => {
-                        const iframe = document.getElementById(`html-iframe-${section.id}`);
-                        if (iframe) {
-                            try {
-                                // En Netlify, intentar cargar el archivo directamente sin verificación
-                                if (isNetlify) {
-                                    console.log('Entorno Netlify detectado, cargando HTML directamente');
-                                    // Intentar cargar el archivo, si falla usar el fallback
-                                    iframe.onerror = function() {
-                                        console.warn('Error al cargar ' + htmlPath + ', usando fallback');
-                                        this.src = fallbackHtmlPath;
-                                    };
-                                } else {
-                                    // En local, usar fetch para verificar
-                                    fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
-                                        .then(response => {
-                                            if (!response.ok) {
-                                                console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                                iframe.src = fallbackHtmlPath;
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error('Error verificando archivo ' + htmlPath + ':', error);
-                                            iframe.src = fallbackHtmlPath;
+                        // Crear contenedor con indicador de carga
+                        contentHtml = `
+                            <div class="html-container">
+                                <div class="text-center p-5" id="html-loading-${section.id}">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando contenido...</p>
+                                </div>
+                                <div id="html-content-${section.id}" style="display:none;"></div>
+                            </div>
+                        `;
+
+                        // Agregar script para cargar el contenido después de que el DOM esté listo
+                        setTimeout(() => {
+                            const loadingElement = document.getElementById(`html-loading-${section.id}`);
+                            const contentElement = document.getElementById(`html-content-${section.id}`);
+
+                            if (loadingElement && contentElement) {
+                                // Cargar el contenido usando fetch
+                                fetch(htmlPath)
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                            return fetch(fallbackHtmlPath);
+                                        }
+                                        return response;
+                                    })
+                                    .then(response => response.text())
+                                    .then(html => {
+                                        // Insertar el HTML en el contenedor
+                                        contentElement.innerHTML = html;
+                                        contentElement.style.width = '100%';
+                                        contentElement.style.minHeight = '500px';
+                                        contentElement.style.border = '1px solid #dee2e6';
+                                        contentElement.style.borderRadius = '0.25rem';
+                                        contentElement.style.padding = '1rem';
+                                        contentElement.style.display = 'block';
+
+                                        // Ocultar el indicador de carga
+                                        loadingElement.style.display = 'none';
+
+                                        // Ejecutar scripts si hay alguno
+                                        const scripts = contentElement.querySelectorAll('script');
+                                        scripts.forEach(oldScript => {
+                                            const newScript = document.createElement('script');
+                                            Array.from(oldScript.attributes).forEach(attr => {
+                                                newScript.setAttribute(attr.name, attr.value);
+                                            });
+                                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                            oldScript.parentNode.replaceChild(newScript, oldScript);
                                         });
-                                }
-                            } catch (error) {
-                                console.error('Error general al cargar HTML:', error);
-                                iframe.src = fallbackHtmlPath;
+                                    })
+                                    .catch(error => {
+                                        console.error('Error cargando HTML:', error);
+                                        contentElement.innerHTML = `
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                Error al cargar el contenido HTML. Por favor, inténtelo de nuevo más tarde.
+                                            </div>
+                                        `;
+                                        contentElement.style.display = 'block';
+                                        loadingElement.style.display = 'none';
+                                    });
                             }
-                        }
-                    }, isNetlify ? 1000 : 500);
+                        }, 500);
+                    } else {
+                        // En local, usar iframe como antes
+                        contentHtml = `
+                            <div class="html-container">
+                                <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
+                                        id="html-iframe-${section.id}"></iframe>
+                            </div>
+                        `;
+
+                        // Verificar si el archivo existe después de cargar
+                        setTimeout(() => {
+                            const iframe = document.getElementById(`html-iframe-${section.id}`);
+                            if (iframe) {
+                                fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                            iframe.src = fallbackHtmlPath;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error verificando archivo ' + htmlPath + ':', error);
+                                        iframe.src = fallbackHtmlPath;
+                                    });
+                            }
+                        }, 500);
+                    }
                     break;
 
                 case 'activity':
@@ -449,48 +504,103 @@
 
                     console.log('Cargando Actividad en ' + (isNetlifyActivity ? 'Netlify' : 'Local') + ': ' + activityPath);
 
-                    // Crear el contenedor de actividad directamente con manejo especial para Netlify
-                    contentHtml = `
-                        <div class="activity-container">
-                            <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
-                                    id="activity-iframe-${section.id}"></iframe>
-                        </div>
-                    `;
+                    // En Netlify, cargar el contenido usando fetch en lugar de iframe
+                    if (isNetlifyActivity) {
+                        console.log('Entorno Netlify detectado, cargando Actividad usando fetch');
 
-                    // Agregar script para verificar si el archivo existe después de cargar
-                    // Usar un tiempo de espera más largo para Netlify
-                    setTimeout(() => {
-                        const iframe = document.getElementById(`activity-iframe-${section.id}`);
-                        if (iframe) {
-                            try {
-                                // En Netlify, intentar cargar el archivo directamente sin verificación
-                                if (isNetlifyActivity) {
-                                    console.log('Entorno Netlify detectado, cargando Actividad directamente');
-                                    // Intentar cargar el archivo, si falla usar el fallback
-                                    iframe.onerror = function() {
-                                        console.warn('Error al cargar ' + activityPath + ', usando fallback');
-                                        this.src = fallbackActivityPath;
-                                    };
-                                } else {
-                                    // En local, usar fetch para verificar
-                                    fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
-                                        .then(response => {
-                                            if (!response.ok) {
-                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                                iframe.src = fallbackActivityPath;
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error('Error verificando archivo ' + activityPath + ':', error);
-                                            iframe.src = fallbackActivityPath;
+                        // Crear contenedor con indicador de carga
+                        contentHtml = `
+                            <div class="activity-container">
+                                <div class="text-center p-5" id="activity-loading-${section.id}">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando actividad...</p>
+                                </div>
+                                <div id="activity-content-${section.id}" style="display:none;"></div>
+                            </div>
+                        `;
+
+                        // Agregar script para cargar el contenido después de que el DOM esté listo
+                        setTimeout(() => {
+                            const loadingElement = document.getElementById(`activity-loading-${section.id}`);
+                            const contentElement = document.getElementById(`activity-content-${section.id}`);
+
+                            if (loadingElement && contentElement) {
+                                // Cargar el contenido usando fetch
+                                fetch(activityPath)
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                            return fetch(fallbackActivityPath);
+                                        }
+                                        return response;
+                                    })
+                                    .then(response => response.text())
+                                    .then(html => {
+                                        // Insertar el HTML en el contenedor
+                                        contentElement.innerHTML = html;
+                                        contentElement.style.width = '100%';
+                                        contentElement.style.minHeight = '600px';
+                                        contentElement.style.border = '1px solid #dee2e6';
+                                        contentElement.style.borderRadius = '0.25rem';
+                                        contentElement.style.padding = '1rem';
+                                        contentElement.style.display = 'block';
+
+                                        // Ocultar el indicador de carga
+                                        loadingElement.style.display = 'none';
+
+                                        // Ejecutar scripts si hay alguno
+                                        const scripts = contentElement.querySelectorAll('script');
+                                        scripts.forEach(oldScript => {
+                                            const newScript = document.createElement('script');
+                                            Array.from(oldScript.attributes).forEach(attr => {
+                                                newScript.setAttribute(attr.name, attr.value);
+                                            });
+                                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                            oldScript.parentNode.replaceChild(newScript, oldScript);
                                         });
-                                }
-                            } catch (error) {
-                                console.error('Error general al cargar Actividad:', error);
-                                iframe.src = fallbackActivityPath;
+                                    })
+                                    .catch(error => {
+                                        console.error('Error cargando Actividad:', error);
+                                        contentElement.innerHTML = `
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                Error al cargar la actividad. Por favor, inténtelo de nuevo más tarde.
+                                            </div>
+                                        `;
+                                        contentElement.style.display = 'block';
+                                        loadingElement.style.display = 'none';
+                                    });
                             }
-                        }
-                    }, isNetlifyActivity ? 1000 : 500);
+                        }, 500);
+                    } else {
+                        // En local, usar iframe como antes
+                        contentHtml = `
+                            <div class="activity-container">
+                                <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
+                                        id="activity-iframe-${section.id}"></iframe>
+                            </div>
+                        `;
+
+                        // Verificar si el archivo existe después de cargar
+                        setTimeout(() => {
+                            const iframe = document.getElementById(`activity-iframe-${section.id}`);
+                            if (iframe) {
+                                fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                            iframe.src = fallbackActivityPath;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error verificando archivo ' + activityPath + ':', error);
+                                        iframe.src = fallbackActivityPath;
+                                    });
+                            }
+                        }, 500);
+                    }
                     break;
 
                 default:
