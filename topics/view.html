@@ -398,27 +398,34 @@
                     console.log('Tipo de contenido de la sección:', section.type);
                     console.log('Contenido de la sección:', section.content);
 
-                    // En Netlify, mostrar un mensaje informativo en lugar de intentar cargar dinámicamente
+                    // En Netlify, usar iframe como antes (ya que el HTML estático funciona bien en Netlify)
                     if (isNetlify) {
-                        console.log('Entorno Netlify detectado, mostrando mensaje informativo para HTML');
+                        console.log('Entorno Netlify detectado, cargando HTML con iframe');
 
                         contentHtml = `
                             <div class="html-container">
-                                <div class="p-4 border rounded">
-                                    <h4 class="mb-3">Contenido HTML: ${section.title}</h4>
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Información:</strong> El contenido HTML interactivo requiere componentes que no están disponibles en esta versión de Netlify.
-                                    </div>
-                                    <p>Para acceder a todas las funcionalidades, por favor utilice la versión local del sitio.</p>
-                                    <div class="mt-3 text-center">
-                                        <img src="../img/html-placeholder.png" alt="Imagen de contenido HTML"
-                                             onerror="this.src='../img/placeholder.png'"
-                                             style="max-width: 100%; height: auto; max-height: 300px;">
-                                    </div>
-                                </div>
+                                <iframe src="${htmlPath}" frameborder="0" style="width:100%; height:500px;"
+                                        id="html-iframe-${section.id}"></iframe>
                             </div>
                         `;
+
+                        // Verificar si el archivo existe después de cargar
+                        setTimeout(() => {
+                            const iframe = document.getElementById(`html-iframe-${section.id}`);
+                            if (iframe) {
+                                fetch(htmlPath, { method: 'HEAD', cache: 'no-store' })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
+                                            iframe.src = fallbackHtmlPath;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error verificando archivo ' + htmlPath + ':', error);
+                                        iframe.src = fallbackHtmlPath;
+                                    });
+                            }
+                        }, 500);
                     } else {
                         // En local, usar iframe como antes
                         contentHtml = `
@@ -461,29 +468,34 @@
                     console.log('Tipo de contenido de la sección:', section.type);
                     console.log('Contenido de la sección:', section.content);
 
-                    // En Netlify, mostrar un mensaje informativo en lugar de intentar cargar la actividad
+                    // En Netlify, usar iframe como con HTML
                     if (isNetlifyActivity) {
-                        console.log('Entorno Netlify detectado, mostrando mensaje informativo para actividad');
+                        console.log('Entorno Netlify detectado, cargando Actividad con iframe');
 
-                        // Mostrar un mensaje informativo en lugar de intentar cargar la actividad
                         contentHtml = `
                             <div class="activity-container">
-                                <div class="p-4 border rounded">
-                                    <h4 class="mb-3">Actividad: ${section.title}</h4>
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Información:</strong> Esta actividad está disponible en la versión local del sitio.
-                                    </div>
-                                    <p>Las actividades interactivas requieren componentes que no están disponibles en esta versión alojada en Netlify.</p>
-                                    <p>Para acceder a todas las funcionalidades, por favor utilice la versión local del sitio.</p>
-                                    <div class="mt-3 text-center">
-                                        <img src="../img/activity-placeholder.png" alt="Imagen de actividad"
-                                             onerror="this.src='../img/placeholder.png'"
-                                             style="max-width: 100%; height: auto; max-height: 300px;">
-                                    </div>
-                                </div>
+                                <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
+                                        id="activity-iframe-${section.id}"></iframe>
                             </div>
                         `;
+
+                        // Verificar si el archivo existe después de cargar
+                        setTimeout(() => {
+                            const iframe = document.getElementById(`activity-iframe-${section.id}`);
+                            if (iframe) {
+                                fetch(activityPath, { method: 'HEAD', cache: 'no-store' })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                            iframe.src = fallbackActivityPath;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error verificando archivo ' + activityPath + ':', error);
+                                        iframe.src = fallbackActivityPath;
+                                    });
+                            }
+                        }, 500);
                     } else {
                         // En local, usar iframe como antes
                         contentHtml = `
