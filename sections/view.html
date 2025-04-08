@@ -308,17 +308,62 @@
                             </div>
                         `;
 
-                        // Cargar el contenido usando fetch
-                        fetch(htmlPath)
-                            .then(response => {
-                                if (!response.ok) {
-                                    console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                    return fetch(fallbackHtmlPath);
+                        // Función para cargar el contenido HTML directamente
+                        const loadHtmlContent = () => {
+                            console.log('Intentando cargar HTML desde:', htmlPath);
+
+                            // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', htmlPath, true);
+
+                            xhr.onload = function() {
+                                if (xhr.status >= 200 && xhr.status < 400) {
+                                    console.log('HTML cargado correctamente');
+                                    displayHtmlContent(xhr.responseText);
+                                } else {
+                                    console.warn('Archivo ' + htmlPath + ' no encontrado (status: ' + xhr.status + '), usando fallback');
+                                    loadFallbackContent();
                                 }
-                                return response;
-                            })
-                            .then(response => response.text())
-                            .then(html => {
+                            };
+
+                            xhr.onerror = function() {
+                                console.error('Error de red al cargar HTML');
+                                loadFallbackContent();
+                            };
+
+                            xhr.send();
+                        };
+
+                        // Función para cargar el contenido de respaldo
+                        const loadFallbackContent = () => {
+                            console.log('Cargando contenido de respaldo desde:', fallbackHtmlPath);
+
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', fallbackHtmlPath, true);
+
+                            xhr.onload = function() {
+                                if (xhr.status >= 200 && xhr.status < 400) {
+                                    console.log('Contenido de respaldo cargado correctamente');
+                                    displayHtmlContent(xhr.responseText);
+                                } else {
+                                    console.error('No se pudo cargar el contenido de respaldo');
+                                    showErrorMessage();
+                                }
+                            };
+
+                            xhr.onerror = function() {
+                                console.error('Error de red al cargar el contenido de respaldo');
+                                showErrorMessage();
+                            };
+
+                            xhr.send();
+                        };
+
+                        // Función para mostrar el contenido HTML
+                        const displayHtmlContent = (html) => {
+                            try {
+                                console.log('Mostrando contenido HTML');
+
                                 // Crear un contenedor seguro para el HTML
                                 const safeContainer = document.createElement('div');
                                 safeContainer.className = 'html-content';
@@ -338,23 +383,37 @@
                                 // Ejecutar scripts si hay alguno
                                 const scripts = safeContainer.querySelectorAll('script');
                                 scripts.forEach(oldScript => {
-                                    const newScript = document.createElement('script');
-                                    Array.from(oldScript.attributes).forEach(attr => {
-                                        newScript.setAttribute(attr.name, attr.value);
-                                    });
-                                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    try {
+                                        const newScript = document.createElement('script');
+                                        Array.from(oldScript.attributes).forEach(attr => {
+                                            newScript.setAttribute(attr.name, attr.value);
+                                        });
+                                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    } catch (scriptError) {
+                                        console.error('Error al ejecutar script:', scriptError);
+                                    }
                                 });
-                            })
-                            .catch(error => {
-                                console.error('Error cargando HTML:', error);
-                                innerContainer.innerHTML = `
-                                    <div class="alert alert-danger">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        Error al cargar el contenido HTML. Por favor, inténtelo de nuevo más tarde.
-                                    </div>
-                                `;
-                            });
+
+                                console.log('Contenido HTML mostrado correctamente');
+                            } catch (displayError) {
+                                console.error('Error al mostrar el contenido HTML:', displayError);
+                                showErrorMessage();
+                            }
+                        };
+
+                        // Función para mostrar mensaje de error
+                        const showErrorMessage = () => {
+                            innerContainer.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Error al cargar el contenido HTML. Por favor, inténtelo de nuevo más tarde.
+                                </div>
+                            `;
+                        };
+
+                        // Iniciar la carga del contenido
+                        loadHtmlContent();
                     } else {
                         // En local, usar iframe como antes
                         const iframe = document.createElement('iframe');
@@ -420,17 +479,62 @@
                             </div>
                         `;
 
-                        // Cargar el contenido usando fetch
-                        fetch(activityPath)
-                            .then(response => {
-                                if (!response.ok) {
-                                    console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                    return fetch(fallbackActivityPath);
+                        // Función para cargar el contenido de la actividad directamente
+                        const loadActivityContent = () => {
+                            console.log('Intentando cargar Actividad desde:', activityPath);
+
+                            // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', activityPath, true);
+
+                            xhr.onload = function() {
+                                if (xhr.status >= 200 && xhr.status < 400) {
+                                    console.log('Actividad cargada correctamente');
+                                    displayActivityContent(xhr.responseText);
+                                } else {
+                                    console.warn('Archivo ' + activityPath + ' no encontrado (status: ' + xhr.status + '), usando fallback');
+                                    loadFallbackActivityContent();
                                 }
-                                return response;
-                            })
-                            .then(response => response.text())
-                            .then(html => {
+                            };
+
+                            xhr.onerror = function() {
+                                console.error('Error de red al cargar Actividad');
+                                loadFallbackActivityContent();
+                            };
+
+                            xhr.send();
+                        };
+
+                        // Función para cargar el contenido de respaldo
+                        const loadFallbackActivityContent = () => {
+                            console.log('Cargando contenido de respaldo desde:', fallbackActivityPath);
+
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', fallbackActivityPath, true);
+
+                            xhr.onload = function() {
+                                if (xhr.status >= 200 && xhr.status < 400) {
+                                    console.log('Contenido de respaldo cargado correctamente');
+                                    displayActivityContent(xhr.responseText);
+                                } else {
+                                    console.error('No se pudo cargar el contenido de respaldo');
+                                    showActivityErrorMessage();
+                                }
+                            };
+
+                            xhr.onerror = function() {
+                                console.error('Error de red al cargar el contenido de respaldo');
+                                showActivityErrorMessage();
+                            };
+
+                            xhr.send();
+                        };
+
+                        // Función para mostrar el contenido de la actividad
+                        const displayActivityContent = (html) => {
+                            try {
+                                console.log('Mostrando contenido de la Actividad');
+
                                 // Crear un contenedor seguro para el HTML
                                 const safeContainer = document.createElement('div');
                                 safeContainer.className = 'activity-content';
@@ -450,23 +554,37 @@
                                 // Ejecutar scripts si hay alguno
                                 const scripts = safeContainer.querySelectorAll('script');
                                 scripts.forEach(oldScript => {
-                                    const newScript = document.createElement('script');
-                                    Array.from(oldScript.attributes).forEach(attr => {
-                                        newScript.setAttribute(attr.name, attr.value);
-                                    });
-                                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    try {
+                                        const newScript = document.createElement('script');
+                                        Array.from(oldScript.attributes).forEach(attr => {
+                                            newScript.setAttribute(attr.name, attr.value);
+                                        });
+                                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    } catch (scriptError) {
+                                        console.error('Error al ejecutar script:', scriptError);
+                                    }
                                 });
-                            })
-                            .catch(error => {
-                                console.error('Error cargando Actividad:', error);
-                                innerActivityContainer.innerHTML = `
-                                    <div class="alert alert-danger">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        Error al cargar la actividad. Por favor, inténtelo de nuevo más tarde.
-                                    </div>
-                                `;
-                            });
+
+                                console.log('Contenido de la Actividad mostrado correctamente');
+                            } catch (displayError) {
+                                console.error('Error al mostrar el contenido de la Actividad:', displayError);
+                                showActivityErrorMessage();
+                            }
+                        };
+
+                        // Función para mostrar mensaje de error
+                        const showActivityErrorMessage = () => {
+                            innerActivityContainer.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Error al cargar la actividad. Por favor, inténtelo de nuevo más tarde.
+                                </div>
+                            `;
+                        };
+
+                        // Iniciar la carga del contenido
+                        loadActivityContent();
                     } else {
                         // En local, usar iframe como antes
                         const iframe = document.createElement('iframe');

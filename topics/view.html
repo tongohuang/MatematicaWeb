@@ -417,51 +417,99 @@
                             const contentElement = document.getElementById(`html-content-${section.id}`);
 
                             if (loadingElement && contentElement) {
-                                // Cargar el contenido usando fetch
-                                fetch(htmlPath)
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
-                                            return fetch(fallbackHtmlPath);
-                                        }
-                                        return response;
-                                    })
-                                    .then(response => response.text())
-                                    .then(html => {
-                                        // Insertar el HTML en el contenedor
-                                        contentElement.innerHTML = html;
-                                        contentElement.style.width = '100%';
-                                        contentElement.style.minHeight = '500px';
-                                        contentElement.style.border = '1px solid #dee2e6';
-                                        contentElement.style.borderRadius = '0.25rem';
-                                        contentElement.style.padding = '1rem';
-                                        contentElement.style.display = 'block';
+                                console.log(`Intentando cargar HTML para sección ${section.id} desde:`, htmlPath);
 
-                                        // Ocultar el indicador de carga
-                                        loadingElement.style.display = 'none';
+                                // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                                const xhr = new XMLHttpRequest();
+                                xhr.open('GET', htmlPath, true);
 
-                                        // Ejecutar scripts si hay alguno
-                                        const scripts = contentElement.querySelectorAll('script');
-                                        scripts.forEach(oldScript => {
-                                            const newScript = document.createElement('script');
-                                            Array.from(oldScript.attributes).forEach(attr => {
-                                                newScript.setAttribute(attr.name, attr.value);
+                                xhr.onload = function() {
+                                    if (xhr.status >= 200 && xhr.status < 400) {
+                                        console.log(`HTML para sección ${section.id} cargado correctamente`);
+                                        try {
+                                            // Insertar el HTML en el contenedor
+                                            contentElement.innerHTML = xhr.responseText;
+                                            contentElement.style.width = '100%';
+                                            contentElement.style.minHeight = '500px';
+                                            contentElement.style.border = '1px solid #dee2e6';
+                                            contentElement.style.borderRadius = '0.25rem';
+                                            contentElement.style.padding = '1rem';
+                                            contentElement.style.display = 'block';
+
+                                            // Ocultar el indicador de carga
+                                            loadingElement.style.display = 'none';
+
+                                            // Ejecutar scripts si hay alguno
+                                            const scripts = contentElement.querySelectorAll('script');
+                                            scripts.forEach(oldScript => {
+                                                try {
+                                                    const newScript = document.createElement('script');
+                                                    Array.from(oldScript.attributes).forEach(attr => {
+                                                        newScript.setAttribute(attr.name, attr.value);
+                                                    });
+                                                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                                                } catch (scriptError) {
+                                                    console.error(`Error al ejecutar script en sección ${section.id}:`, scriptError);
+                                                }
                                             });
-                                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                            oldScript.parentNode.replaceChild(newScript, oldScript);
-                                        });
-                                    })
-                                    .catch(error => {
-                                        console.error('Error cargando HTML:', error);
-                                        contentElement.innerHTML = `
-                                            <div class="alert alert-danger">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                                Error al cargar el contenido HTML. Por favor, inténtelo de nuevo más tarde.
-                                            </div>
-                                        `;
-                                        contentElement.style.display = 'block';
-                                        loadingElement.style.display = 'none';
-                                    });
+
+                                            console.log(`Contenido HTML para sección ${section.id} mostrado correctamente`);
+                                        } catch (displayError) {
+                                            console.error(`Error al mostrar el contenido HTML para sección ${section.id}:`, displayError);
+                                            showHtmlError();
+                                        }
+                                    } else {
+                                        console.warn(`Archivo ${htmlPath} no encontrado (status: ${xhr.status}), usando fallback`);
+                                        loadFallbackHtml();
+                                    }
+                                };
+
+                                xhr.onerror = function() {
+                                    console.error(`Error de red al cargar HTML para sección ${section.id}`);
+                                    loadFallbackHtml();
+                                };
+
+                                xhr.send();
+
+                                // Función para cargar el HTML de respaldo
+                                function loadFallbackHtml() {
+                                    console.log(`Cargando HTML de respaldo para sección ${section.id} desde:`, fallbackHtmlPath);
+
+                                    const fallbackXhr = new XMLHttpRequest();
+                                    fallbackXhr.open('GET', fallbackHtmlPath, true);
+
+                                    fallbackXhr.onload = function() {
+                                        if (fallbackXhr.status >= 200 && fallbackXhr.status < 400) {
+                                            console.log(`HTML de respaldo para sección ${section.id} cargado correctamente`);
+                                            contentElement.innerHTML = fallbackXhr.responseText;
+                                            contentElement.style.display = 'block';
+                                            loadingElement.style.display = 'none';
+                                        } else {
+                                            console.error(`No se pudo cargar el HTML de respaldo para sección ${section.id}`);
+                                            showHtmlError();
+                                        }
+                                    };
+
+                                    fallbackXhr.onerror = function() {
+                                        console.error(`Error de red al cargar HTML de respaldo para sección ${section.id}`);
+                                        showHtmlError();
+                                    };
+
+                                    fallbackXhr.send();
+                                }
+
+                                // Función para mostrar mensaje de error
+                                function showHtmlError() {
+                                    contentElement.innerHTML = `
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Error al cargar el contenido HTML. Por favor, inténtelo de nuevo más tarde.
+                                        </div>
+                                    `;
+                                    contentElement.style.display = 'block';
+                                    loadingElement.style.display = 'none';
+                                }
                             }
                         }, 500);
                     } else {
@@ -527,51 +575,99 @@
                             const contentElement = document.getElementById(`activity-content-${section.id}`);
 
                             if (loadingElement && contentElement) {
-                                // Cargar el contenido usando fetch
-                                fetch(activityPath)
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                            return fetch(fallbackActivityPath);
-                                        }
-                                        return response;
-                                    })
-                                    .then(response => response.text())
-                                    .then(html => {
-                                        // Insertar el HTML en el contenedor
-                                        contentElement.innerHTML = html;
-                                        contentElement.style.width = '100%';
-                                        contentElement.style.minHeight = '600px';
-                                        contentElement.style.border = '1px solid #dee2e6';
-                                        contentElement.style.borderRadius = '0.25rem';
-                                        contentElement.style.padding = '1rem';
-                                        contentElement.style.display = 'block';
+                                console.log(`Intentando cargar Actividad para sección ${section.id} desde:`, activityPath);
 
-                                        // Ocultar el indicador de carga
-                                        loadingElement.style.display = 'none';
+                                // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                                const xhr = new XMLHttpRequest();
+                                xhr.open('GET', activityPath, true);
 
-                                        // Ejecutar scripts si hay alguno
-                                        const scripts = contentElement.querySelectorAll('script');
-                                        scripts.forEach(oldScript => {
-                                            const newScript = document.createElement('script');
-                                            Array.from(oldScript.attributes).forEach(attr => {
-                                                newScript.setAttribute(attr.name, attr.value);
+                                xhr.onload = function() {
+                                    if (xhr.status >= 200 && xhr.status < 400) {
+                                        console.log(`Actividad para sección ${section.id} cargada correctamente`);
+                                        try {
+                                            // Insertar el HTML en el contenedor
+                                            contentElement.innerHTML = xhr.responseText;
+                                            contentElement.style.width = '100%';
+                                            contentElement.style.minHeight = '600px';
+                                            contentElement.style.border = '1px solid #dee2e6';
+                                            contentElement.style.borderRadius = '0.25rem';
+                                            contentElement.style.padding = '1rem';
+                                            contentElement.style.display = 'block';
+
+                                            // Ocultar el indicador de carga
+                                            loadingElement.style.display = 'none';
+
+                                            // Ejecutar scripts si hay alguno
+                                            const scripts = contentElement.querySelectorAll('script');
+                                            scripts.forEach(oldScript => {
+                                                try {
+                                                    const newScript = document.createElement('script');
+                                                    Array.from(oldScript.attributes).forEach(attr => {
+                                                        newScript.setAttribute(attr.name, attr.value);
+                                                    });
+                                                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                                                } catch (scriptError) {
+                                                    console.error(`Error al ejecutar script en sección ${section.id}:`, scriptError);
+                                                }
                                             });
-                                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                            oldScript.parentNode.replaceChild(newScript, oldScript);
-                                        });
-                                    })
-                                    .catch(error => {
-                                        console.error('Error cargando Actividad:', error);
-                                        contentElement.innerHTML = `
-                                            <div class="alert alert-danger">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                                Error al cargar la actividad. Por favor, inténtelo de nuevo más tarde.
-                                            </div>
-                                        `;
-                                        contentElement.style.display = 'block';
-                                        loadingElement.style.display = 'none';
-                                    });
+
+                                            console.log(`Contenido de Actividad para sección ${section.id} mostrado correctamente`);
+                                        } catch (displayError) {
+                                            console.error(`Error al mostrar el contenido de Actividad para sección ${section.id}:`, displayError);
+                                            showActivityError();
+                                        }
+                                    } else {
+                                        console.warn(`Archivo ${activityPath} no encontrado (status: ${xhr.status}), usando fallback`);
+                                        loadFallbackActivity();
+                                    }
+                                };
+
+                                xhr.onerror = function() {
+                                    console.error(`Error de red al cargar Actividad para sección ${section.id}`);
+                                    loadFallbackActivity();
+                                };
+
+                                xhr.send();
+
+                                // Función para cargar la Actividad de respaldo
+                                function loadFallbackActivity() {
+                                    console.log(`Cargando Actividad de respaldo para sección ${section.id} desde:`, fallbackActivityPath);
+
+                                    const fallbackXhr = new XMLHttpRequest();
+                                    fallbackXhr.open('GET', fallbackActivityPath, true);
+
+                                    fallbackXhr.onload = function() {
+                                        if (fallbackXhr.status >= 200 && fallbackXhr.status < 400) {
+                                            console.log(`Actividad de respaldo para sección ${section.id} cargada correctamente`);
+                                            contentElement.innerHTML = fallbackXhr.responseText;
+                                            contentElement.style.display = 'block';
+                                            loadingElement.style.display = 'none';
+                                        } else {
+                                            console.error(`No se pudo cargar la Actividad de respaldo para sección ${section.id}`);
+                                            showActivityError();
+                                        }
+                                    };
+
+                                    fallbackXhr.onerror = function() {
+                                        console.error(`Error de red al cargar Actividad de respaldo para sección ${section.id}`);
+                                        showActivityError();
+                                    };
+
+                                    fallbackXhr.send();
+                                }
+
+                                // Función para mostrar mensaje de error
+                                function showActivityError() {
+                                    contentElement.innerHTML = `
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Error al cargar la actividad. Por favor, inténtelo de nuevo más tarde.
+                                        </div>
+                                    `;
+                                    contentElement.style.display = 'block';
+                                    loadingElement.style.display = 'none';
+                                }
                             }
                         }, 500);
                     } else {
