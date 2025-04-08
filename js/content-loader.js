@@ -9,6 +9,16 @@ function loadHTMLContent(url, containerId, fallbackUrl, isActivity = false) {
         return;
     }
 
+    // Detectar si estamos en Netlify
+    const isNetlify = window.location.hostname.includes('netlify.app') ||
+                     window.location.hostname.includes('netlify.com');
+
+    // Si es una actividad y estamos en Netlify, usar la versión estática
+    if (isActivity && isNetlify) {
+        console.log('Entorno Netlify detectado, usando versión estática para actividad');
+        url = '../activities/templates/activity-static.html';
+    }
+
     // Mostrar indicador de carga
     container.innerHTML = `
         <div class="text-center p-4">

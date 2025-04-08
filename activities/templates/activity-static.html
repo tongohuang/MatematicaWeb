@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad Estática para Netlify</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .activity-content {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .question {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .question h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+        
+        .options {
+            margin-top: 15px;
+        }
+        
+        .option {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .option:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .option.selected {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .feedback.correct {
+            background-color: #dff0d8;
+            color: #3c763d;
+            display: none;
+        }
+        
+        .feedback.incorrect {
+            background-color: #f2dede;
+            color: #a94442;
+            display: none;
+        }
+        
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .result {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .netlify-notice {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="activity-content" id="activity-content">
+        <h1>Actividad Interactiva</h1>
+        
+        <div class="netlify-notice">
+            <p><strong>Nota:</strong> Estás viendo una versión estática de esta actividad en Netlify. Para acceder a todas las funcionalidades interactivas, por favor utiliza la versión local del sitio.</p>
+        </div>
+        
+        <div class="question">
+            <h3>Pregunta 1: ¿Cuál es el resultado de 2 + 2?</h3>
+            <div class="options">
+                <div class="option">3</div>
+                <div class="option selected">4</div>
+                <div class="option">5</div>
+                <div class="option">6</div>
+            </div>
+            <div class="feedback correct" style="display: block;">
+                ¡Correcto! 2 + 2 = 4
+            </div>
+        </div>
+        
+        <div class="question">
+            <h3>Pregunta 2: ¿Cuál es el resultado de 5 - 3?</h3>
+            <div class="options">
+                <div class="option">1</div>
+                <div class="option selected">2</div>
+                <div class="option">3</div>
+                <div class="option">4</div>
+            </div>
+            <div class="feedback correct" style="display: block;">
+                ¡Correcto! 5 - 3 = 2
+            </div>
+        </div>
+        
+        <div class="question">
+            <h3>Pregunta 3: ¿Cuál es el resultado de 3 × 4?</h3>
+            <div class="options">
+                <div class="option">9</div>
+                <div class="option">10</div>
+                <div class="option selected">12</div>
+                <div class="option">15</div>
+            </div>
+            <div class="feedback correct" style="display: block;">
+                ¡Correcto! 3 × 4 = 12
+            </div>
+        </div>
+        
+        <div class="result">
+            Resultado: 3 de 3 correctas
+        </div>
+    </div>
+</body>
+</html>
