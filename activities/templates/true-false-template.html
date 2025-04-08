@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad de Verdadero o Falso</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .activity-content {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .question {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .question h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+        
+        .options {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .option {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .option:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .option.selected {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .feedback.correct {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        
+        .feedback.incorrect {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        
+        .btn-check {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        .btn-check:hover {
+            background-color: #2980b9;
+        }
+        
+        .result {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="activity-content" id="activity-content">
+        <h1 id="activity-title">Actividad de Verdadero o Falso</h1>
+        
+        <div id="questions-container">
+            <!-- Las preguntas se cargarán aquí dinámicamente -->
+        </div>
+        
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        // Datos de la actividad (serán reemplazados al guardar)
+        const activityData = {
+            title: "Actividad de Verdadero o Falso",
+            questions: [
+                {
+                    id: 1,
+                    text: "La suma de los ángulos internos de un triángulo es 180 grados.",
+                    correctAnswer: true,
+                    feedback: {
+                        correct: "¡Correcto! La suma de los ángulos internos de un triángulo siempre es 180 grados.",
+                        incorrect: "Incorrecto. La suma de los ángulos internos de un triángulo siempre es 180 grados."
+                    }
+                }
+                // Más preguntas se agregarán aquí
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Establecer el título de la actividad
+            document.getElementById('activity-title').textContent = activityData.title;
+            
+            // Generar las preguntas
+            const questionsContainer = document.getElementById('questions-container');
+            
+            activityData.questions.forEach((question, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question';
+                questionElement.id = `question-${question.id}`;
+                
+                // Crear el contenido de la pregunta
+                let questionHTML = `
+                    <h3>Pregunta ${index + 1}: ${question.text}</h3>
+                    <div class="options">
+                        <div class="option" data-value="true" onclick="selectOption(${question.id}, true)">Verdadero</div>
+                        <div class="option" data-value="false" onclick="selectOption(${question.id}, false)">Falso</div>
+                    </div>
+                    <div class="feedback correct" id="feedback-correct-${question.id}">
+                        ${question.feedback.correct}
+                    </div>
+                    <div class="feedback incorrect" id="feedback-incorrect-${question.id}">
+                        ${question.feedback.incorrect}
+                    </div>
+                    <button class="btn-check" onclick="checkAnswer(${question.id})">Verificar</button>
+                `;
+                
+                questionElement.innerHTML = questionHTML;
+                questionsContainer.appendChild(questionElement);
+            });
+        });
+        
+        // Variables para seguimiento
+        let selectedOptions = {};
+        let correctAnswers = 0;
+        let totalAnswered = 0;
+        
+        // Función para seleccionar una opción
+        function selectOption(questionId, value) {
+            // Desmarcar ambas opciones
+            const options = document.querySelectorAll(`#question-${questionId} .option`);
+            options.forEach(option => option.classList.remove('selected'));
+            
+            // Marcar la opción seleccionada
+            const selectedOption = document.querySelector(`#question-${questionId} .option[data-value="${value}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+                selectedOptions[questionId] = value;
+            }
+        }
+        
+        // Función para verificar una respuesta
+        function checkAnswer(questionId) {
+            // Verificar si se ha seleccionado una opción
+            if (selectedOptions[questionId] === undefined) {
+                alert('Por favor, selecciona una opción.');
+                return;
+            }
+            
+            // Obtener la pregunta
+            const question = activityData.questions.find(q => q.id === questionId);
+            if (!question) return;
+            
+            // Ocultar ambos mensajes de retroalimentación
+            document.getElementById(`feedback-correct-${questionId}`).style.display = 'none';
+            document.getElementById(`feedback-incorrect-${questionId}`).style.display = 'none';
+            
+            // Verificar si la respuesta es correcta
+            const isCorrect = selectedOptions[questionId] === question.correctAnswer;
+            
+            // Mostrar retroalimentación
+            if (isCorrect) {
+                document.getElementById(`feedback-correct-${questionId}`).style.display = 'block';
+                correctAnswers++;
+            } else {
+                document.getElementById(`feedback-incorrect-${questionId}`).style.display = 'block';
+            }
+            
+            // Deshabilitar el botón y las opciones después de verificar
+            const checkButton = document.querySelector(`#question-${questionId} .btn-check`);
+            if (checkButton) checkButton.disabled = true;
+            
+            const options = document.querySelectorAll(`#question-${questionId} .option`);
+            options.forEach(opt => opt.style.pointerEvents = 'none');
+            
+            // Actualizar contador
+            totalAnswered++;
+            
+            // Actualizar resultado si todas las preguntas han sido respondidas
+            if (totalAnswered === activityData.questions.length) {
+                const resultElement = document.getElementById('result');
+                resultElement.textContent = `Resultado final: ${correctAnswers} de ${activityData.questions.length} correctas`;
+            }
+        }
+    </script>
+</body>
+</html>

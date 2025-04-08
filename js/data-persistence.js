@@ -4,6 +4,13 @@
  * Este módulo implementa un sistema que mantiene permanentemente los datos
  * tanto en localStorage como en el JSON del repositorio, sin reiniciar ninguno
  * de los dos, con un mecanismo de sincronización manual controlada.
+ *
+ * ¡IMPORTANTE! - ESTRUCTURA DE DATOS MATEMÁTICA WEB
+ * -----------------------------------------------
+ * - localStorage es la fuente principal para almacenamiento y recuperación de datos
+ * - Los archivos JSON son solo para exportar datos al repositorio
+ * - Cualquier modificación debe mantener esta estructura para garantizar la persistencia
+ * - Ver docs/ESTRUCTURA_DE_DATOS.md para más información detallada
  */
 
 const DataPersistence = {
@@ -13,7 +20,8 @@ const DataPersistence = {
         persistent: {
             courses: {},
             topics: {},
-            sections: {}
+            sections: {},
+            activities: {} // Agregado para almacenar actividades
         },
         // Cambios locales no sincronizados
         unsynced: {}
@@ -34,6 +42,9 @@ const DataPersistence = {
      * @param {boolean} forceRepoData - Si es true, fuerza la carga desde el repositorio
      */
     async init(forceRepoData = false) {
+        // Verificar y recuperar actividades perdidas
+        this._recoverLostActivities();
+
         console.log('Inicializando sistema de persistencia de datos...');
 
         try {
@@ -208,7 +219,7 @@ const DataPersistence = {
 
     /**
      * Guarda datos en el sistema de persistencia
-     * @param {string} type - Tipo de dato (courses, topics, sections)
+     * @param {string} type - Tipo de dato (courses, topics, sections, activities)
      * @param {string|number} id - Identificador único del elemento
      * @param {object} content - Contenido a guardar
      * @param {boolean} syncImmediately - Si es true, sincroniza inmediatamente con el JSON
@@ -250,6 +261,11 @@ const DataPersistence = {
         // 5. Guardar también en el sistema antiguo para compatibilidad
         try {
             this._saveToOldSystem(type, id, content);
+
+            // Si es una actividad, guardarla también en el registro de actividades
+            if (type === 'activities') {
+                this._updateActivityRegistry(id, content);
+            }
         } catch (error) {
             console.warn('Error al guardar en el sistema antiguo:', error);
         }
@@ -288,6 +304,114 @@ const DataPersistence = {
     },
 
     /**
+     * Actualiza el registro de actividades
+     * @private
+     * @param {string} id - ID de la actividad
+     * @param {object} content - Contenido de la actividad
+     */
+    _updateActivityRegistry(id, content) {
+        try {
+            // Obtener el registro actual
+            let registry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+
+            // Verificar si la actividad ya está en el registro
+            const index = registry.findIndex(entry => entry.id === id);
+
+            // Crear entrada para el registro
+            const registryEntry = {
+                id: id,
+                title: content.title || 'Actividad sin título',
+                type: content.type || 'unknown',
+                updated: Date.now()
+            };
+
+            if (index !== -1) {
+                // Actualizar entrada existente
+                registry[index] = {
+                    ...registry[index],
+                    ...registryEntry
+                };
+            } else {
+                // Agregar nueva entrada
+                registryEntry.created = Date.now();
+                registry.push(registryEntry);
+            }
+
+            // Guardar el registro actualizado
+            localStorage.setItem('activity_registry', JSON.stringify(registry));
+            console.log(`Registro de actividades actualizado para ${id}`);
+        } catch (error) {
+            console.warn('Error al actualizar el registro de actividades:', error);
+        }
+    },
+
+    /**
+     * Recupera actividades perdidas de localStorage
+     * @private
+     */
+    _recoverLostActivities() {
+        try {
+            console.log('Verificando actividades perdidas...');
+
+            // Obtener datos actuales
+            const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
+            if (!currentData.persistent) {
+                currentData.persistent = this.dataStructure.persistent;
+            }
+            if (!currentData.persistent.activities) {
+                currentData.persistent.activities = {};
+            }
+
+            // Buscar claves de actividades en localStorage
+            const activityKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('activity_') || key.match(/^\d+$/))) {
+                    activityKeys.push(key);
+                }
+            }
+
+            console.log(`Encontradas ${activityKeys.length} posibles claves de actividades`);
+
+            // Procesar cada clave
+            let recoveredCount = 0;
+            activityKeys.forEach(key => {
+                try {
+                    const data = localStorage.getItem(key);
+                    if (!data) return;
+
+                    const activity = JSON.parse(data);
+                    if (!activity || typeof activity !== 'object') return;
+
+                    // Verificar si parece una actividad válida
+                    if (activity.title && (activity.questions || activity.type)) {
+                        // Extraer ID de la clave
+                        const activityId = key.replace('activity_data_', '');
+
+                        // Verificar si ya existe en el sistema de persistencia
+                        if (!currentData.persistent.activities[activityId]) {
+                            console.log(`Recuperando actividad perdida: ${activityId}`);
+                            currentData.persistent.activities[activityId] = activity;
+                            recoveredCount++;
+                        }
+                    }
+                } catch (parseError) {
+                    console.warn(`Error al procesar clave ${key}:`, parseError);
+                }
+            });
+
+            if (recoveredCount > 0) {
+                console.log(`Recuperadas ${recoveredCount} actividades perdidas`);
+                localStorage.setItem('courseData', JSON.stringify(currentData));
+            } else {
+                console.log('No se encontraron actividades perdidas para recuperar');
+            }
+        } catch (error) {
+            console.warn('Error al recuperar actividades perdidas:', error);
+        }
+    },
+
+    /**
      * Verifica si hay secciones de tipo HTML o Activity y registra información sobre ellas
      * @private
      * @param {Object} data - Datos a verificar
@@ -296,6 +420,15 @@ const DataPersistence = {
         if (!data || !data.topics) return;
 
         console.log('Verificando secciones especiales (HTML y Activity)...');
+
+        // Verificar si existe la estructura para actividades
+        if (!data.persistent) {
+            data.persistent = this.dataStructure.persistent;
+        }
+
+        if (!data.persistent.activities) {
+            data.persistent.activities = {};
+        }
 
         // Recopilar todas las secciones de tipo HTML y Activity
         const htmlSections = [];

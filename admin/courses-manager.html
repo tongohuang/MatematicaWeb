@@ -90,7 +90,7 @@
                 </button>
             </div>
         </div>
-        
+
         <div class="card">
             <div class="card-header bg-light">
                 <h5 class="mb-0">Listado de Cursos</h5>
@@ -168,7 +168,23 @@
         function loadCoursesList() {
             console.log('Cargando lista de cursos...');
             const coursesList = document.getElementById('coursesList');
-            const courses = DataManager.getCourses();
+
+            // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+            let courses = [];
+            try {
+                console.log('Cargando cursos directamente desde localStorage...');
+
+                // 1. Obtener todos los cursos de localStorage
+                courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                console.log(`Cursos encontrados en localStorage: ${courses.length}`);
+            } catch (error) {
+                console.error('Error al cargar cursos desde localStorage:', error);
+                // Intentar con DataManager como fallback
+                if (typeof DataManager !== 'undefined') {
+                    console.log('Intentando cargar cursos con DataManager...');
+                    courses = DataManager.getCourses();
+                }
+            }
 
             if (courses.length === 0) {
                 coursesList.innerHTML = `
@@ -187,10 +203,25 @@
 
             // Generar HTML para cada curso
             coursesList.innerHTML = courses.map(course => {
-                // Obtener la cantidad de temas para este curso
-                const topics = DataManager.getTopicsByCourse(course.id);
+                // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+                let topics = [];
+                try {
+                    // 1. Obtener todos los temas de localStorage
+                    const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+
+                    // 2. Filtrar los temas por curso
+                    topics = allTopics.filter(topic => topic.courseId == course.id);
+                    debugLog(`Temas para el curso ${course.id}: ${topics.length}`);
+                } catch (error) {
+                    debugLog(`Error al cargar temas para el curso ${course.id}: ${error.message}`);
+                    // Intentar con DataManager como fallback
+                    if (typeof DataManager !== 'undefined') {
+                        topics = DataManager.getTopicsByCourse(course.id);
+                    }
+                }
+
                 const topicsCount = topics.length;
-                
+
                 // Contar el total de secciones en todos los temas
                 let sectionsCount = 0;
                 topics.forEach(topic => {
@@ -200,8 +231,8 @@
                 });
 
                 // Truncar la descripción si es muy larga
-                const shortDescription = course.description.length > 100 
-                    ? course.description.substring(0, 100) + '...' 
+                const shortDescription = course.description.length > 100
+                    ? course.description.substring(0, 100) + '...'
                     : course.description;
 
                 return `
@@ -261,10 +292,10 @@
                 const loadingElement = document.createElement('div');
                 loadingElement.innerHTML = loadingHtml;
                 document.body.appendChild(loadingElement.firstElementChild);
-                
+
                 // Método 1: Eliminar directamente del localStorage
                 deleteDirectFromLocalStorage(courseId);
-                
+
                 // Método 2: Usar DataManager como respaldo
                 try {
                     DataManager.deleteCourse(courseId);
@@ -272,16 +303,16 @@
                 } catch (dmError) {
                     debugLog('Error en DataManager.deleteCourse: ' + dmError.message);
                 }
-                
+
                 // Mostrar mensaje de éxito
                 alert('Curso eliminado correctamente. La página se recargará para actualizar los datos.');
-                
+
                 // Recargar la página
                 window.location.reload();
             } catch (error) {
                 console.error('Error al eliminar el curso:', error);
                 alert('Error al eliminar el curso. Por favor, inténtalo de nuevo.');
-                
+
                 // Eliminar el indicador de carga en caso de error
                 const loadingElement = document.querySelector('.bg-white.bg-opacity-75');
                 if (loadingElement) {
@@ -293,108 +324,91 @@
         // Función para eliminar un curso directamente del localStorage
         function deleteDirectFromLocalStorage(courseId) {
             debugLog(`Eliminando curso ${courseId} directamente del localStorage...`);
-            
-            // Asegurarse de que courseId sea numérico
-            if (typeof courseId === 'string' && !isNaN(courseId)) {
-                courseId = parseInt(courseId);
-            }
-            
+
+            // Asegurarse de que courseId sea consistente para comparaciones
+            courseId = String(courseId);
+
             try {
-                // 1. Sistema nuevo (courseData)
-                const courseData = JSON.parse(localStorage.getItem('courseData') || '{}');
-                
-                if (courseData.persistent) {
-                    // Buscar temas y secciones asociados
-                    const associatedTopicIds = [];
-                    const associatedSectionIds = [];
-                    
-                    if (courseData.persistent.topics) {
-                        Object.keys(courseData.persistent.topics).forEach(topicId => {
-                            const topic = courseData.persistent.topics[topicId];
-                            if (topic && topic.courseId === courseId) {
-                                associatedTopicIds.push(topicId);
-                                
-                                // Buscar secciones
-                                if (topic.sections && Array.isArray(topic.sections)) {
-                                    topic.sections.forEach(section => {
-                                        if (section && section.id) {
-                                            associatedSectionIds.push(section.id);
-                                        }
-                                    });
+                // ENFOQUE SIMPLIFICADO - TRABAJAR DIRECTAMENTE CON LOCALSTORAGE
+                debugLog('Usando enfoque simplificado con localStorage...');
+
+                // 1. Obtener todos los cursos
+                const allCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                debugLog(`Cursos encontrados en localStorage: ${allCourses.length}`);
+
+                // 2. Filtrar para eliminar el curso
+                const newCourses = allCourses.filter(course => String(course.id) !== courseId);
+                debugLog(`Después de filtrar quedan ${newCourses.length} cursos`);
+
+                // 3. Guardar los cursos actualizados
+                localStorage.setItem('matematicaweb_courses', JSON.stringify(newCourses));
+                debugLog('Cursos actualizados guardados en localStorage');
+
+                // 4. Obtener todos los temas
+                const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+                debugLog(`Temas encontrados en localStorage: ${allTopics.length}`);
+
+                // 5. Identificar temas asociados al curso
+                const topicsToKeep = [];
+                const topicsToDelete = [];
+
+                allTopics.forEach(topic => {
+                    if (String(topic.courseId) === courseId) {
+                        topicsToDelete.push(topic);
+                    } else {
+                        topicsToKeep.push(topic);
+                    }
+                });
+
+                debugLog(`Temas a eliminar: ${topicsToDelete.length}`);
+                debugLog(`Temas a mantener: ${topicsToKeep.length}`);
+
+                // 6. Guardar los temas actualizados
+                localStorage.setItem('matematicaweb_topics', JSON.stringify(topicsToKeep));
+                debugLog('Temas actualizados guardados en localStorage');
+
+                // 7. Eliminar actividades asociadas a los temas eliminados
+                let activityCount = 0;
+
+                topicsToDelete.forEach(topic => {
+                    if (topic.sections && Array.isArray(topic.sections)) {
+                        topic.sections.forEach(section => {
+                            if (section.type === 'activity' && section.content) {
+                                // Eliminar datos de actividad
+                                const activityKey = `activity_data_${section.content}`;
+                                if (localStorage.getItem(activityKey)) {
+                                    localStorage.removeItem(activityKey);
+                                    activityCount++;
+                                    debugLog(`Actividad eliminada: ${activityKey}`);
                                 }
                             }
                         });
                     }
-                    
-                    debugLog(`Encontrados ${associatedTopicIds.length} temas y ${associatedSectionIds.length} secciones asociados`);
-                    
-                    // Eliminar secciones
-                    if (courseData.persistent.sections) {
-                        associatedSectionIds.forEach(sectionId => {
-                            if (courseData.persistent.sections[sectionId]) {
-                                delete courseData.persistent.sections[sectionId];
-                                debugLog(`Sección ${sectionId} eliminada`);
-                            }
-                        });
-                    }
-                    
-                    // Eliminar temas
-                    associatedTopicIds.forEach(topicId => {
-                        if (courseData.persistent.topics[topicId]) {
-                            delete courseData.persistent.topics[topicId];
-                            debugLog(`Tema ${topicId} eliminado`);
-                        }
+                });
+
+                debugLog(`Total de actividades eliminadas: ${activityCount}`);
+
+                // 8. Actualizar el registro de actividades si existe
+                try {
+                    const activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                    const updatedRegistry = activityRegistry.filter(entry => {
+                        // Mantener solo las actividades que no estén en temas eliminados
+                        return !topicsToDelete.some(topic =>
+                            topic.sections && topic.sections.some(section =>
+                                section.type === 'activity' && section.content === entry.id
+                            )
+                        );
                     });
-                    
-                    // Eliminar curso
-                    if (courseData.persistent.courses[courseId]) {
-                        delete courseData.persistent.courses[courseId];
-                        debugLog(`Curso ${courseId} eliminado del sistema nuevo`);
-                    }
-                    
-                    // Limpiar referencias en unsynced
-                    if (courseData.unsynced) {
-                        const newUnsynced = {};
-                        
-                        Object.keys(courseData.unsynced).forEach(key => {
-                            if (!key.includes(`courses_${courseId}`) && 
-                                !associatedTopicIds.some(topicId => key.includes(`topics_${topicId}`)) &&
-                                !associatedSectionIds.some(sectionId => key.includes(`sections_${sectionId}`))) {
-                                newUnsynced[key] = courseData.unsynced[key];
-                            } else {
-                                debugLog(`Eliminada referencia en unsynced: ${key}`);
-                            }
-                        });
-                        
-                        courseData.unsynced = newUnsynced;
-                    }
-                    
-                    // Guardar cambios
-                    localStorage.setItem('courseData', JSON.stringify(courseData));
-                    debugLog('Cambios guardados en localStorage (sistema nuevo)');
+
+                    localStorage.setItem('activity_registry', JSON.stringify(updatedRegistry));
+                    debugLog(`Registro de actividades actualizado: ${updatedRegistry.length} entradas`);
+                } catch (regError) {
+                    debugLog(`Error al actualizar registro de actividades: ${regError.message}`);
                 }
-                
-                // 2. Sistema antiguo
-                if (localStorage.getItem('matematicaweb_courses')) {
-                    const oldCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
-                    const newCourses = oldCourses.filter(course => course.id !== courseId);
-                    
-                    if (oldCourses.length > newCourses.length) {
-                        localStorage.setItem('matematicaweb_courses', JSON.stringify(newCourses));
-                        debugLog(`Curso ${courseId} eliminado del sistema antiguo`);
-                    }
-                }
-                
-                if (localStorage.getItem('matematicaweb_topics')) {
-                    const oldTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
-                    const newTopics = oldTopics.filter(topic => topic.courseId !== courseId);
-                    
-                    if (oldTopics.length > newTopics.length) {
-                        localStorage.setItem('matematicaweb_topics', JSON.stringify(newTopics));
-                        debugLog(`Temas del curso ${courseId} eliminados del sistema antiguo`);
-                    }
-                }
-                
+
+                // Ya no es necesario el sistema antiguo porque estamos trabajando directamente con localStorage
+                debugLog('Eliminación completada con éxito');
+
                 return true;
             } catch (error) {
                 debugLog('Error al eliminar directamente del localStorage: ' + error.message);
@@ -406,11 +420,11 @@
         function showCourseData(courseId) {
             debugMode = true;
             document.getElementById('debugPanel').classList.add('show');
-            
+
             // Obtener datos del curso
             const courseData = JSON.parse(localStorage.getItem('courseData') || '{}');
             const course = courseData.persistent?.courses?.[courseId];
-            
+
             if (course) {
                 const content = `
                     <div class="debug-section">
@@ -418,7 +432,7 @@
                         <pre>${JSON.stringify(course, null, 2)}</pre>
                     </div>
                 `;
-                
+
                 document.getElementById('debugContent').innerHTML = content;
             } else {
                 document.getElementById('debugContent').innerHTML = `<div class="debug-section">No se encontró el curso con ID ${courseId}</div>`;
@@ -431,22 +445,22 @@
             document.getElementById('toggleDebugBtn').addEventListener('click', function() {
                 debugMode = !debugMode;
                 document.getElementById('debugPanel').classList.toggle('show', debugMode);
-                
+
                 if (debugMode) {
                     showDebugInfo();
                 }
             });
-            
+
             // Botones del panel de depuración
             document.getElementById('debugClose').addEventListener('click', function() {
                 debugMode = false;
                 document.getElementById('debugPanel').classList.remove('show');
             });
-            
+
             document.getElementById('debugClear').addEventListener('click', function() {
                 document.getElementById('debugContent').innerHTML = '';
             });
-            
+
             document.getElementById('debugRefresh').addEventListener('click', function() {
                 showDebugInfo();
             });
@@ -460,7 +474,7 @@
                 const topicsCount = Object.keys(courseData.persistent?.topics || {}).length;
                 const sectionsCount = Object.keys(courseData.persistent?.sections || {}).length;
                 const unsyncedCount = Object.keys(courseData.unsynced || {}).length;
-                
+
                 const content = `
                     <div class="debug-section">
                         <h6>Estadísticas:</h6>
@@ -470,7 +484,7 @@
                         <p>Cambios no sincronizados: ${unsyncedCount}</p>
                     </div>
                 `;
-                
+
                 document.getElementById('debugContent').innerHTML = content;
             } catch (error) {
                 document.getElementById('debugContent').innerHTML = `<div class="debug-section">Error: ${error.message}</div>`;
@@ -480,7 +494,7 @@
         // Función para registrar mensajes de depuración
         function debugLog(message) {
             console.log(message);
-            
+
             if (debugMode) {
                 const debugContent = document.getElementById('debugContent');
                 const timestamp = new Date().toLocaleTimeString();

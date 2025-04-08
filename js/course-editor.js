@@ -1,3 +1,12 @@
+/**
+ * ¡IMPORTANTE! - ESTRUCTURA DE DATOS MATEMÁTICA WEB
+ * -----------------------------------------------
+ * - localStorage es la fuente principal para almacenamiento y recuperación de datos
+ * - Los archivos JSON son solo para exportar datos al repositorio
+ * - Cualquier modificación debe mantener esta estructura para garantizar la persistencia
+ * - Ver docs/ESTRUCTURA_DE_DATOS.md para más información detallada
+ */
+
 // Variables globales
 let currentCourseId = null;
 let currentCourse = null;
@@ -32,10 +41,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function loadCourse(courseId) {
-    // Obtener el curso usando DataManager
-    currentCourse = DataManager.getCourseById(courseId);
+    console.log(`Cargando curso con ID: ${courseId}`);
+
+    // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    try {
+        // 1. Obtener todos los cursos de localStorage
+        const allCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+        console.log(`Cursos encontrados en localStorage: ${allCourses.length}`);
+
+        // 2. Buscar el curso por ID
+        currentCourse = allCourses.find(c => c.id == courseId);
+        console.log('Curso encontrado:', currentCourse);
+
+        // 3. Si no se encuentra, intentar con DataManager como fallback
+        if (!currentCourse && typeof DataManager !== 'undefined') {
+            console.log('Curso no encontrado en localStorage, intentando con DataManager...');
+            currentCourse = DataManager.getCourseById(courseId);
+        }
+    } catch (error) {
+        console.error('Error al cargar curso desde localStorage:', error);
+        // Intentar con DataManager como fallback
+        if (typeof DataManager !== 'undefined') {
+            currentCourse = DataManager.getCourseById(courseId);
+        }
+    }
 
     if (!currentCourse) {
+        console.error(`No se encontró el curso con ID ${courseId}`);
         alert('Curso no encontrado');
         window.location.href = 'index.html';
         return;
@@ -125,6 +157,7 @@ function setupEventListeners() {
 
 function saveCourse(event) {
     event.preventDefault();
+    console.log('Guardando curso...');
 
     // Obtener los valores del formulario
     const title = document.getElementById('courseTitleInput').value;
@@ -145,12 +178,74 @@ function saveCourse(event) {
 
     // Si es un nuevo curso, generar un ID
     if (!currentCourse.id) {
-        const courses = DataManager.getCourses();
-        currentCourse.id = courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1;
+        // OBTENER DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+        let courses = [];
+        try {
+            // 1. Obtener todos los cursos de localStorage
+            courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+            console.log(`Cursos existentes en localStorage: ${courses.length}`);
+        } catch (error) {
+            console.error('Error al cargar cursos desde localStorage:', error);
+            // Intentar con DataManager como fallback
+            if (typeof DataManager !== 'undefined') {
+                courses = DataManager.getCourses();
+            }
+        }
+
+        // Generar un nuevo ID
+        currentCourse.id = courses.length > 0 ? Math.max(...courses.map(c => parseInt(c.id) || 0)) + 1 : 1;
+        console.log(`Nuevo ID generado: ${currentCourse.id}`);
     }
 
-    // Guardar el curso usando DataManager
-    DataManager.saveCourse(currentCourse);
+    // GUARDAR DIRECTAMENTE EN LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    try {
+        console.log('Guardando curso directamente en localStorage...');
+
+        // 1. Obtener todos los cursos actuales
+        const allCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+        console.log(`Cursos existentes en localStorage: ${allCourses.length}`);
+
+        // 2. Encontrar y actualizar el curso actual
+        const courseIndex = allCourses.findIndex(c => c.id == currentCourse.id);
+
+        if (courseIndex !== -1) {
+            // Actualizar curso existente
+            allCourses[courseIndex] = currentCourse;
+            console.log(`Curso actualizado en índice ${courseIndex}`);
+        } else {
+            // Agregar nuevo curso
+            allCourses.push(currentCourse);
+            console.log('Nuevo curso agregado a la lista');
+        }
+
+        // 3. Guardar todos los cursos de vuelta en localStorage
+        localStorage.setItem('matematicaweb_courses', JSON.stringify(allCourses));
+        console.log('Cursos guardados en localStorage');
+
+        // 4. Verificar que se haya guardado correctamente
+        const savedCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+        const savedCourse = savedCourses.find(c => c.id == currentCourse.id);
+
+        if (savedCourse) {
+            console.log(`Verificación: Curso encontrado en localStorage`);
+        } else {
+            console.error('Verificación fallida: No se encontró el curso en localStorage después de guardar');
+        }
+
+        // 5. Guardar también en DataManager si está disponible (para compatibilidad)
+        if (typeof DataManager !== 'undefined') {
+            try {
+                DataManager.saveCourse(currentCourse);
+                console.log('Curso guardado también en DataManager');
+            } catch (dmError) {
+                console.warn('Error al guardar en DataManager:', dmError);
+            }
+        }
+    } catch (error) {
+        console.error('Error al guardar curso en localStorage:', error);
+        alert('Error al guardar los cambios. Por favor, intente nuevamente.');
+        return;
+    }
 
     // Actualizar la URL si es un nuevo curso
     if (!currentCourseId) {
@@ -169,10 +264,29 @@ function saveCourse(event) {
 }
 
 function loadCourseStructure() {
+    console.log('Cargando estructura del curso...');
     const courseStructure = document.getElementById('courseStructure');
 
-    // Obtener los temas del curso
-    const topics = DataManager.getTopicsByCourse(currentCourseId);
+    // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    let topics = [];
+    try {
+        console.log('Cargando temas directamente desde localStorage...');
+
+        // 1. Obtener todos los temas de localStorage
+        const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        console.log(`Temas encontrados en localStorage: ${allTopics.length}`);
+
+        // 2. Filtrar los temas por curso
+        topics = allTopics.filter(topic => topic.courseId == currentCourseId);
+        console.log(`Temas filtrados para el curso ${currentCourseId}: ${topics.length}`);
+    } catch (error) {
+        console.error('Error al cargar temas desde localStorage:', error);
+        // Intentar con DataManager como fallback
+        if (typeof DataManager !== 'undefined') {
+            console.log('Intentando cargar temas con DataManager...');
+            topics = DataManager.getTopicsByCourse(currentCourseId);
+        }
+    }
 
     if (topics.length === 0) {
         courseStructure.innerHTML = `
@@ -225,10 +339,29 @@ function loadCourseStructure() {
 }
 
 function loadTopics() {
+    console.log('Cargando temas del curso...');
     const topicsList = document.getElementById('topicsList');
 
-    // Obtener los temas del curso
-    const topics = DataManager.getTopicsByCourse(currentCourseId);
+    // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    let topics = [];
+    try {
+        console.log('Cargando temas directamente desde localStorage...');
+
+        // 1. Obtener todos los temas de localStorage
+        const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        console.log(`Temas encontrados en localStorage: ${allTopics.length}`);
+
+        // 2. Filtrar los temas por curso
+        topics = allTopics.filter(topic => topic.courseId == currentCourseId);
+        console.log(`Temas filtrados para el curso ${currentCourseId}: ${topics.length}`);
+    } catch (error) {
+        console.error('Error al cargar temas desde localStorage:', error);
+        // Intentar con DataManager como fallback
+        if (typeof DataManager !== 'undefined') {
+            console.log('Intentando cargar temas con DataManager...');
+            topics = DataManager.getTopicsByCourse(currentCourseId);
+        }
+    }
 
     if (topics.length === 0) {
         topicsList.innerHTML = `

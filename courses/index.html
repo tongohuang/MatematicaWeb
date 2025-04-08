@@ -57,12 +57,26 @@
             console.log('Cargando cursos en courses/index.html...');
             const coursesList = document.getElementById('coursesList');
 
-            // Obtener cursos usando DataManager
-            const courses = DataManager.getCourses();
-            console.log('Cursos cargados:', courses.length);
+            // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+            let courses = [];
+            try {
+                console.log('Cargando cursos directamente desde localStorage...');
 
-            if (courses && courses.length) {
-                console.log('Primer curso:', courses[0].title);
+                // 1. Obtener todos los cursos de localStorage
+                courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                console.log(`Cursos encontrados en localStorage: ${courses.length}`);
+
+                if (courses && courses.length) {
+                    console.log('Primer curso:', courses[0].title);
+                }
+            } catch (error) {
+                console.error('Error al cargar cursos desde localStorage:', error);
+                // Intentar con DataManager como fallback
+                if (typeof DataManager !== 'undefined') {
+                    console.log('Intentando cargar cursos con DataManager...');
+                    courses = DataManager.getCourses();
+                    console.log('Cursos cargados con DataManager:', courses.length);
+                }
             }
 
             if (courses.length === 0) {

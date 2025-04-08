@@ -273,9 +273,31 @@
         }
 
         function loadStats() {
-            // Obtener datos reales usando DataManager
-            const courses = DataManager.getCourses();
-            const topics = DataManager.getTopics();
+            console.log('Cargando estadísticas...');
+
+            // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+            let courses = [];
+            let topics = [];
+
+            try {
+                console.log('Cargando datos directamente desde localStorage...');
+
+                // 1. Obtener todos los cursos de localStorage
+                courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                console.log(`Cursos encontrados en localStorage: ${courses.length}`);
+
+                // 2. Obtener todos los temas de localStorage
+                topics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+                console.log(`Temas encontrados en localStorage: ${topics.length}`);
+            } catch (error) {
+                console.error('Error al cargar datos desde localStorage:', error);
+                // Intentar con DataManager como fallback
+                if (typeof DataManager !== 'undefined') {
+                    console.log('Intentando cargar datos con DataManager...');
+                    courses = DataManager.getCourses();
+                    topics = DataManager.getTopics();
+                }
+            }
 
             // Contar secciones
             let sectionsCount = 0;
@@ -289,14 +311,34 @@
             document.getElementById('coursesCount').textContent = courses.length;
             document.getElementById('topicsCount').textContent = topics.length;
             document.getElementById('sectionsCount').textContent = sectionsCount;
+
+            console.log(`Estadísticas cargadas: ${courses.length} cursos, ${topics.length} temas, ${sectionsCount} secciones`);
         }
 
         function loadRecentCourses() {
+            console.log('Cargando cursos recientes...');
             const recentCoursesList = document.getElementById('recentCoursesList');
-            // Obtener cursos usando DataManager
-            const courses = DataManager.getCourses();
+
+            // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+            let courses = [];
+            try {
+                console.log('Cargando cursos directamente desde localStorage...');
+
+                // 1. Obtener todos los cursos de localStorage
+                courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                console.log(`Cursos encontrados en localStorage: ${courses.length}`);
+            } catch (error) {
+                console.error('Error al cargar cursos desde localStorage:', error);
+                // Intentar con DataManager como fallback
+                if (typeof DataManager !== 'undefined') {
+                    console.log('Intentando cargar cursos con DataManager...');
+                    courses = DataManager.getCourses();
+                }
+            }
+
             // Mostrar solo los 3 cursos más recientes (en este caso, los últimos del array)
             const recentCourses = courses.slice(-3).reverse();
+            console.log(`Mostrando ${recentCourses.length} cursos recientes`);
 
             if (recentCourses.length === 0) {
                 recentCoursesList.innerHTML = `
@@ -308,8 +350,21 @@
             }
 
             recentCoursesList.innerHTML = recentCourses.map(course => {
-                // Obtener temas del curso
-                const topics = DataManager.getTopicsByCourse(course.id);
+                // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+                let topics = [];
+                try {
+                    // 1. Obtener todos los temas de localStorage
+                    const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+
+                    // 2. Filtrar los temas por curso
+                    topics = allTopics.filter(topic => topic.courseId == course.id);
+                } catch (error) {
+                    console.error(`Error al cargar temas para el curso ${course.id}:`, error);
+                    // Intentar con DataManager como fallback
+                    if (typeof DataManager !== 'undefined') {
+                        topics = DataManager.getTopicsByCourse(course.id);
+                    }
+                }
 
                 return `
                 <tr>
@@ -326,15 +381,32 @@
         }
 
         function loadRecentActivities() {
+            console.log('Cargando actividades recientes...');
             // El título y el enlace ya están configurados correctamente en el HTML
             // No es necesario cambiarlos mediante JavaScript
 
             // Los encabezados de la tabla ya están configurados correctamente en el HTML
 
-            // Obtener temas usando DataManager
-            const topics = DataManager.getTopics();
+            // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+            let topics = [];
+            try {
+                console.log('Cargando temas directamente desde localStorage...');
+
+                // 1. Obtener todos los temas de localStorage
+                topics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+                console.log(`Temas encontrados en localStorage: ${topics.length}`);
+            } catch (error) {
+                console.error('Error al cargar temas desde localStorage:', error);
+                // Intentar con DataManager como fallback
+                if (typeof DataManager !== 'undefined') {
+                    console.log('Intentando cargar temas con DataManager...');
+                    topics = DataManager.getTopics();
+                }
+            }
+
             // Mostrar solo los 3 temas más recientes
             const recentTopics = topics.slice(-3).reverse();
+            console.log(`Mostrando ${recentTopics.length} temas recientes`);
 
             const recentActivitiesList = document.getElementById('recentActivitiesList');
 

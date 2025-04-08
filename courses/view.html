@@ -81,12 +81,54 @@
         });
 
         function loadCourseContent() {
+            console.log('Cargando contenido del curso...');
             const urlParams = new URLSearchParams(window.location.search);
             const courseId = parseInt(urlParams.get('id'));
+            console.log(`ID del curso: ${courseId}`);
 
             try {
-                // Usar DataManager para obtener el curso
-                const course = DataManager.getCourseById(courseId);
+                // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+                let course = null;
+                let topics = [];
+
+                try {
+                    console.log('Cargando curso directamente desde localStorage...');
+
+                    // 1. Obtener todos los cursos de localStorage
+                    const coursesData = localStorage.getItem('matematicaweb_courses');
+                    const courses = coursesData ? JSON.parse(coursesData) : [];
+                    console.log(`Cursos encontrados en localStorage: ${courses.length}`);
+
+                    // 2. Buscar el curso por ID
+                    course = courses.find(c => c.id == courseId);
+                    console.log('Curso encontrado:', course);
+
+                    // 3. Si no se encuentra, intentar con DataManager
+                    if (!course) {
+                        console.log('Curso no encontrado en localStorage, intentando con DataManager...');
+                        course = DataManager.getCourseById(courseId);
+                    }
+
+                    // 4. Obtener todos los temas de localStorage
+                    const topicsData = localStorage.getItem('matematicaweb_topics');
+                    const allTopics = topicsData ? JSON.parse(topicsData) : [];
+                    console.log(`Temas encontrados en localStorage: ${allTopics.length}`);
+
+                    // 5. Filtrar los temas por curso
+                    topics = allTopics.filter(topic => topic.courseId == courseId);
+                    console.log(`Temas filtrados para el curso ${courseId}: ${topics.length}`);
+
+                    // 6. Si no hay temas, intentar con DataManager
+                    if (topics.length === 0) {
+                        console.log('No se encontraron temas en localStorage, intentando con DataManager...');
+                        topics = DataManager.getTopicsByCourse(courseId);
+                    }
+                } catch (error) {
+                    console.error('Error al cargar datos desde localStorage:', error);
+                    // Fallback a DataManager
+                    course = DataManager.getCourseById(courseId);
+                    topics = DataManager.getTopicsByCourse(courseId);
+                }
 
                 if (!course) {
                     throw new Error('Curso no encontrado');
@@ -96,8 +138,6 @@
                 document.getElementById('courseTitle').textContent = course.title;
                 document.getElementById('courseDescription').innerHTML = course.description;
 
-                // Obtener los temas del curso
-                const topics = DataManager.getTopicsByCourse(courseId);
                 console.log('Temas encontrados:', topics);
 
                 // Calcular la duración total (15 minutos por sección)
@@ -199,6 +239,30 @@
                 return;
             }
 
+            // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+            try {
+                console.log('Verificando temas en localStorage...');
+
+                // 1. Obtener todos los temas de localStorage
+                const topicsData = localStorage.getItem('matematicaweb_topics');
+                const allTopics = topicsData ? JSON.parse(topicsData) : [];
+
+                // 2. Verificar si hay temas en localStorage que no estén en el array actual
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = parseInt(urlParams.get('id'));
+
+                const localStorageTopics = allTopics.filter(topic => topic.courseId == courseId);
+                console.log(`Temas en localStorage para el curso ${courseId}: ${localStorageTopics.length}`);
+
+                // 3. Si hay más temas en localStorage, usarlos en lugar de los actuales
+                if (localStorageTopics.length > topics.length) {
+                    console.log('Usando temas de localStorage en lugar de los actuales');
+                    topics = localStorageTopics;
+                }
+            } catch (error) {
+                console.error('Error al verificar temas en localStorage:', error);
+            }
+
             // Crear el menú de navegación con acordeones para cada tema
             let html = '<div class="accordion" id="courseAccordion">';
 
@@ -225,9 +289,36 @@
                 // Obtener secciones del tema y del sistema de persistencia
                 let sections = [];
 
-                // Primero intentar obtener las secciones del tema
-                if (topic.sections && Array.isArray(topic.sections) && topic.sections.length > 0) {
-                    sections = [...topic.sections];
+                // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+                try {
+                    // 1. Verificar si el tema tiene secciones
+                    if (topic.sections && Array.isArray(topic.sections) && topic.sections.length > 0) {
+                        console.log(`Tema ${topic.id} tiene ${topic.sections.length} secciones`);
+                        sections = [...topic.sections];
+                    } else {
+                        console.log(`Tema ${topic.id} no tiene secciones o no son un array`);
+                    }
+
+                    // 2. Verificar si hay temas actualizados en localStorage
+                    const topicsData = localStorage.getItem('matematicaweb_topics');
+                    if (topicsData) {
+                        const allTopics = JSON.parse(topicsData);
+                        const updatedTopic = allTopics.find(t => t.id == topic.id);
+
+                        if (updatedTopic && updatedTopic.sections && Array.isArray(updatedTopic.sections)) {
+                            console.log(`Tema ${topic.id} encontrado en localStorage con ${updatedTopic.sections.length} secciones`);
+                            if (updatedTopic.sections.length > 0) {
+                                sections = [...updatedTopic.sections];
+                                console.log('Usando secciones de localStorage');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error al cargar secciones para el tema ${topic.id}:`, error);
+                    // Fallback al método original
+                    if (topic.sections && Array.isArray(topic.sections) && topic.sections.length > 0) {
+                        sections = [...topic.sections];
+                    }
                 }
 
                 // Si no hay secciones en el tema, intentar obtenerlas del sistema de persistencia

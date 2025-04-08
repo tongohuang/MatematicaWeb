@@ -1,4 +1,12 @@
 // Gestor de datos para almacenamiento permanente
+/**
+ * ¡IMPORTANTE! - ESTRUCTURA DE DATOS MATEMÁTICA WEB
+ * -----------------------------------------------
+ * - localStorage es la fuente principal para almacenamiento y recuperación de datos
+ * - Los archivos JSON son solo para exportar datos al repositorio
+ * - Cualquier modificación debe mantener esta estructura para garantizar la persistencia
+ * - Ver docs/ESTRUCTURA_DE_DATOS.md para más información detallada
+ */
 const DataManager = {
     // Claves para localStorage (compatibilidad con versión anterior)
     COURSES_KEY: 'matematicaweb_courses',
@@ -165,14 +173,44 @@ const DataManager = {
 
     // Obtener cursos
     getCourses() {
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            return DataPersistence.getAllDataAsArray('courses');
-        }
+        console.log('DataManager: Obteniendo todos los cursos...');
 
-        // Fallback al sistema antiguo
-        const coursesData = localStorage.getItem(this.COURSES_KEY);
-        return coursesData ? JSON.parse(coursesData) : [];
+        // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+        try {
+            console.log('DataManager: Cargando cursos directamente desde localStorage...');
+
+            // 1. Obtener todos los cursos de localStorage
+            const coursesData = localStorage.getItem(this.COURSES_KEY);
+            const courses = coursesData ? JSON.parse(coursesData) : [];
+            console.log(`DataManager: Encontrados ${courses.length} cursos en localStorage`);
+
+            // 2. Si no hay cursos en localStorage, intentar con DataPersistence
+            if (courses.length === 0 && typeof DataPersistence !== 'undefined') {
+                console.log('DataManager: No hay cursos en localStorage, intentando con DataPersistence...');
+                const persistenceCourses = DataPersistence.getAllDataAsArray('courses');
+                if (persistenceCourses && persistenceCourses.length > 0) {
+                    console.log(`DataManager: Encontrados ${persistenceCourses.length} cursos en DataPersistence`);
+                    return persistenceCourses;
+                }
+            }
+
+            return courses;
+        } catch (error) {
+            console.error('DataManager: Error al obtener cursos:', error);
+
+            // Intentar con DataPersistence como fallback
+            if (typeof DataPersistence !== 'undefined') {
+                try {
+                    const persistenceCourses = DataPersistence.getAllDataAsArray('courses');
+                    console.log(`DataManager: Fallback - Encontrados ${persistenceCourses.length} cursos en DataPersistence`);
+                    return persistenceCourses;
+                } catch (persistenceError) {
+                    console.error('DataManager: Error en fallback de DataPersistence:', persistenceError);
+                }
+            }
+
+            return [];
+        }
     },
 
     // Guardar cursos
@@ -199,14 +237,59 @@ const DataManager = {
 
     // Obtener un curso por ID
     getCourseById(courseId) {
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            return DataPersistence.getData('courses', courseId);
+        console.log(`DataManager: Buscando curso con ID: ${courseId}`);
+
+        // Asegurarse de que courseId sea consistente para comparaciones
+        const courseIdStr = String(courseId);
+        console.log(`DataManager: ID convertido a string: ${courseIdStr}`);
+
+        // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+        try {
+            console.log('DataManager: Cargando cursos directamente desde localStorage...');
+
+            // 1. Obtener todos los cursos de localStorage
+            const coursesData = localStorage.getItem(this.COURSES_KEY);
+            const allCourses = coursesData ? JSON.parse(coursesData) : [];
+
+            // 2. Buscar el curso por ID
+            const course = allCourses.find(c => String(c.id) === courseIdStr);
+
+            if (course) {
+                console.log(`DataManager: Curso encontrado en localStorage: ${course.title}`);
+                return course;
+            } else {
+                console.log('DataManager: Curso no encontrado en localStorage, intentando con DataPersistence...');
+            }
+        } catch (error) {
+            console.error(`DataManager: Error al buscar curso con ID ${courseId} en localStorage:`, error);
         }
 
-        // Fallback al sistema antiguo
+        // Intentar con DataPersistence si está disponible
+        if (typeof DataPersistence !== 'undefined') {
+            try {
+                const course = DataPersistence.getData('courses', courseId);
+                if (course) {
+                    console.log(`DataManager: Curso encontrado en DataPersistence: ${course.title}`);
+                    return course;
+                } else {
+                    console.log('DataManager: Curso no encontrado en DataPersistence');
+                }
+            } catch (persistenceError) {
+                console.error(`DataManager: Error al buscar curso con DataPersistence:`, persistenceError);
+            }
+        }
+
+        // Último intento con getCourses (que ya tiene su propia lógica de carga)
         const courses = this.getCourses();
-        return courses.find(course => course.id === courseId);
+        const course = courses.find(c => String(c.id) === courseIdStr);
+
+        if (course) {
+            console.log(`DataManager: Curso encontrado en array de cursos: ${course.title}`);
+        } else {
+            console.warn(`DataManager: No se encontró ningún curso con ID: ${courseId}`);
+        }
+
+        return course;
     },
 
     // Guardar un curso (crear o actualizar)
@@ -355,14 +438,44 @@ const DataManager = {
 
     // Obtener temas
     getTopics() {
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            return DataPersistence.getAllDataAsArray('topics');
-        }
+        console.log('DataManager: Obteniendo todos los temas...');
 
-        // Fallback al sistema antiguo
-        const topicsData = localStorage.getItem(this.TOPICS_KEY);
-        return topicsData ? JSON.parse(topicsData) : [];
+        // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+        try {
+            console.log('DataManager: Cargando temas directamente desde localStorage...');
+
+            // 1. Obtener todos los temas de localStorage
+            const topicsData = localStorage.getItem(this.TOPICS_KEY);
+            const topics = topicsData ? JSON.parse(topicsData) : [];
+            console.log(`DataManager: Encontrados ${topics.length} temas en localStorage`);
+
+            // 2. Si no hay temas en localStorage, intentar con DataPersistence
+            if (topics.length === 0 && typeof DataPersistence !== 'undefined') {
+                console.log('DataManager: No hay temas en localStorage, intentando con DataPersistence...');
+                const persistenceTopics = DataPersistence.getAllDataAsArray('topics');
+                if (persistenceTopics && persistenceTopics.length > 0) {
+                    console.log(`DataManager: Encontrados ${persistenceTopics.length} temas en DataPersistence`);
+                    return persistenceTopics;
+                }
+            }
+
+            return topics;
+        } catch (error) {
+            console.error('DataManager: Error al obtener temas:', error);
+
+            // Intentar con DataPersistence como fallback
+            if (typeof DataPersistence !== 'undefined') {
+                try {
+                    const persistenceTopics = DataPersistence.getAllDataAsArray('topics');
+                    console.log(`DataManager: Fallback - Encontrados ${persistenceTopics.length} temas en DataPersistence`);
+                    return persistenceTopics;
+                } catch (persistenceError) {
+                    console.error('DataManager: Error en fallback de DataPersistence:', persistenceError);
+                }
+            }
+
+            return [];
+        }
     },
 
     // Guardar temas
@@ -389,39 +502,82 @@ const DataManager = {
 
     // Obtener temas por curso
     getTopicsByCourse(courseId) {
-        const topics = this.getTopics();
-        return topics.filter(topic => topic.courseId === courseId);
+        console.log(`DataManager: Obteniendo temas para el curso ${courseId}...`);
+
+        // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+        try {
+            console.log('DataManager: Cargando temas directamente desde localStorage...');
+
+            // 1. Obtener todos los temas de localStorage
+            const topicsData = localStorage.getItem(this.TOPICS_KEY);
+            const allTopics = topicsData ? JSON.parse(topicsData) : [];
+
+            // 2. Filtrar los temas por curso
+            const courseTopics = allTopics.filter(topic => topic.courseId == courseId);
+            console.log(`DataManager: Encontrados ${courseTopics.length} temas para el curso ${courseId}`);
+
+            return courseTopics;
+        } catch (error) {
+            console.error(`DataManager: Error al obtener temas para el curso ${courseId}:`, error);
+
+            // Fallback al método tradicional
+            const topics = this.getTopics();
+            return topics.filter(topic => topic.courseId == courseId);
+        }
     },
 
     // Obtener un tema por ID
     getTopicById(topicId) {
-        console.log(`Buscando tema con ID: ${topicId}`);
+        console.log(`DataManager: Buscando tema con ID: ${topicId}`);
 
-        // Asegurarse de que topicId sea numérico para comparaciones consistentes
-        if (typeof topicId === 'string' && !isNaN(topicId)) {
-            topicId = parseInt(topicId);
-            console.log(`ID convertido a número: ${topicId}`);
-        }
+        // Asegurarse de que topicId sea consistente para comparaciones
+        const topicIdStr = String(topicId);
+        console.log(`DataManager: ID convertido a string: ${topicIdStr}`);
 
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            const topic = DataPersistence.getData('topics', topicId);
+        // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+        try {
+            console.log('DataManager: Cargando temas directamente desde localStorage...');
+
+            // 1. Obtener todos los temas de localStorage
+            const topicsData = localStorage.getItem(this.TOPICS_KEY);
+            const allTopics = topicsData ? JSON.parse(topicsData) : [];
+
+            // 2. Buscar el tema por ID
+            const topic = allTopics.find(t => String(t.id) === topicIdStr);
+
             if (topic) {
-                console.log(`Tema encontrado en DataPersistence: ${topic.title}`);
+                console.log(`DataManager: Tema encontrado en localStorage: ${topic.title}`);
                 return topic;
             } else {
-                console.log('Tema no encontrado en DataPersistence, buscando en array...');
+                console.log('DataManager: Tema no encontrado en localStorage, intentando con DataPersistence...');
+            }
+        } catch (error) {
+            console.error(`DataManager: Error al buscar tema con ID ${topicId} en localStorage:`, error);
+        }
+
+        // Intentar con DataPersistence si está disponible
+        if (typeof DataPersistence !== 'undefined') {
+            try {
+                const topic = DataPersistence.getData('topics', topicId);
+                if (topic) {
+                    console.log(`DataManager: Tema encontrado en DataPersistence: ${topic.title}`);
+                    return topic;
+                } else {
+                    console.log('DataManager: Tema no encontrado en DataPersistence');
+                }
+            } catch (persistenceError) {
+                console.error(`DataManager: Error al buscar tema con DataPersistence:`, persistenceError);
             }
         }
 
-        // Fallback al sistema antiguo o búsqueda adicional
+        // Último intento con getTopics (que ya tiene su propia lógica de carga)
         const topics = this.getTopics();
-        const topic = topics.find(topic => topic.id === topicId || topic.id === parseInt(topicId));
+        const topic = topics.find(t => String(t.id) === topicIdStr);
 
         if (topic) {
-            console.log(`Tema encontrado en array: ${topic.title}`);
+            console.log(`DataManager: Tema encontrado en array de temas: ${topic.title}`);
         } else {
-            console.warn(`No se encontró ningún tema con ID: ${topicId}`);
+            console.warn(`DataManager: No se encontró ningún tema con ID: ${topicId}`);
         }
 
         return topic;

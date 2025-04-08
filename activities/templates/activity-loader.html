@@ -12,7 +12,7 @@
             padding: 20px;
             background-color: #f8f9fa;
         }
-        
+
         .activity-container {
             background-color: white;
             border-radius: 8px;
@@ -20,25 +20,25 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-        
+
         .activity-header {
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
-        
+
         .activity-title {
             font-size: 1.5rem;
             font-weight: 600;
             color: #333;
             margin-bottom: 5px;
         }
-        
+
         .activity-description {
             color: #666;
             margin-bottom: 0;
         }
-        
+
         .question-container {
             margin-bottom: 30px;
             padding: 15px;
@@ -46,13 +46,13 @@
             border-radius: 8px;
             background-color: #f8f9fa;
         }
-        
+
         .question-header {
             display: flex;
             align-items: center;
             margin-bottom: 15px;
         }
-        
+
         .question-number {
             width: 30px;
             height: 30px;
@@ -65,16 +65,16 @@
             font-weight: 600;
             margin-right: 10px;
         }
-        
+
         .question-text {
             font-weight: 500;
             color: #333;
         }
-        
+
         .options-container {
             margin-left: 40px;
         }
-        
+
         .option-item {
             display: flex;
             align-items: center;
@@ -84,15 +84,15 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .option-item:hover {
             background-color: #e9ecef;
         }
-        
+
         .option-item.selected {
             background-color: #e3f2fd;
         }
-        
+
         .option-marker {
             width: 25px;
             height: 25px;
@@ -105,17 +105,17 @@
             font-weight: 600;
             margin-right: 10px;
         }
-        
+
         .option-text {
             flex: 1;
         }
-        
+
         .true-false-options {
             display: flex;
             margin-left: 40px;
             gap: 10px;
         }
-        
+
         .true-false-option {
             flex: 1;
             padding: 10px;
@@ -124,47 +124,47 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .true-false-option:hover {
             background-color: #e9ecef;
         }
-        
+
         .true-false-option.selected {
             background-color: #e3f2fd;
         }
-        
+
         .true-option {
             border: 1px solid #28a745;
             color: #28a745;
         }
-        
+
         .false-option {
             border: 1px solid #dc3545;
             color: #dc3545;
         }
-        
+
         .short-answer-container {
             margin-left: 40px;
         }
-        
+
         .feedback-container {
             margin-top: 20px;
             padding: 15px;
             border-radius: 4px;
         }
-        
+
         .feedback-correct {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
+
         .feedback-incorrect {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        
+
         .activity-footer {
             display: flex;
             justify-content: space-between;
@@ -172,7 +172,7 @@
             padding-top: 20px;
             border-top: 1px solid #eee;
         }
-        
+
         .error-container {
             text-align: center;
             padding: 30px;
@@ -183,7 +183,7 @@
         }
     </style>
     <!-- MathJax para ecuaciones -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="../../js/polyfill.min.js"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -204,24 +204,59 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
-        
+
         // Cargar la actividad desde localStorage
         function loadActivity() {
             const activityId = getActivityId();
-            
+
             if (!activityId) {
                 showError('No se especificó un ID de actividad');
                 return;
             }
-            
-            // Intentar cargar la actividad desde localStorage
-            const activityData = localStorage.getItem(activityId);
-            
+
+            // Intentar cargar la actividad desde múltiples fuentes
+            let activityData = null;
+            let activitySource = '';
+
+            // 1. Intentar con la clave principal
+            const primaryData = localStorage.getItem(`activity_data_${activityId}`);
+            if (primaryData) {
+                activityData = primaryData;
+                activitySource = 'clave principal';
+            }
+
+            // 2. Intentar con la clave simple
             if (!activityData) {
-                showError('No se encontró la actividad especificada');
+                const simpleData = localStorage.getItem(activityId);
+                if (simpleData) {
+                    activityData = simpleData;
+                    activitySource = 'clave simple';
+                }
+            }
+
+            // 3. Buscar en el registro de actividades
+            if (!activityData) {
+                try {
+                    const registry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                    const registryEntry = registry.find(entry => entry.id === activityId);
+
+                    if (registryEntry) {
+                        console.log('Actividad encontrada en el registro, pero no se encontraron los datos completos');
+                    }
+                } catch (error) {
+                    console.error('Error al buscar en el registro de actividades:', error);
+                }
+            }
+
+            // 4. Verificar si tenemos datos
+            if (!activityData) {
+                showError(`No se encontró la actividad especificada (ID: ${activityId})`);
+                console.error(`No se encontraron datos para la actividad con ID: ${activityId}`);
                 return;
             }
-            
+
+            console.log(`Actividad cargada desde ${activitySource}:`, activityId);
+
             try {
                 const activity = JSON.parse(activityData);
                 renderActivity(activity);
@@ -230,7 +265,7 @@
                 showError('Error al cargar la actividad');
             }
         }
-        
+
         // Mostrar un mensaje de error
         function showError(message) {
             document.getElementById('activityContent').innerHTML = `
@@ -241,7 +276,7 @@
                 </div>
             `;
         }
-        
+
         // Renderizar la actividad
         function renderActivity(activity) {
             // Seleccionar una pregunta aleatoria si está habilitada la aleatorización
@@ -250,38 +285,38 @@
                 const randomIndex = Math.floor(Math.random() * questions.length);
                 questions = [questions[randomIndex]];
             }
-            
+
             // Crear el HTML de la actividad
             const activityHtml = `
                 <div class="activity-header">
                     <h1 class="activity-title">${activity.title}</h1>
                     <p class="activity-description">${activity.description || ''}</p>
                 </div>
-                
+
                 <div class="questions-container">
                     ${questions.map((question, index) => renderQuestion(question, index)).join('')}
                 </div>
-                
+
                 <div class="activity-footer">
                     <button id="checkAnswersBtn" class="btn btn-primary">Verificar Respuestas</button>
                 </div>
             `;
-            
+
             document.getElementById('activityContent').innerHTML = activityHtml;
-            
+
             // Configurar eventos
             setupEvents(activity);
-            
+
             // Renderizar ecuaciones matemáticas
             if (window.MathJax) {
                 MathJax.typesetPromise();
             }
         }
-        
+
         // Renderizar una pregunta
         function renderQuestion(question, index) {
             let optionsHtml = '';
-            
+
             switch (question.type) {
                 case 'multiple-choice':
                     optionsHtml = `
@@ -295,7 +330,7 @@
                         </div>
                     `;
                     break;
-                    
+
                 case 'true-false':
                     optionsHtml = `
                         <div class="true-false-options" data-question-id="${question.id}">
@@ -304,7 +339,7 @@
                         </div>
                     `;
                     break;
-                    
+
                 case 'short-answer':
                     optionsHtml = `
                         <div class="short-answer-container">
@@ -313,7 +348,7 @@
                     `;
                     break;
             }
-            
+
             return `
                 <div class="question-container" data-question-id="${question.id}">
                     <div class="question-header">
@@ -325,59 +360,59 @@
                 </div>
             `;
         }
-        
+
         // Configurar eventos
         function setupEvents(activity) {
             // Eventos para opciones múltiples
             document.querySelectorAll('.option-item').forEach(option => {
                 option.addEventListener('click', function() {
                     const questionId = this.closest('.options-container').getAttribute('data-question-id');
-                    
+
                     // Deseleccionar todas las opciones de esta pregunta
                     document.querySelectorAll(`.options-container[data-question-id="${questionId}"] .option-item`).forEach(opt => {
                         opt.classList.remove('selected');
                     });
-                    
+
                     // Seleccionar esta opción
                     this.classList.add('selected');
                 });
             });
-            
+
             // Eventos para verdadero/falso
             document.querySelectorAll('.true-false-option').forEach(option => {
                 option.addEventListener('click', function() {
                     const questionId = this.closest('.true-false-options').getAttribute('data-question-id');
-                    
+
                     // Deseleccionar todas las opciones de esta pregunta
                     document.querySelectorAll(`.true-false-options[data-question-id="${questionId}"] .true-false-option`).forEach(opt => {
                         opt.classList.remove('selected');
                     });
-                    
+
                     // Seleccionar esta opción
                     this.classList.add('selected');
                 });
             });
-            
+
             // Evento para verificar respuestas
             document.getElementById('checkAnswersBtn').addEventListener('click', function() {
                 checkAnswers(activity);
             });
         }
-        
+
         // Verificar respuestas
         function checkAnswers(activity) {
             let correctCount = 0;
             const totalQuestions = document.querySelectorAll('.question-container').length;
-            
+
             // Verificar cada pregunta
             activity.questions.forEach(question => {
                 const questionContainer = document.querySelector(`.question-container[data-question-id="${question.id}"]`);
                 if (!questionContainer) return;
-                
+
                 const feedbackContainer = questionContainer.querySelector('.feedback-container');
                 let isCorrect = false;
                 let userAnswer = null;
-                
+
                 switch (question.type) {
                     case 'multiple-choice':
                         const selectedOption = questionContainer.querySelector('.option-item.selected');
@@ -387,7 +422,7 @@
                             isCorrect = selectedIndex === question.correctOption;
                         }
                         break;
-                        
+
                     case 'true-false':
                         const selectedTrueFalse = questionContainer.querySelector('.true-false-option.selected');
                         if (selectedTrueFalse) {
@@ -396,22 +431,22 @@
                             isCorrect = selectedValue === question.correctAnswer;
                         }
                         break;
-                        
+
                     case 'short-answer':
                         const answerInput = questionContainer.querySelector('input');
                         if (answerInput && answerInput.value.trim()) {
                             userAnswer = answerInput.value.trim();
-                            isCorrect = question.correctAnswers.some(answer => 
+                            isCorrect = question.correctAnswers.some(answer =>
                                 userAnswer.toLowerCase() === answer.toLowerCase()
                             );
                         }
                         break;
                 }
-                
+
                 // Mostrar retroalimentación si está habilitada
                 if (activity.settings.showFeedback && feedbackContainer) {
                     feedbackContainer.style.display = 'block';
-                    
+
                     if (isCorrect) {
                         feedbackContainer.className = 'feedback-container feedback-correct';
                         feedbackContainer.innerHTML = `
@@ -436,17 +471,17 @@
                     correctCount++;
                 }
             });
-            
+
             // Mostrar resultado final
             const score = Math.round((correctCount / totalQuestions) * 100);
             alert(`Puntuación: ${correctCount}/${totalQuestions} (${score}%)`);
-            
+
             // Renderizar ecuaciones matemáticas en la retroalimentación
             if (window.MathJax) {
                 MathJax.typesetPromise();
             }
         }
-        
+
         // Cargar la actividad al cargar la página
         document.addEventListener('DOMContentLoaded', loadActivity);
     </script>

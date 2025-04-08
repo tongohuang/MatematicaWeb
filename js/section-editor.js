@@ -1,3 +1,12 @@
+/**
+ * ¡IMPORTANTE! - ESTRUCTURA DE DATOS MATEMÁTICA WEB
+ * -----------------------------------------------
+ * - localStorage es la fuente principal para almacenamiento y recuperación de datos
+ * - Los archivos JSON son solo para exportar datos al repositorio
+ * - Cualquier modificación debe mantener esta estructura para garantizar la persistencia
+ * - Ver docs/ESTRUCTURA_DE_DATOS.md para más información detallada
+ */
+
 // Datos de ejemplo para actividades
 const SAMPLE_ACTIVITIES = [
     {
@@ -44,7 +53,41 @@ let currentTopic = null;
 // Variable global para mantener la selección actual
 let savedSelection = null;
 
+// Función para verificar y recuperar datos perdidos
+function checkAndRecoverData() {
+    console.log('Verificando datos en localStorage...');
+
+    try {
+        // Verificar si hay datos en localStorage
+        const topics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        console.log(`Encontrados ${topics.length} temas en localStorage`);
+
+        // Verificar si hay actividades en localStorage
+        let activityCount = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('activity_') || key.match(/^activity_data_/))) {
+                activityCount++;
+            }
+        }
+        console.log(`Encontradas ${activityCount} actividades en localStorage`);
+
+        // Verificar si hay un registro de actividades
+        try {
+            const activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+            console.log(`Registro de actividades: ${activityRegistry.length} entradas`);
+        } catch (error) {
+            console.warn('Error al parsear el registro de actividades:', error);
+        }
+    } catch (error) {
+        console.error('Error al verificar datos en localStorage:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar datos en localStorage
+    checkAndRecoverData();
+
     // Verificar si el usuario está autenticado y es administrador
     if (!auth.isAdmin()) {
         window.location.href = '../login.html';
@@ -142,14 +185,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function loadTopicInfo() {
-    // Buscar el tema usando DataManager
-    currentTopic = DataManager.getTopicById(currentTopicId);
+    console.log('Cargando información del tema desde localStorage...');
+
+    // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    try {
+        // 1. Obtener todos los temas de localStorage
+        const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        console.log(`Temas encontrados en localStorage: ${allTopics.length}`);
+
+        // 2. Buscar el tema actual por ID
+        currentTopic = allTopics.find(topic => topic.id == currentTopicId);
+
+        // 3. Si no se encuentra, intentar con DataManager como fallback
+        if (!currentTopic && typeof DataManager !== 'undefined') {
+            console.log('Tema no encontrado en localStorage, intentando con DataManager...');
+            currentTopic = DataManager.getTopicById(currentTopicId);
+        }
+    } catch (error) {
+        console.error('Error al cargar tema desde localStorage:', error);
+    }
 
     if (!currentTopic) {
         // Si no se encuentra el tema, mostrar un mensaje de error
         document.getElementById('topicTitle').textContent = 'Tema no encontrado';
         document.getElementById('topicDescription').textContent = 'El tema solicitado no existe.';
+        console.error(`No se pudo encontrar el tema con ID ${currentTopicId} en ninguna fuente`);
         return;
+    }
+
+    // Verificar que el tema tenga un array de secciones
+    if (!currentTopic.sections) {
+        console.warn('El tema no tiene un array de secciones, inicializando uno vacío');
+        currentTopic.sections = [];
     }
 
     // Mostrar la información del tema
@@ -158,6 +225,7 @@ function loadTopicInfo() {
 }
 
 function loadSections() {
+    console.log('Cargando secciones del tema...');
     const sectionsContainer = document.getElementById('sectionsContainer');
     if (!sectionsContainer) return;
 
@@ -170,11 +238,37 @@ function loadSections() {
         return;
     }
 
+    // VERIFICAR Y CARGAR DESDE LOCALSTORAGE SI ES NECESARIO
+    try {
+        // Verificar si el tema tiene secciones
+        if (!currentTopic.sections || !Array.isArray(currentTopic.sections)) {
+            console.warn('El tema no tiene un array de secciones válido, intentando recargar desde localStorage...');
+
+            // Intentar recargar el tema desde localStorage
+            const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+            const freshTopic = allTopics.find(t => t.id == currentTopic.id);
+
+            if (freshTopic && freshTopic.sections && Array.isArray(freshTopic.sections)) {
+                console.log(`Tema recargado desde localStorage con ${freshTopic.sections.length} secciones`);
+                currentTopic.sections = freshTopic.sections;
+            } else {
+                console.warn('No se pudo recargar el tema desde localStorage, inicializando array vacío');
+                currentTopic.sections = [];
+            }
+        }
+    } catch (error) {
+        console.error('Error al verificar/recargar secciones:', error);
+        currentTopic.sections = [];
+    }
+
     // Si no hay secciones, mostrar mensaje
     if (!currentTopic.sections || currentTopic.sections.length === 0) {
         sectionsContainer.innerHTML = '<div class="alert alert-info">Este tema no tiene secciones</div>';
+        console.log('El tema no tiene secciones');
         return;
     }
+
+    console.log(`Cargando ${currentTopic.sections.length} secciones del tema...`);
 
     // Crear una estructura ordenada de elementos (secciones y grupos)
     const allSectionsWithOrder = [];
@@ -774,22 +868,44 @@ function showContentFields() {
             break;
 
         case 'activity':
-            // Opción para crear nueva actividad o seleccionar existente
+            // Opciones para crear diferentes tipos de actividades interactivas
             contentFields.innerHTML = `
                 <div class="mb-3">
-                    <label for="activityId" class="form-label">Seleccionar Actividad</label>
-                    <input type="hidden" id="activityId">
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-outline-primary" onclick="openActivitySelector()">
-                            <i class="fas fa-list-ul"></i> Seleccionar Actividad Existente
-                        </button>
-                        <button type="button" class="btn btn-outline-success" onclick="createNewActivity()">
-                            <i class="fas fa-plus"></i> Crear Nueva Actividad
+                    <label for="activityType" class="form-label">Tipo de Actividad</label>
+                    <select class="form-select" id="activityType" onchange="showActivityOptions()">
+                        <option value="" selected disabled>Seleccionar tipo de actividad</option>
+                        <option value="multiple-choice">Opción Múltiple</option>
+                        <option value="true-false">Verdadero o Falso</option>
+                        <option value="short-answer">Respuesta Corta</option>
+                    </select>
+                </div>
+
+                <div id="activityOptions" class="d-none">
+                    <div class="mb-3">
+                        <label for="activityTitle" class="form-label">Título de la Actividad</label>
+                        <input type="text" class="form-control" id="activityTitle" placeholder="Ingrese el título de la actividad">
+                    </div>
+
+                    <div id="questionsContainer">
+                        <!-- Aquí se agregarán las preguntas dinámicamente -->
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <button type="button" class="btn btn-outline-primary" onclick="addQuestion()">
+                            <i class="fas fa-plus"></i> Agregar Pregunta
                         </button>
                     </div>
-                    <div id="activityInfo" class="mt-3 d-none alert alert-info">
-                        <span id="activityInfoText"></span>
+
+                    <div id="activityPreview" class="mt-4 d-none">
+                        <h5>Vista Previa</h5>
+                        <div class="border p-3 rounded bg-light">
+                            <div id="previewContent"></div>
+                        </div>
                     </div>
+                </div>
+
+                <div id="activityInfo" class="mt-3 d-none alert alert-info">
+                    <span id="activityInfoText"></span>
                 </div>
             `;
             break;
@@ -895,18 +1011,43 @@ function selectActivity(activityId) {
 }
 
 function editSection(sectionId) {
-    if (!currentTopic || !currentTopic.sections) return;
+    console.log(`Editando sección con ID: ${sectionId}`);
 
-    // Asegurarse de que sectionId sea numérico para comparaciones consistentes
-    if (typeof sectionId === 'string' && !isNaN(sectionId)) {
-        sectionId = parseInt(sectionId);
+    // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    try {
+        // 1. Obtener todos los temas de localStorage
+        const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        console.log(`Temas encontrados en localStorage: ${allTopics.length}`);
+
+        // 2. Buscar el tema actual por ID
+        const freshTopic = allTopics.find(topic => topic.id == currentTopicId);
+
+        // 3. Actualizar el tema actual si se encontró
+        if (freshTopic) {
+            console.log(`Tema encontrado en localStorage con ${freshTopic.sections ? freshTopic.sections.length : 0} secciones`);
+            currentTopic = freshTopic;
+        }
+    } catch (error) {
+        console.error('Error al cargar tema desde localStorage:', error);
     }
 
-    const section = currentTopic.sections.find(s => s.id == sectionId);
-    if (!section) {
-        console.error(`No se encontró la sección con ID ${sectionId}`);
+    if (!currentTopic || !currentTopic.sections) {
+        console.error('No hay un tema o secciones cargadas');
+        alert('Error: No se pudo editar la sección porque no hay un tema cargado.');
         return;
     }
+
+    // Asegurarse de que sectionId sea consistente para comparaciones
+    sectionId = String(sectionId);
+
+    const section = currentTopic.sections.find(s => String(s.id) == sectionId);
+    if (!section) {
+        console.error(`No se encontró la sección con ID ${sectionId}`);
+        alert('Error: No se pudo encontrar la sección para editar.');
+        return;
+    }
+
+    console.log(`Sección encontrada:`, section);
 
     console.log(`Editando sección: "${section.title}" (ID: ${section.id}, Tipo: ${section.type})`);
 
@@ -2030,6 +2171,89 @@ function editGroupName(groupId) {
     console.log(`Nombre del grupo actualizado a: ${newName}`);
 }
 
+// Función para eliminar una sección
+function deleteSection(sectionId) {
+    console.log(`Eliminando sección con ID: ${sectionId}`);
+
+    // Verificar que hay un tema actual y secciones cargadas
+    if (!currentTopic || !currentTopic.sections) {
+        console.error('No hay un tema o secciones cargadas');
+        alert('Error: No se pudo eliminar la sección porque no hay un tema cargado.');
+        return;
+    }
+
+    // Convertir sectionId a string para comparaciones consistentes
+    sectionId = String(sectionId);
+
+    // Encontrar el índice de la sección a eliminar
+    const sectionIndex = currentTopic.sections.findIndex(section => String(section.id) === sectionId);
+
+    if (sectionIndex === -1) {
+        console.error(`No se encontró la sección con ID ${sectionId}`);
+        alert('Error: No se pudo encontrar la sección para eliminar.');
+        return;
+    }
+
+    // Obtener la sección para registro
+    const sectionToDelete = currentTopic.sections[sectionIndex];
+    console.log('Sección a eliminar:', sectionToDelete);
+
+    // Eliminar la sección del array
+    currentTopic.sections.splice(sectionIndex, 1);
+    console.log(`Sección eliminada del array. Quedan ${currentTopic.sections.length} secciones`);
+
+    // GUARDAR DIRECTAMENTE EN LOCALSTORAGE
+    try {
+        console.log('Guardando cambios en localStorage después de eliminar sección...');
+
+        // 1. Obtener todos los temas actuales
+        const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+
+        // 2. Encontrar y actualizar el tema actual
+        const topicIndex = allTopics.findIndex(t => t.id == currentTopic.id);
+
+        if (topicIndex !== -1) {
+            // Actualizar tema existente
+            allTopics[topicIndex] = currentTopic;
+            console.log(`Tema actualizado en índice ${topicIndex}`);
+        } else {
+            console.error('No se encontró el tema en localStorage');
+        }
+
+        // 3. Guardar todos los temas de vuelta en localStorage
+        localStorage.setItem('matematicaweb_topics', JSON.stringify(allTopics));
+        console.log('Cambios guardados en localStorage');
+
+        // 4. Verificar que se haya guardado correctamente
+        const savedTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        const savedTopic = savedTopics.find(t => t.id == currentTopic.id);
+
+        if (savedTopic) {
+            console.log(`Verificación: Tema encontrado en localStorage con ${savedTopic.sections ? savedTopic.sections.length : 0} secciones`);
+        } else {
+            console.error('Verificación fallida: No se encontró el tema en localStorage después de guardar');
+        }
+
+        // 5. Actualizar también en DataManager si está disponible (para compatibilidad)
+        if (typeof DataManager !== 'undefined') {
+            try {
+                DataManager.saveTopic(currentTopic);
+                console.log('Cambios guardados también en DataManager');
+            } catch (dmError) {
+                console.warn('Error al guardar en DataManager:', dmError);
+            }
+        }
+    } catch (error) {
+        console.error('Error al guardar cambios en localStorage:', error);
+        alert('Error al guardar los cambios. La sección se eliminó pero no se pudieron guardar los cambios.');
+    }
+
+    // Recargar las secciones para mostrar los cambios
+    loadSections();
+
+    console.log('Sección eliminada correctamente');
+}
+
 function ungroupSections(groupId) {
     console.log(`Desagrupando secciones del grupo ${groupId}`);
 
@@ -2941,10 +3165,51 @@ function saveSection() {
         }
     }
 
-    // Guardar los cambios usando DataManager
+    // GUARDAR DIRECTAMENTE EN LOCALSTORAGE - ENFOQUE SIMPLIFICADO
     try {
-        DataManager.saveTopic(currentTopic);
-        console.log('Tema guardado correctamente');
+        console.log('Guardando tema directamente en localStorage...');
+
+        // 1. Obtener todos los temas actuales
+        const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        console.log(`Temas existentes en localStorage: ${allTopics.length}`);
+
+        // 2. Encontrar y actualizar el tema actual
+        const topicIndex = allTopics.findIndex(t => t.id == currentTopic.id);
+
+        if (topicIndex !== -1) {
+            // Actualizar tema existente
+            allTopics[topicIndex] = currentTopic;
+            console.log(`Tema actualizado en índice ${topicIndex}`);
+        } else {
+            // Agregar nuevo tema
+            allTopics.push(currentTopic);
+            console.log('Nuevo tema agregado a la lista');
+        }
+
+        // 3. Guardar todos los temas de vuelta en localStorage
+        localStorage.setItem('matematicaweb_topics', JSON.stringify(allTopics));
+        console.log('Temas guardados en localStorage');
+
+        // 4. Verificar que se haya guardado correctamente
+        const savedTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        const savedTopic = savedTopics.find(t => t.id == currentTopic.id);
+
+        if (savedTopic) {
+            console.log(`Verificación: Tema encontrado en localStorage con ${savedTopic.sections ? savedTopic.sections.length : 0} secciones`);
+        } else {
+            console.error('Verificación fallida: No se encontró el tema en localStorage después de guardar');
+        }
+
+        // 5. Actualizar también en DataManager y DataPersistence si están disponibles (para compatibilidad)
+        if (typeof DataManager !== 'undefined') {
+            DataManager.saveTopic(currentTopic);
+        }
+
+        if (typeof DataPersistence !== 'undefined') {
+            DataPersistence.saveData('topics', currentTopic.id, currentTopic, true);
+        }
+
+        console.log('Tema guardado correctamente en todos los sistemas');
     } catch (error) {
         console.error('Error al guardar el tema:', error);
         alert('Error al guardar los cambios. Por favor, intente nuevamente.');
@@ -2971,6 +3236,444 @@ function saveSection() {
     return true;
 }
 
+// Variables globales para actividades
+let currentActivityType = '';
+let questions = [];
+let questionCounter = 0;
 
+// Función para mostrar las opciones de actividad según el tipo seleccionado
+function showActivityOptions() {
+    const activityType = document.getElementById('activityType').value;
+    const activityOptions = document.getElementById('activityOptions');
+    const questionsContainer = document.getElementById('questionsContainer');
 
+    if (!activityType || !activityOptions || !questionsContainer) return;
 
+    // Guardar el tipo de actividad actual
+    currentActivityType = activityType;
+
+    // Mostrar las opciones
+    activityOptions.classList.remove('d-none');
+
+    // Limpiar las preguntas existentes
+    questionsContainer.innerHTML = '';
+    questions = [];
+    questionCounter = 0;
+
+    // Agregar la primera pregunta
+    addQuestion();
+}
+
+// Función para agregar una nueva pregunta
+function addQuestion() {
+    const questionsContainer = document.getElementById('questionsContainer');
+    if (!questionsContainer) return;
+
+    // Incrementar el contador de preguntas
+    questionCounter++;
+
+    // Crear un nuevo ID único para la pregunta
+    const questionId = Date.now() + '_' + questionCounter;
+
+    // Crear el elemento de la pregunta según el tipo de actividad
+    const questionElement = document.createElement('div');
+    questionElement.className = 'card mb-3';
+    questionElement.id = `question-card-${questionId}`;
+
+    let questionHTML = `
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Pregunta ${questionCounter}</h5>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion('${questionId}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="question-text-${questionId}" class="form-label">Texto de la Pregunta</label>
+                <textarea class="form-control" id="question-text-${questionId}" rows="2" placeholder="Escriba la pregunta aquí"></textarea>
+            </div>
+    `;
+
+    // Agregar campos específicos según el tipo de actividad
+    if (currentActivityType === 'multiple-choice') {
+        questionHTML += `
+            <div class="mb-3">
+                <label class="form-label">Opciones</label>
+                <div id="options-container-${questionId}">
+                    <div class="input-group mb-2">
+                        <div class="input-group-text">
+                            <input class="form-check-input" type="radio" name="correct-option-${questionId}" value="1" checked>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Opción 1" id="option-1-${questionId}">
+                    </div>
+                    <div class="input-group mb-2">
+                        <div class="input-group-text">
+                            <input class="form-check-input" type="radio" name="correct-option-${questionId}" value="2">
+                        </div>
+                        <input type="text" class="form-control" placeholder="Opción 2" id="option-2-${questionId}">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addOption('${questionId}')">
+                    <i class="fas fa-plus"></i> Agregar Opción
+                </button>
+            </div>
+        `;
+    } else if (currentActivityType === 'true-false') {
+        questionHTML += `
+            <div class="mb-3">
+                <label class="form-label">Respuesta Correcta</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="correct-answer-${questionId}" id="true-${questionId}" value="true" checked>
+                    <label class="form-check-label" for="true-${questionId}">
+                        Verdadero
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="correct-answer-${questionId}" id="false-${questionId}" value="false">
+                    <label class="form-check-label" for="false-${questionId}">
+                        Falso
+                    </label>
+                </div>
+            </div>
+        `;
+    } else if (currentActivityType === 'short-answer') {
+        questionHTML += `
+            <div class="mb-3">
+                <label for="correct-answers-${questionId}" class="form-label">Respuestas Correctas</label>
+                <input type="text" class="form-control" id="correct-answers-${questionId}" placeholder="Ingrese respuestas separadas por comas">
+                <div class="form-text">Ingrese todas las posibles respuestas correctas separadas por comas.</div>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="case-sensitive-${questionId}">
+                <label class="form-check-label" for="case-sensitive-${questionId}">
+                    Distinguir mayúsculas y minúsculas
+                </label>
+            </div>
+        `;
+    }
+
+    // Agregar campos de retroalimentación
+    questionHTML += `
+            <div class="mb-3">
+                <label for="feedback-correct-${questionId}" class="form-label">Retroalimentación para Respuesta Correcta</label>
+                <textarea class="form-control" id="feedback-correct-${questionId}" rows="2" placeholder="Mensaje cuando la respuesta es correcta"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="feedback-incorrect-${questionId}" class="form-label">Retroalimentación para Respuesta Incorrecta</label>
+                <textarea class="form-control" id="feedback-incorrect-${questionId}" rows="2" placeholder="Mensaje cuando la respuesta es incorrecta"></textarea>
+            </div>
+        </div>
+    `;
+
+    questionElement.innerHTML = questionHTML;
+    questionsContainer.appendChild(questionElement);
+
+    // Agregar la pregunta al array de preguntas
+    questions.push({
+        id: questionId,
+        type: currentActivityType
+    });
+}
+
+// Función para agregar una opción a una pregunta de opción múltiple
+function addOption(questionId) {
+    const optionsContainer = document.getElementById(`options-container-${questionId}`);
+    if (!optionsContainer) return;
+
+    // Contar cuántas opciones hay actualmente
+    const optionCount = optionsContainer.querySelectorAll('.input-group').length + 1;
+
+    // Crear una nueva opción
+    const optionElement = document.createElement('div');
+    optionElement.className = 'input-group mb-2';
+    optionElement.innerHTML = `
+        <div class="input-group-text">
+            <input class="form-check-input" type="radio" name="correct-option-${questionId}" value="${optionCount}">
+        </div>
+        <input type="text" class="form-control" placeholder="Opción ${optionCount}" id="option-${optionCount}-${questionId}">
+        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    optionsContainer.appendChild(optionElement);
+}
+
+// Función para eliminar una pregunta
+function removeQuestion(questionId) {
+    const questionCard = document.getElementById(`question-card-${questionId}`);
+    if (!questionCard) return;
+
+    // Eliminar la pregunta del DOM
+    questionCard.remove();
+
+    // Eliminar la pregunta del array
+    questions = questions.filter(q => q.id !== questionId);
+
+    // Actualizar los números de las preguntas
+    const questionCards = document.querySelectorAll('[id^="question-card-"]');
+    questionCards.forEach((card, index) => {
+        const headerElement = card.querySelector('.card-header h5');
+        if (headerElement) {
+            headerElement.textContent = `Pregunta ${index + 1}`;
+        }
+    });
+
+    // Actualizar el contador
+    questionCounter = questionCards.length;
+}
+
+// Función para generar el contenido de la actividad
+function generateActivityContent() {
+    const activityTitle = document.getElementById('activityTitle').value;
+    if (!activityTitle) {
+        alert('Por favor, ingrese un título para la actividad');
+        return null;
+    }
+
+    // Verificar que haya al menos una pregunta
+    if (questions.length === 0) {
+        alert('Por favor, agregue al menos una pregunta');
+        return null;
+    }
+
+    // Crear el objeto de datos de la actividad
+    const activityData = {
+        title: activityTitle,
+        type: currentActivityType,
+        questions: []
+    };
+
+    // Recopilar los datos de cada pregunta
+    for (const question of questions) {
+        const questionText = document.getElementById(`question-text-${question.id}`).value;
+        if (!questionText) {
+            alert('Por favor, complete el texto de todas las preguntas');
+            return null;
+        }
+
+        const feedbackCorrect = document.getElementById(`feedback-correct-${question.id}`).value;
+        const feedbackIncorrect = document.getElementById(`feedback-incorrect-${question.id}`).value;
+
+        const questionData = {
+            id: question.id,
+            text: questionText,
+            feedback: {
+                correct: feedbackCorrect || '¡Correcto!',
+                incorrect: feedbackIncorrect || 'Incorrecto. Intenta de nuevo.'
+            }
+        };
+
+        // Agregar datos específicos según el tipo de pregunta
+        if (currentActivityType === 'multiple-choice') {
+            const optionsContainer = document.getElementById(`options-container-${question.id}`);
+            const optionInputs = optionsContainer.querySelectorAll('input[type="text"]');
+            const options = [];
+
+            optionInputs.forEach((input, index) => {
+                if (input.value) {
+                    options.push({
+                        id: index + 1,
+                        text: input.value
+                    });
+                }
+            });
+
+            if (options.length < 2) {
+                alert('Cada pregunta de opción múltiple debe tener al menos 2 opciones');
+                return null;
+            }
+
+            const correctOptionRadio = document.querySelector(`input[name="correct-option-${question.id}"]:checked`);
+            if (!correctOptionRadio) {
+                alert('Por favor, seleccione una opción correcta para cada pregunta');
+                return null;
+            }
+
+            questionData.options = options;
+            questionData.correctOption = parseInt(correctOptionRadio.value);
+        } else if (currentActivityType === 'true-false') {
+            const correctAnswerRadio = document.querySelector(`input[name="correct-answer-${question.id}"]:checked`);
+            if (!correctAnswerRadio) {
+                alert('Por favor, seleccione una respuesta correcta para cada pregunta');
+                return null;
+            }
+
+            questionData.correctAnswer = correctAnswerRadio.value === 'true';
+        } else if (currentActivityType === 'short-answer') {
+            const correctAnswersInput = document.getElementById(`correct-answers-${question.id}`);
+            if (!correctAnswersInput || !correctAnswersInput.value) {
+                alert('Por favor, ingrese al menos una respuesta correcta para cada pregunta');
+                return null;
+            }
+
+            const correctAnswers = correctAnswersInput.value.split(',').map(answer => answer.trim()).filter(answer => answer);
+            if (correctAnswers.length === 0) {
+                alert('Por favor, ingrese al menos una respuesta correcta para cada pregunta');
+                return null;
+            }
+
+            const caseSensitiveCheckbox = document.getElementById(`case-sensitive-${question.id}`);
+
+            questionData.correctAnswers = correctAnswers;
+            questionData.caseSensitive = caseSensitiveCheckbox.checked;
+        }
+
+        activityData.questions.push(questionData);
+    }
+
+    return activityData;
+}
+
+// Función para guardar la actividad
+function saveActivity() {
+    const activityData = generateActivityContent();
+    if (!activityData) return null;
+
+    // Generar un ID único para la actividad
+    const activityId = 'activity_' + Date.now();
+
+    // Determinar qué plantilla usar según el tipo de actividad
+    let templateFile = '';
+    switch (currentActivityType) {
+        case 'multiple-choice':
+            templateFile = 'multiple-choice-template.html';
+            break;
+        case 'true-false':
+            templateFile = 'true-false-template.html';
+            break;
+        case 'short-answer':
+            templateFile = 'short-answer-template.html';
+            break;
+        default:
+            alert('Tipo de actividad no válido');
+            return null;
+    }
+
+    // Crear el nombre del archivo de la actividad
+    const activityFilename = `activity-${activityId}.html`;
+
+    // GUARDAR DIRECTAMENTE EN LOCALSTORAGE - ENFOQUE SIMPLIFICADO
+    try {
+        console.log('Guardando actividad directamente en localStorage...');
+
+        // 1. Guardar con múltiples claves para mayor seguridad
+        localStorage.setItem(`activity_data_${activityId}`, JSON.stringify(activityData));
+        localStorage.setItem(activityId, JSON.stringify(activityData));
+
+        // 2. Verificar que se haya guardado correctamente
+        const savedData1 = localStorage.getItem(`activity_data_${activityId}`);
+        const savedData2 = localStorage.getItem(activityId);
+
+        if (savedData1 && savedData2) {
+            console.log(`Verificación: Actividad guardada correctamente con ambas claves`);
+        } else {
+            console.error('Verificación fallida: No se guardó correctamente la actividad');
+            if (!savedData1) console.error(`Falta clave activity_data_${activityId}`);
+            if (!savedData2) console.error(`Falta clave ${activityId}`);
+        }
+
+        // 3. Actualizar el registro de actividades
+        let activityRegistry = [];
+        try {
+            activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+        } catch (parseError) {
+            console.warn('Error al parsear el registro de actividades, creando uno nuevo:', parseError);
+        }
+
+        // Agregar la nueva actividad al registro
+        activityRegistry.push({
+            id: activityId,
+            title: activityData.title,
+            type: activityData.type,
+            created: Date.now()
+        });
+
+        // Guardar el registro actualizado
+        localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+        console.log(`Actividad registrada en el registro de actividades (total: ${activityRegistry.length})`);
+
+        // 4. Guardar también en el sistema de persistencia si está disponible (para compatibilidad)
+        if (typeof DataPersistence !== 'undefined') {
+            try {
+                DataPersistence.saveData('activities', activityId, activityData, true);
+                console.log('Actividad guardada también en el sistema de persistencia');
+            } catch (persistenceError) {
+                console.warn('Error al guardar en el sistema de persistencia:', persistenceError);
+            }
+        }
+
+        console.log('Actividad guardada correctamente en todos los sistemas');
+    } catch (error) {
+        console.error('Error al guardar la actividad:', error);
+        alert('Error al guardar la actividad. Por favor, intente nuevamente.');
+        return null;
+    }
+
+    // Mostrar información
+    const activityInfo = document.getElementById('activityInfo');
+    const activityInfoText = document.getElementById('activityInfoText');
+    const activityIdInput = document.getElementById('activityId');
+
+    if (activityInfo && activityInfoText && activityIdInput) {
+        activityInfo.classList.remove('d-none');
+        activityInfoText.textContent = `Actividad creada con éxito: ${activityData.title}`;
+        activityIdInput.value = `activity-loader.html?id=${activityId}`;
+    }
+
+    return activityId;
+}
+
+// Función para crear una nueva actividad
+function createNewActivity() {
+    console.log('Creando nueva actividad...');
+
+    // Verificar si estamos en el nuevo flujo de creación de actividades
+    if (currentActivityType) {
+        console.log('Usando nuevo flujo de creación de actividades con tipo:', currentActivityType);
+        const activityId = saveActivity();
+
+        // Verificar que se haya guardado correctamente
+        if (activityId) {
+            console.log(`Actividad creada con ID: ${activityId}`);
+
+            // Verificar que esté en localStorage
+            const savedData = localStorage.getItem(`activity_data_${activityId}`);
+            if (savedData) {
+                console.log('Verificación: Actividad encontrada en localStorage');
+            } else {
+                console.error('Verificación fallida: No se encontró la actividad en localStorage');
+            }
+        }
+
+        return activityId;
+    }
+
+    // Código anterior para compatibilidad
+    console.log('Usando flujo antiguo de creación de actividades');
+    const activityId = 'activity_' + Date.now();
+
+    // Guardar en múltiples ubicaciones para mayor seguridad
+    localStorage.setItem('currentActivityId', activityId);
+
+    // Abrir el editor de actividades
+    window.open('../activities/editor.html', '_blank');
+
+    // Mostrar información
+    const activityInfo = document.getElementById('activityInfo');
+    const activityInfoText = document.getElementById('activityInfoText');
+    const activityIdInput = document.getElementById('activityId');
+
+    if (activityInfo && activityInfoText && activityIdInput) {
+        activityInfo.classList.remove('d-none');
+        activityInfoText.textContent = `Se ha creado una nueva actividad con ID: ${activityId}. Por favor, complete la actividad en la ventana abierta.`;
+        activityIdInput.value = `activity-loader.html?id=${activityId}`;
+    }
+
+    return activityId;
+}
+
+// Función para abrir el selector de actividades existentes
+function openActivitySelector() {
+    alert('Esta funcionalidad está en desarrollo. Por favor, cree una nueva actividad.');
+}
