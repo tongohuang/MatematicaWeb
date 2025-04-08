@@ -94,40 +94,22 @@
 
             // Obtener los IDs de la URL
             const urlParams = new URLSearchParams(window.location.search);
-
-            // Obtener los parámetros sin convertir a entero primero
-            const sectionIdParam = urlParams.get('id');
-            const topicIdParam = urlParams.get('topicId');
-
-            console.log('Parámetros de URL originales:', { sectionIdParam, topicIdParam });
-
-            // Intentar convertir a entero si es posible, pero mantener el valor original si falla
-            currentSectionId = !isNaN(parseInt(sectionIdParam)) ? parseInt(sectionIdParam) : sectionIdParam;
-            currentTopicId = !isNaN(parseInt(topicIdParam)) ? parseInt(topicIdParam) : topicIdParam;
-
-            console.log('Parámetros de URL procesados:', { currentSectionId, currentTopicId });
+            currentSectionId = parseInt(urlParams.get('id'));
+            currentTopicId = parseInt(urlParams.get('topicId'));
 
             if (!currentSectionId || !currentTopicId) {
                 showError('Parámetros incorrectos', 'No se pudo cargar la sección porque faltan parámetros.');
                 return;
             }
 
-            // Esperar un momento para asegurar que todos los componentes estén cargados
-            setTimeout(() => {
-                // Cargar los datos
-                loadData();
-            }, 100);
+            // Cargar los datos
+            loadData();
         });
 
         function loadData() {
             try {
-                console.log('Cargando datos para tema ID:', currentTopicId, 'y sección ID:', currentSectionId);
-                console.log('Tipo de currentSectionId:', typeof currentSectionId);
-
                 // Obtener el tema
                 currentTopic = DataManager.getTopicById(currentTopicId);
-                console.log('Tema obtenido:', currentTopic);
-
                 if (!currentTopic) {
                     showError('Tema no encontrado', 'El tema solicitado no existe.');
                     return;
@@ -135,21 +117,11 @@
 
                 // Obtener la sección
                 if (!currentTopic.sections) {
-                    console.error('El tema no tiene la propiedad sections:', currentTopic);
                     showError('Sección no encontrada', 'Este tema no tiene secciones.');
                     return;
                 }
 
-                console.log('Secciones del tema:', currentTopic.sections);
-
-                // Intentar encontrar la sección por ID (considerando que puede ser string o número)
-                currentSection = currentTopic.sections.find(s => {
-                    // Convertir ambos a string para comparación
-                    return String(s.id) === String(currentSectionId);
-                });
-
-                console.log('Sección encontrada:', currentSection);
-
+                currentSection = currentTopic.sections.find(s => s.id === currentSectionId);
                 if (!currentSection) {
                     showError('Sección no encontrada', 'La sección solicitada no existe.');
                     return;
@@ -157,8 +129,6 @@
 
                 // Obtener el curso
                 const course = DataManager.getCourseById(currentTopic.courseId);
-                console.log('Curso obtenido:', course);
-
                 if (!course) {
                     showError('Curso no encontrado', 'El curso asociado no existe.');
                     return;
@@ -201,33 +171,8 @@
                 document.getElementById('otherSections').innerHTML = otherSectionsHtml ||
                     '<p class="text-muted">No hay más secciones en este tema.</p>';
 
-                console.log('Preparando para renderizar la sección:', currentSection);
-                console.log('Tipo de sección:', currentSection.type);
-                console.log('Contenido de la sección:', currentSection.content);
-                console.log('ID de la sección:', currentSection.id, 'Tipo:', typeof currentSection.id);
-
-                // Verificar si la sección tiene un tipo válido
-                if (!currentSection.type) {
-                    console.error('La sección no tiene un tipo definido');
-                    showError('Error de configuración', 'La sección no tiene un tipo definido.');
-                    return;
-                }
-
-                // Verificar si la sección tiene contenido
-                if (currentSection.content === undefined || currentSection.content === null) {
-                    console.error('La sección no tiene contenido definido');
-                    showError('Error de configuración', 'La sección no tiene contenido definido.');
-                    return;
-                }
-
                 // Mostrar el contenido de la sección
-                try {
-                    renderSectionContent();
-                    console.log('Sección renderizada correctamente');
-                } catch (renderError) {
-                    console.error('Error al renderizar la sección:', renderError);
-                    showError('Error de renderizado', 'Ocurrió un error al mostrar el contenido de la sección.');
-                }
+                renderSectionContent();
             } catch (error) {
                 console.error('Error al cargar los datos:', error);
                 showError('Error', 'Ocurrió un error al cargar el contenido.');
@@ -237,234 +182,163 @@
         function renderSectionContent() {
             const sectionPreview = document.getElementById('sectionPreview');
 
-            // Limpiar el contenedor de la sección
-            sectionPreview.innerHTML = '';
-
             // Crear el encabezado de la sección
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'section-preview-header';
+            const headerHtml = `
+                <div class="section-preview-header">
+                    <div class="section-preview-icon">
+                        <i class="${getSectionIcon(currentSection.type)}"></i>
+                    </div>
+                    <h2 class="section-preview-title">${currentSection.title}</h2>
+                </div>
+            `;
 
-            const iconDiv = document.createElement('div');
-            iconDiv.className = 'section-preview-icon';
-
-            const icon = document.createElement('i');
-            icon.className = getSectionIcon(currentSection.type);
-            iconDiv.appendChild(icon);
-
-            const title = document.createElement('h2');
-            title.className = 'section-preview-title';
-            title.textContent = currentSection.title;
-
-            headerDiv.appendChild(iconDiv);
-            headerDiv.appendChild(title);
-
-            // Añadir el encabezado al contenedor
-            sectionPreview.appendChild(headerDiv);
-
-            // Crear el contenedor principal para el contenido
-            const sectionPreviewContent = document.createElement('div');
-            sectionPreviewContent.className = 'section-preview-content';
+            // Crear el contenido según el tipo
+            let contentHtml = '';
 
             switch (currentSection.type) {
                 case 'text':
-                    sectionPreviewContent.classList.add('text-content');
-                    sectionPreviewContent.innerHTML = currentSection.content;
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    contentHtml = `
+                        <div class="section-preview-content text-content">
+                            ${currentSection.content}
+                        </div>
+                    `;
                     break;
 
                 case 'youtube':
-                    const youtubeContainer = document.createElement('div');
-                    youtubeContainer.className = 'youtube-container';
-
-                    const youtubeIframe = document.createElement('iframe');
-                    youtubeIframe.src = `https://www.youtube.com/embed/${currentSection.content}`;
-                    youtubeIframe.frameBorder = '0';
-                    youtubeIframe.allowFullscreen = true;
-                    youtubeIframe.style.width = '100%';
-                    youtubeIframe.style.height = '400px';
-
-                    youtubeContainer.appendChild(youtubeIframe);
-                    sectionPreviewContent.appendChild(youtubeContainer);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <div class="youtube-container">
+                                <iframe src="https://www.youtube.com/embed/${currentSection.content}"
+                                        frameborder="0" allowfullscreen style="width:100%; height:400px;"></iframe>
+                            </div>
+                        </div>
+                    `;
                     break;
 
                 case 'geogebra':
-                    const geogebraContainer = document.createElement('div');
-                    geogebraContainer.className = 'geogebra-container';
-
-                    const geogebraIframe = document.createElement('iframe');
-                    geogebraIframe.src = `https://www.geogebra.org/material/iframe/id/${currentSection.content}`;
-                    geogebraIframe.frameBorder = '0';
-                    geogebraIframe.style.width = '100%';
-                    geogebraIframe.style.height = '500px';
-
-                    geogebraContainer.appendChild(geogebraIframe);
-                    sectionPreviewContent.appendChild(geogebraContainer);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <div class="geogebra-container">
+                                <iframe src="https://www.geogebra.org/material/iframe/id/${currentSection.content}"
+                                        frameborder="0" style="width:100%; height:500px;"></iframe>
+                            </div>
+                        </div>
+                    `;
                     break;
 
                 case 'image':
-                    const imageContainer = document.createElement('div');
-                    imageContainer.className = 'image-container';
-
-                    const image = document.createElement('img');
-                    image.src = currentSection.content;
-                    image.alt = currentSection.title;
-
-                    imageContainer.appendChild(image);
-                    sectionPreviewContent.appendChild(imageContainer);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <div class="image-container">
+                                <img src="${currentSection.content}" alt="${currentSection.title}">
+                            </div>
+                        </div>
+                    `;
                     break;
 
                 case 'pdf':
-                    const pdfContainer = document.createElement('div');
-                    pdfContainer.className = 'pdf-container';
-
-                    const pdfLink = document.createElement('a');
-                    pdfLink.href = currentSection.content;
-                    pdfLink.target = '_blank';
-                    pdfLink.download = '';
-
-                    const pdfIcon = document.createElement('i');
-                    pdfIcon.className = 'fas fa-file-pdf';
-                    pdfLink.appendChild(pdfIcon);
-                    pdfLink.appendChild(document.createTextNode(' Descargar PDF'));
-
-                    pdfContainer.appendChild(pdfLink);
-                    sectionPreviewContent.appendChild(pdfContainer);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <div class="pdf-container">
+                                <a href="${currentSection.content}" target="_blank" download>
+                                    <i class="fas fa-file-pdf"></i> Descargar PDF
+                                </a>
+                            </div>
+                        </div>
+                    `;
                     break;
 
                 case 'html':
-                    // Determinar las rutas correctas basadas en el entorno
-                    let htmlPath, fallbackHtmlPath;
-
-                    // Determinar si estamos en producción (Netlify) o desarrollo local
-                    const isProduction = window.location.hostname.includes('netlify.app') ||
-                                       window.location.hostname.includes('netlify.com');
-
-                    if (isProduction) {
-                        // En producción (Netlify), usar rutas absolutas
-                        htmlPath = '/activities/html/' + currentSection.content;
-                        fallbackHtmlPath = '/activities/html/ejemplo-simple.html';
-                    } else {
-                        // En desarrollo local, usar rutas relativas
-                        htmlPath = '../activities/html/' + currentSection.content;
-                        fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
-                    }
-
-                    console.log('Entorno:', isProduction ? 'Producción (Netlify)' : 'Desarrollo local');
-                    console.log('Cargando HTML desde:', htmlPath);
-                    console.log('Fallback HTML:', fallbackHtmlPath);
+                    // Verificar si el archivo existe
+                    const htmlPath = '../activities/html/' + currentSection.content;
+                    const fallbackHtmlPath = '../activities/html/ejemplo-simple.html';
 
                     // Crear el iframe sin script inline
                     const iframeHtml = document.createElement('iframe');
+                    iframeHtml.src = htmlPath;
                     iframeHtml.frameBorder = '0';
                     iframeHtml.style.width = '100%';
                     iframeHtml.style.height = '500px';
-                    iframeHtml.style.border = '1px solid #ddd';
-                    iframeHtml.style.borderRadius = '4px';
-                    iframeHtml.setAttribute('allowfullscreen', 'true');
-                    iframeHtml.setAttribute('loading', 'lazy');
-
-                    // Establecer la fuente después de crear el elemento
-                    iframeHtml.src = htmlPath;
 
                     // Crear el contenedor HTML
                     const htmlContainer = document.createElement('div');
                     htmlContainer.className = 'html-container';
                     htmlContainer.appendChild(iframeHtml);
 
-                    // Añadir el contenedor HTML al contenedor principal
-                    sectionPreviewContent.appendChild(htmlContainer);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    // Crear el contenedor de la sección
+                    const sectionPreviewHtml = document.createElement('div');
+                    sectionPreviewHtml.className = 'section-preview-content';
+                    sectionPreviewHtml.appendChild(htmlContainer);
 
                     // Verificar si el archivo existe
-                    fetch(htmlPath)
+                    fetch(htmlPath, { method: 'HEAD' })
                         .then(response => {
-                            console.log('Respuesta de fetch HTML:', response);
                             if (!response.ok) {
                                 console.warn('Archivo ' + htmlPath + ' no encontrado, usando fallback');
                                 iframeHtml.src = fallbackHtmlPath;
-                            } else {
-                                console.log('Archivo HTML encontrado correctamente');
                             }
                         })
                         .catch(error => {
                             console.error('Error verificando archivo ' + htmlPath + ':', error);
                             iframeHtml.src = fallbackHtmlPath;
                         });
+
+                    // Convertir el elemento DOM a HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.appendChild(sectionPreviewHtml);
+                    contentHtml = tempDiv.innerHTML;
                     break;
 
                 case 'activity':
-                    // Determinar las rutas correctas basadas en el entorno
-                    let activityPath, fallbackActivityPath;
-
-                    // Determinar si estamos en producción (Netlify) o desarrollo local
-                    const isProductionActivity = window.location.hostname.includes('netlify.app') ||
-                                               window.location.hostname.includes('netlify.com');
-
-                    if (isProductionActivity) {
-                        // En producción (Netlify), usar rutas absolutas
-                        activityPath = '/activities/templates/' + currentSection.content;
-                        fallbackActivityPath = '/activities/templates/ejemplo-simple.html';
-                    } else {
-                        // En desarrollo local, usar rutas relativas
-                        activityPath = '../activities/templates/' + currentSection.content;
-                        fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
-                    }
-
-                    console.log('Entorno:', isProductionActivity ? 'Producción (Netlify)' : 'Desarrollo local');
-                    console.log('Cargando Activity desde:', activityPath);
-                    console.log('Fallback Activity:', fallbackActivityPath);
+                    // Verificar si el archivo existe
+                    const activityPath = '../activities/templates/' + currentSection.content;
+                    const fallbackActivityPath = '../activities/templates/ejemplo-simple.html';
 
                     // Crear el iframe sin script inline
                     const iframeActivity = document.createElement('iframe');
+                    iframeActivity.src = activityPath;
                     iframeActivity.frameBorder = '0';
                     iframeActivity.style.width = '100%';
                     iframeActivity.style.height = '600px';
-                    iframeActivity.style.border = '1px solid #ddd';
-                    iframeActivity.style.borderRadius = '4px';
-                    iframeActivity.setAttribute('allowfullscreen', 'true');
-                    iframeActivity.setAttribute('loading', 'lazy');
-
-                    // Establecer la fuente después de crear el elemento
-                    iframeActivity.src = activityPath;
 
                     // Crear el contenedor de actividad
                     const activityContainer = document.createElement('div');
                     activityContainer.className = 'activity-container';
                     activityContainer.appendChild(iframeActivity);
 
-                    // Añadir el contenedor de actividad al contenedor principal
-                    sectionPreviewContent.appendChild(activityContainer);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    // Crear el contenedor de la sección
+                    const sectionPreviewActivity = document.createElement('div');
+                    sectionPreviewActivity.className = 'section-preview-content';
+                    sectionPreviewActivity.appendChild(activityContainer);
 
                     // Verificar si el archivo existe
-                    fetch(activityPath)
+                    fetch(activityPath, { method: 'HEAD' })
                         .then(response => {
-                            console.log('Respuesta de fetch Activity:', response);
                             if (!response.ok) {
                                 console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
                                 iframeActivity.src = fallbackActivityPath;
-                            } else {
-                                console.log('Archivo Activity encontrado correctamente');
                             }
                         })
                         .catch(error => {
                             console.error('Error verificando archivo ' + activityPath + ':', error);
                             iframeActivity.src = fallbackActivityPath;
                         });
+
+                    // Convertir el elemento DOM a HTML
+                    const tempDivActivity = document.createElement('div');
+                    tempDivActivity.appendChild(sectionPreviewActivity);
+                    contentHtml = tempDivActivity.innerHTML;
                     break;
 
                 default:
-                    const unsupportedText = document.createElement('p');
-                    unsupportedText.className = 'text-muted';
-                    unsupportedText.textContent = 'Tipo de contenido no soportado: ' + currentSection.type;
-
-                    sectionPreviewContent.appendChild(unsupportedText);
-                    sectionPreview.appendChild(sectionPreviewContent);
+                    contentHtml = `
+                        <div class="section-preview-content">
+                            <p class="text-muted">Tipo de contenido no soportado.</p>
+                        </div>
+                    `;
             }
+
+            sectionPreview.innerHTML = headerHtml + contentHtml;
         }
 
         function showError(title, message) {
@@ -488,11 +362,6 @@
         }
 
         function getSectionIcon(type) {
-            if (!type) {
-                console.warn('Tipo de sección no definido, usando icono por defecto');
-                return 'fas fa-file';
-            }
-
             switch (type) {
                 case 'text':
                     return 'fas fa-align-left';
@@ -504,12 +373,9 @@
                     return 'fas fa-image';
                 case 'pdf':
                     return 'fas fa-file-pdf';
-                case 'html':
-                    return 'fas fa-code';
                 case 'activity':
                     return 'fas fa-tasks';
                 default:
-                    console.warn('Tipo de sección desconocido:', type);
                     return 'fas fa-file';
             }
         }

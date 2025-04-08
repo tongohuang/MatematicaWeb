@@ -1,8 +1,8 @@
 {
   "site_name": "MatemáticaWeb",
-  "site_description": "",
-  "primary_color": "#007bff",
-  "font_family": "Arial, sans-serif",
+  "site_description": "Plataforma educativa para el aprendizaje de matemáticas",
+  "primary_color": "#0d6efd",
+  "font_family": "'Roboto', sans-serif",
   "site_logo": "",
   "use_logo": false
 }

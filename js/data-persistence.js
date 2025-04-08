@@ -69,95 +69,14 @@ const DataPersistence = {
      */
     async loadApplicationData(forceRepoData = false) {
         try {
-            // Determinar si estamos en producción (Netlify)
-            const isProduction = window.location.hostname.includes('netlify.app') ||
-                               window.location.hostname.includes('netlify.com');
+            // MODIFICACIÓN: Ya no cargamos datos desde JSON, solo usamos localStorage
+            console.log('IMPORTANTE: Sistema modificado para trabajar exclusivamente con localStorage');
+            console.log('No se cargarán datos desde archivos JSON');
 
-            // En producción o si se fuerza, siempre intentar cargar desde el repositorio primero
-            const shouldPrioritizeRepo = isProduction || forceRepoData;
-
-            // 1. Cargar datos del repositorio (producción)
+            // Variables para mantener compatibilidad con el resto del código
             let repoData = {};
             let repoDataLoaded = false;
-            try {
-                console.log('Priorizar repositorio:', shouldPrioritizeRepo ? 'Sí' : 'No');
-
-                // Usar cache: 'no-store' para evitar problemas de caché en producción
-                const fetchOptions = { cache: 'no-store' };
-
-                // Intentar cargar desde archivos separados primero
-                console.log('Intentando cargar datos desde archivos separados...');
-                try {
-                    const coursesPromise = fetch(this.JSON_FILES.courses, fetchOptions);
-                    const topicsPromise = fetch(this.JSON_FILES.topics, fetchOptions);
-
-                    const [coursesResponse, topicsResponse] = await Promise.all([coursesPromise, topicsPromise]);
-
-                    if (coursesResponse.ok && topicsResponse.ok) {
-                        // Si ambos archivos existen, cargar desde ellos
-                        const coursesData = await coursesResponse.json();
-                        const topicsData = await topicsResponse.json();
-
-                        repoData = {
-                            courses: {},
-                            topics: {},
-                            sections: {}
-                        };
-
-                        // Convertir arrays a objetos indexados por ID
-                        if (Array.isArray(coursesData)) {
-                            coursesData.forEach(course => {
-                                repoData.courses[course.id] = course;
-                            });
-                        } else {
-                            repoData.courses = coursesData;
-                        }
-
-                        if (Array.isArray(topicsData)) {
-                            topicsData.forEach(topic => {
-                                repoData.topics[topic.id] = topic;
-                            });
-                        } else {
-                            repoData.topics = topicsData;
-                        }
-
-                        repoDataLoaded = true;
-                        console.log('Datos del repositorio cargados desde archivos separados');
-                        console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
-                        console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
-                    }
-                } catch (error) {
-                    console.warn('Error cargando datos desde archivos separados:', error);
-                }
-
-                // Si no se pudieron cargar los archivos separados, intentar con el archivo combinado
-                console.log('Intentando cargar datos desde archivo combinado:', this.JSON_FILE_PATH);
-                const repoResponse = await fetch(this.JSON_FILE_PATH, fetchOptions);
-
-                if (repoResponse.ok) {
-                    repoData = await repoResponse.json();
-                    repoDataLoaded = true;
-                    console.log('Datos del repositorio cargados desde archivo combinado');
-                    console.log('Cursos en repositorio:', Object.keys(repoData.courses || {}).length);
-                    console.log('Temas en repositorio:', Object.keys(repoData.topics || {}).length);
-
-                    // Si estamos en producción (Netlify) o se fuerza la carga desde el repositorio,
-                    // actualizar el localStorage con estos datos
-                    if (shouldPrioritizeRepo) {
-                        console.log('Actualizando localStorage con datos del repositorio');
-                        const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
-                        const updatedData = {
-                            persistent: repoData,
-                            unsynced: currentData.unsynced || {}
-                        };
-                        localStorage.setItem('courseData', JSON.stringify(updatedData));
-                    }
-                } else {
-                    console.warn('No se pudo cargar el archivo JSON del repositorio, status:', repoResponse.status);
-                }
-            } catch (error) {
-                console.warn('Error cargando datos del repositorio:', error);
-            }
+            const shouldPrioritizeRepo = false; // Nunca priorizar repositorio
 
             // 2. Cargar datos locales
             const localData = JSON.parse(localStorage.getItem('courseData') || '{}');
@@ -165,36 +84,15 @@ const DataPersistence = {
             console.log('Cursos en localStorage:', Object.keys(localData.persistent?.courses || {}).length);
             console.log('Temas en localStorage:', Object.keys(localData.persistent?.topics || {}).length);
 
-            // 3. Combinación inteligente
-            let merged;
-
-            // En producción o si se fuerza, priorizar datos del repositorio
-            const shouldUseRepoData = shouldPrioritizeRepo && repoDataLoaded;
-
-            if (shouldUseRepoData) {
-                merged = {
-                    persistent: repoData,
-                    unsynced: localData.unsynced || {}
-                };
-                console.log('Usando datos del repositorio como fuente principal');
-
-                // Verificar si hay secciones de tipo HTML o Activity y registrarlas
-                this._checkSpecialSectionTypes(repoData);
-            } else {
-                // En desarrollo, combinar dando prioridad a los datos locales
-                merged = {
-                    persistent: {
-                        courses: { ...(repoData.courses || {}), ...(localData.persistent?.courses || {}) },
-                        topics: { ...(repoData.topics || {}), ...(localData.persistent?.topics || {}) },
-                        sections: { ...(repoData.sections || {}), ...(localData.persistent?.sections || {}) }
-                    },
-                    unsynced: localData.unsynced || {}
-                };
-                console.log('Combinando datos locales y del repositorio');
-
-                // Verificar si hay secciones de tipo HTML o Activity y registrarlas
-                this._checkSpecialSectionTypes(merged.persistent);
+            // 3. Siempre usar datos locales
+            let merged = localData;
+            if (!merged.persistent) {
+                merged.persistent = { courses: {}, topics: {}, sections: {} };
             }
+            console.log('Usando EXCLUSIVAMENTE datos locales como fuente principal');
+
+            // Verificar si hay secciones de tipo HTML o Activity y registrarlas
+            this._checkSpecialSectionTypes(merged.persistent);
 
             // Guardar la combinación en localStorage para uso futuro
             localStorage.setItem('courseData', JSON.stringify(merged));
@@ -446,8 +344,9 @@ const DataPersistence = {
     /**
      * Sincroniza los datos con el repositorio
      * @param {boolean} silent - Si es true, no muestra alertas
+     * @param {boolean} download - Si es true, descarga los archivos JSON
      */
-    synchronizeData(silent = false) {
+    synchronizeData(silent = false, download = false) {
         const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
 
         if (!currentData.persistent) {
@@ -473,7 +372,7 @@ const DataPersistence = {
         const dataToSync = { ...currentData.persistent, settings };
 
         // 1. Generar JSON con datos persistentes y configuración
-        const result = this.generateRepoJSON(dataToSync, silent);
+        const result = this.generateRepoJSON(dataToSync, silent, download);
 
         if (result) {
             // 2. Limpiar solo el registro de no sincronizados
@@ -487,6 +386,11 @@ const DataPersistence = {
                 console.log('Datos sincronizados con el repositorio');
             }
 
+            // Mostrar mensaje de éxito
+            if (!silent && !download && window.location.pathname.includes('/admin/')) {
+                alert('Los datos se han sincronizado correctamente y están listos para ser exportados a JSON cuando lo necesites.');
+            }
+
             return true;
         }
 
@@ -497,8 +401,9 @@ const DataPersistence = {
      * Genera los archivos JSON para el repositorio
      * @param {object} data - Datos a guardar en los JSON
      * @param {boolean} silent - Si es true, no muestra alertas
+     * @param {boolean} download - Si es true, descarga los archivos JSON
      */
-    generateRepoJSON(data, silent = false) {
+    generateRepoJSON(data, silent = false, download = false) {
         try {
             // Validar que los datos no estén vacíos
             if (!data || Object.keys(data).length === 0) {
@@ -511,35 +416,50 @@ const DataPersistence = {
 
             // 1. Generar archivo combinado (para compatibilidad)
             const combinedJsonData = JSON.stringify(data, null, 2);
-            this._downloadJsonFile(combinedJsonData, 'courseData.json', 'repository-data');
 
-            // 2. Generar archivos separados
+            // 2. Preparar archivos separados
+            let coursesJsonData = null;
+            let topicsJsonData = null;
+            let settingsJsonData = null;
 
             // Cursos
             if (data.courses && Object.keys(data.courses).length > 0) {
                 // Convertir objeto a array
                 const coursesArray = Object.values(data.courses);
-                const coursesJsonData = JSON.stringify(coursesArray, null, 2);
-                this._downloadJsonFile(coursesJsonData, 'courses.json', 'courses-data');
+                coursesJsonData = JSON.stringify(coursesArray, null, 2);
             }
 
             // Temas
             if (data.topics && Object.keys(data.topics).length > 0) {
                 // Convertir objeto a array
                 const topicsArray = Object.values(data.topics);
-                const topicsJsonData = JSON.stringify(topicsArray, null, 2);
-                this._downloadJsonFile(topicsJsonData, 'topics.json', 'topics-data');
+                topicsJsonData = JSON.stringify(topicsArray, null, 2);
             }
 
             // Configuración (si existe)
             if (data.settings) {
-                const settingsJsonData = JSON.stringify(data.settings, null, 2);
-                this._downloadJsonFile(settingsJsonData, 'settings.json', 'settings-data');
+                settingsJsonData = JSON.stringify(data.settings, null, 2);
             }
 
-            // Solo mostramos la alerta si se solicita explícitamente y no estamos en modo silencioso
-            if (!silent && window.location.pathname.includes('/admin/')) {
-                alert('Se han generado los archivos JSON para el repositorio. Por favor, guárdelos en las carpetas correspondientes del proyecto:\n\n- courseData.json en /data/\n- courses.json en /data/\n- topics.json en /data/\n- settings.json en /data/\n\nY haga commit de los cambios.');
+            // Guardar los datos JSON en localStorage para su posterior sincronización
+            localStorage.setItem('jsonData_courseData', combinedJsonData);
+            if (coursesJsonData) localStorage.setItem('jsonData_courses', coursesJsonData);
+            if (topicsJsonData) localStorage.setItem('jsonData_topics', topicsJsonData);
+            if (settingsJsonData) localStorage.setItem('jsonData_settings', settingsJsonData);
+
+            // Si se solicita la descarga, descargar los archivos
+            if (download) {
+                if (combinedJsonData) this._downloadJsonFile(combinedJsonData, 'courseData.json', 'repository-data');
+                if (coursesJsonData) this._downloadJsonFile(coursesJsonData, 'courses.json', 'courses-data');
+                if (topicsJsonData) this._downloadJsonFile(topicsJsonData, 'topics.json', 'topics-data');
+                if (settingsJsonData) this._downloadJsonFile(settingsJsonData, 'settings.json', 'settings-data');
+
+                // Solo mostramos la alerta si se solicita explícitamente y no estamos en modo silencioso
+                if (!silent && window.location.pathname.includes('/admin/')) {
+                    alert('Se han generado los archivos JSON para el repositorio. Por favor, guárdelos en las carpetas correspondientes del proyecto:\n\n- courseData.json en /data/\n- courses.json en /data/\n- topics.json en /data/\n- settings.json en /data/\n\nY haga commit de los cambios.');
+                }
+            } else {
+                console.log('Datos JSON generados y guardados en localStorage para su posterior sincronización');
             }
 
             // Guardar una copia en localStorage para referencia

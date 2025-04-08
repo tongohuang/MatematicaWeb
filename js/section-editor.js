@@ -1154,24 +1154,21 @@ function deleteSection(sectionId) {
         return;
     }
 
-    // Buscar el índice de la sección
-    const sectionIndex = currentTopic.sections.findIndex(section => section.id == sectionId);
+    // Usar la nueva función de DataManager para eliminar la sección directamente del localStorage
+    const success = DataManager.deleteSection(sectionId, currentTopic.id);
 
-    if (sectionIndex === -1) {
-        console.error(`No se encontró la sección con ID ${sectionId}`);
-        return;
+    if (success) {
+        console.log(`Sección ${sectionId} eliminada correctamente`);
+
+        // Actualizar el objeto currentTopic para reflejar los cambios
+        currentTopic = DataManager.getTopicById(currentTopic.id);
+
+        // Recargar la lista de secciones
+        loadSections();
+    } else {
+        console.error(`Error al eliminar la sección ${sectionId}`);
+        alert('Error al eliminar la sección. Por favor, inténtelo de nuevo.');
     }
-
-    // Eliminar la sección del array
-    currentTopic.sections.splice(sectionIndex, 1);
-
-    // Guardar los cambios
-    DataManager.saveTopic(currentTopic);
-
-    // Recargar la lista de secciones
-    loadSections();
-
-    console.log(`Sección eliminada correctamente`);
 }
 
 function previewSection(sectionId) {

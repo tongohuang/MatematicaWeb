@@ -34,23 +34,7 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "frame-ancestors 'self'"
+    Content-Security-Policy = "frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
-
-# Configuración especial para archivos HTML en activities
-[[headers]]
-  for = "/activities/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self';"
-    Access-Control-Allow-Origin = "*"
-
-# Configuración para rutas relativas desde sections
-[[headers]]
-  for = "/sections/activities/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self';"
-    Access-Control-Allow-Origin = "*"

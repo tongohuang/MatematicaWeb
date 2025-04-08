@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Cursos - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <style>
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .table-actions .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .debug-panel {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-top-left-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow: auto;
+            z-index: 9999;
+            display: none;
+        }
+        .debug-panel.show {
+            display: block;
+        }
+        .debug-panel pre {
+            color: #00ff00;
+            margin: 0;
+        }
+        .debug-panel .debug-title {
+            color: #ffff00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .debug-panel .debug-actions {
+            margin-top: 10px;
+        }
+        .debug-panel .debug-actions button {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 2px 5px;
+            font-size: 10px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header"></div>
+
+    <!-- Panel de depuración (oculto por defecto) -->
+    <div id="debugPanel" class="debug-panel">
+        <div class="debug-title">Panel de Depuración</div>
+        <div id="debugContent"></div>
+        <div class="debug-actions">
+            <button id="debugClose">Cerrar</button>
+            <button id="debugClear">Limpiar</button>
+            <button id="debugRefresh">Actualizar</button>
+        </div>
+    </div>
+
+    <main class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Administración de Cursos</h1>
+            <div>
+                <a href="index.html" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left"></i> Volver al Panel
+                </a>
+                <a href="course-editor.html" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Curso
+                </a>
+                <button class="btn btn-outline-dark ms-2" id="toggleDebugBtn">
+                    <i class="fas fa-bug"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Listado de Cursos</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px" class="text-center">#</th>
+                                <th style="width: 60px" class="text-center">Color</th>
+                                <th style="width: 60px" class="text-center">Icono</th>
+                                <th>Título</th>
+                                <th>Descripción</th>
+                                <th style="width: 80px" class="text-center">Temas</th>
+                                <th style="width: 80px" class="text-center">Secciones</th>
+                                <th style="width: 150px" class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coursesList">
+                            <!-- Los cursos se cargarán aquí dinámicamente -->
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando cursos...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sample-data.js"></script>
+    <script src="../js/data-persistence.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        // Variables globales
+        let debugMode = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Cargar componentes
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+
+            // Verificar si el usuario está autenticado y es administrador
+            if (!auth.isAdmin()) {
+                window.location.href = '../login.html';
+                return;
+            }
+
+            // Inicializar sistema de persistencia
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia...');
+                await initializeDataSystem();
+            }
+
+            // Cargar la lista de cursos
+            loadCoursesList();
+
+            // Configurar eventos
+            setupEventListeners();
+        });
+
+        // Función para cargar y mostrar la lista de cursos
+        function loadCoursesList() {
+            console.log('Cargando lista de cursos...');
+            const coursesList = document.getElementById('coursesList');
+            const courses = DataManager.getCourses();
+
+            if (courses.length === 0) {
+                coursesList.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-book fa-3x mb-3 text-muted"></i>
+                            <p class="text-muted">No hay cursos disponibles. ¡Crea el primero!</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Ordenar cursos por ID (los más recientes primero)
+            courses.sort((a, b) => b.id - a.id);
+
+            // Generar HTML para cada curso
+            coursesList.innerHTML = courses.map(course => {
+                // Obtener la cantidad de temas para este curso
+                const topics = DataManager.getTopicsByCourse(course.id);
+                const topicsCount = topics.length;
+                
+                // Contar el total de secciones en todos los temas
+                let sectionsCount = 0;
+                topics.forEach(topic => {
+                    if (topic.sections && Array.isArray(topic.sections)) {
+                        sectionsCount += topic.sections.length;
+                    }
+                });
+
+                // Truncar la descripción si es muy larga
+                const shortDescription = course.description.length > 100 
+                    ? course.description.substring(0, 100) + '...' 
+                    : course.description;
+
+                return `
+                    <tr>
+                        <td class="text-center">${course.id}</td>
+                        <td class="text-center">
+                            <div class="color-preview" style="background-color: ${course.color || '#4CAF50'};"></div>
+                        </td>
+                        <td class="text-center">
+                            <i class="${course.icon || 'fas fa-book'} fa-lg"></i>
+                        </td>
+                        <td><strong>${course.title}</strong></td>
+                        <td>${shortDescription}</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">${topicsCount}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">${sectionsCount}</span>
+                        </td>
+                        <td class="text-center table-actions">
+                            <a href="course-editor.html?id=${course.id}" class="btn btn-sm btn-outline-primary" title="Editar curso">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteCourse(${course.id})" title="Eliminar curso">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="showCourseData(${course.id})" title="Ver datos">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Función para confirmar la eliminación de un curso
+        function confirmDeleteCourse(courseId) {
+            if (confirm(`¿Estás seguro de que deseas eliminar el curso con ID ${courseId}? Esta acción eliminará también todos los temas y secciones asociados.`)) {
+                deleteCourse(courseId);
+            }
+        }
+
+        // Función para eliminar un curso
+        function deleteCourse(courseId) {
+            try {
+                // Mostrar indicador de carga
+                const loadingHtml = `
+                    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 9999;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Eliminando curso...</span>
+                            </div>
+                            <p>Eliminando curso y sus contenidos...</p>
+                        </div>
+                    </div>
+                `;
+                const loadingElement = document.createElement('div');
+                loadingElement.innerHTML = loadingHtml;
+                document.body.appendChild(loadingElement.firstElementChild);
+                
+                // Método 1: Eliminar directamente del localStorage
+                deleteDirectFromLocalStorage(courseId);
+                
+                // Método 2: Usar DataManager como respaldo
+                try {
+                    DataManager.deleteCourse(courseId);
+                    debugLog('DataManager.deleteCourse ejecutado correctamente');
+                } catch (dmError) {
+                    debugLog('Error en DataManager.deleteCourse: ' + dmError.message);
+                }
+                
+                // Mostrar mensaje de éxito
+                alert('Curso eliminado correctamente. La página se recargará para actualizar los datos.');
+                
+                // Recargar la página
+                window.location.reload();
+            } catch (error) {
+                console.error('Error al eliminar el curso:', error);
+                alert('Error al eliminar el curso. Por favor, inténtalo de nuevo.');
+                
+                // Eliminar el indicador de carga en caso de error
+                const loadingElement = document.querySelector('.bg-white.bg-opacity-75');
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+            }
+        }
+
+        // Función para eliminar un curso directamente del localStorage
+        function deleteDirectFromLocalStorage(courseId) {
+            debugLog(`Eliminando curso ${courseId} directamente del localStorage...`);
+            
+            // Asegurarse de que courseId sea numérico
+            if (typeof courseId === 'string' && !isNaN(courseId)) {
+                courseId = parseInt(courseId);
+            }
+            
+            try {
+                // 1. Sistema nuevo (courseData)
+                const courseData = JSON.parse(localStorage.getItem('courseData') || '{}');
+                
+                if (courseData.persistent) {
+                    // Buscar temas y secciones asociados
+                    const associatedTopicIds = [];
+                    const associatedSectionIds = [];
+                    
+                    if (courseData.persistent.topics) {
+                        Object.keys(courseData.persistent.topics).forEach(topicId => {
+                            const topic = courseData.persistent.topics[topicId];
+                            if (topic && topic.courseId === courseId) {
+                                associatedTopicIds.push(topicId);
+                                
+                                // Buscar secciones
+                                if (topic.sections && Array.isArray(topic.sections)) {
+                                    topic.sections.forEach(section => {
+                                        if (section && section.id) {
+                                            associatedSectionIds.push(section.id);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                    
+                    debugLog(`Encontrados ${associatedTopicIds.length} temas y ${associatedSectionIds.length} secciones asociados`);
+                    
+                    // Eliminar secciones
+                    if (courseData.persistent.sections) {
+                        associatedSectionIds.forEach(sectionId => {
+                            if (courseData.persistent.sections[sectionId]) {
+                                delete courseData.persistent.sections[sectionId];
+                                debugLog(`Sección ${sectionId} eliminada`);
+                            }
+                        });
+                    }
+                    
+                    // Eliminar temas
+                    associatedTopicIds.forEach(topicId => {
+                        if (courseData.persistent.topics[topicId]) {
+                            delete courseData.persistent.topics[topicId];
+                            debugLog(`Tema ${topicId} eliminado`);
+                        }
+                    });
+                    
+                    // Eliminar curso
+                    if (courseData.persistent.courses[courseId]) {
+                        delete courseData.persistent.courses[courseId];
+                        debugLog(`Curso ${courseId} eliminado del sistema nuevo`);
+                    }
+                    
+                    // Limpiar referencias en unsynced
+                    if (courseData.unsynced) {
+                        const newUnsynced = {};
+                        
+                        Object.keys(courseData.unsynced).forEach(key => {
+                            if (!key.includes(`courses_${courseId}`) && 
+                                !associatedTopicIds.some(topicId => key.includes(`topics_${topicId}`)) &&
+                                !associatedSectionIds.some(sectionId => key.includes(`sections_${sectionId}`))) {
+                                newUnsynced[key] = courseData.unsynced[key];
+                            } else {
+                                debugLog(`Eliminada referencia en unsynced: ${key}`);
+                            }
+                        });
+                        
+                        courseData.unsynced = newUnsynced;
+                    }
+                    
+                    // Guardar cambios
+                    localStorage.setItem('courseData', JSON.stringify(courseData));
+                    debugLog('Cambios guardados en localStorage (sistema nuevo)');
+                }
+                
+                // 2. Sistema antiguo
+                if (localStorage.getItem('matematicaweb_courses')) {
+                    const oldCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                    const newCourses = oldCourses.filter(course => course.id !== courseId);
+                    
+                    if (oldCourses.length > newCourses.length) {
+                        localStorage.setItem('matematicaweb_courses', JSON.stringify(newCourses));
+                        debugLog(`Curso ${courseId} eliminado del sistema antiguo`);
+                    }
+                }
+                
+                if (localStorage.getItem('matematicaweb_topics')) {
+                    const oldTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+                    const newTopics = oldTopics.filter(topic => topic.courseId !== courseId);
+                    
+                    if (oldTopics.length > newTopics.length) {
+                        localStorage.setItem('matematicaweb_topics', JSON.stringify(newTopics));
+                        debugLog(`Temas del curso ${courseId} eliminados del sistema antiguo`);
+                    }
+                }
+                
+                return true;
+            } catch (error) {
+                debugLog('Error al eliminar directamente del localStorage: ' + error.message);
+                return false;
+            }
+        }
+
+        // Función para mostrar los datos de un curso en el panel de depuración
+        function showCourseData(courseId) {
+            debugMode = true;
+            document.getElementById('debugPanel').classList.add('show');
+            
+            // Obtener datos del curso
+            const courseData = JSON.parse(localStorage.getItem('courseData') || '{}');
+            const course = courseData.persistent?.courses?.[courseId];
+            
+            if (course) {
+                const content = `
+                    <div class="debug-section">
+                        <h6>Datos del curso (ID: ${courseId}):</h6>
+                        <pre>${JSON.stringify(course, null, 2)}</pre>
+                    </div>
+                `;
+                
+                document.getElementById('debugContent').innerHTML = content;
+            } else {
+                document.getElementById('debugContent').innerHTML = `<div class="debug-section">No se encontró el curso con ID ${courseId}</div>`;
+            }
+        }
+
+        // Función para configurar eventos
+        function setupEventListeners() {
+            // Botón de depuración
+            document.getElementById('toggleDebugBtn').addEventListener('click', function() {
+                debugMode = !debugMode;
+                document.getElementById('debugPanel').classList.toggle('show', debugMode);
+                
+                if (debugMode) {
+                    showDebugInfo();
+                }
+            });
+            
+            // Botones del panel de depuración
+            document.getElementById('debugClose').addEventListener('click', function() {
+                debugMode = false;
+                document.getElementById('debugPanel').classList.remove('show');
+            });
+            
+            document.getElementById('debugClear').addEventListener('click', function() {
+                document.getElementById('debugContent').innerHTML = '';
+            });
+            
+            document.getElementById('debugRefresh').addEventListener('click', function() {
+                showDebugInfo();
+            });
+        }
+
+        // Función para mostrar información de depuración
+        function showDebugInfo() {
+            try {
+                const courseData = JSON.parse(localStorage.getItem('courseData') || '{}');
+                const coursesCount = Object.keys(courseData.persistent?.courses || {}).length;
+                const topicsCount = Object.keys(courseData.persistent?.topics || {}).length;
+                const sectionsCount = Object.keys(courseData.persistent?.sections || {}).length;
+                const unsyncedCount = Object.keys(courseData.unsynced || {}).length;
+                
+                const content = `
+                    <div class="debug-section">
+                        <h6>Estadísticas:</h6>
+                        <p>Cursos: ${coursesCount}</p>
+                        <p>Temas: ${topicsCount}</p>
+                        <p>Secciones: ${sectionsCount}</p>
+                        <p>Cambios no sincronizados: ${unsyncedCount}</p>
+                    </div>
+                `;
+                
+                document.getElementById('debugContent').innerHTML = content;
+            } catch (error) {
+                document.getElementById('debugContent').innerHTML = `<div class="debug-section">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Función para registrar mensajes de depuración
+        function debugLog(message) {
+            console.log(message);
+            
+            if (debugMode) {
+                const debugContent = document.getElementById('debugContent');
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.innerHTML = `<small>[${timestamp}]</small> ${message}`;
+                debugContent.appendChild(logEntry);
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

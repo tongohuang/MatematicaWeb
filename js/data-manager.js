@@ -187,31 +187,123 @@ const DataManager = {
 
     // Eliminar un curso
     deleteCourse(courseId) {
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            // Eliminar el curso
-            DataPersistence.deleteData('courses', courseId);
+        console.log(`DataManager: Eliminando curso con ID ${courseId}...`);
 
-            // Obtener temas asociados a este curso
-            const topics = this.getTopicsByCourse(courseId);
-
-            // Eliminar cada tema asociado
-            topics.forEach(topic => {
-                DataPersistence.deleteData('topics', topic.id);
-            });
-
-            return;
+        // Asegurarse de que courseId sea numérico para comparaciones consistentes
+        if (typeof courseId === 'string' && !isNaN(courseId)) {
+            courseId = parseInt(courseId);
         }
 
-        // Fallback al sistema antiguo
-        const courses = this.getCourses();
-        const newCourses = courses.filter(course => course.id !== courseId);
-        this.saveCourses(newCourses);
+        // Implementación simplificada que elimina directamente del localStorage
+        try {
+            // 1. Obtener los datos actuales
+            const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
+            if (!currentData.persistent) {
+                currentData.persistent = { courses: {}, topics: {}, sections: {} };
+            }
 
-        // También eliminar los temas asociados a este curso
-        const topics = this.getTopics();
-        const newTopics = topics.filter(topic => topic.courseId !== courseId);
-        this.saveTopics(newTopics);
+            // 2. Identificar temas y secciones asociados al curso
+            const associatedTopicIds = [];
+            const associatedSectionIds = [];
+
+            // Buscar temas asociados
+            if (currentData.persistent.topics) {
+                Object.keys(currentData.persistent.topics).forEach(topicId => {
+                    const topic = currentData.persistent.topics[topicId];
+                    if (topic && topic.courseId === courseId) {
+                        associatedTopicIds.push(topicId);
+
+                        // Buscar secciones asociadas a este tema
+                        if (topic.sections && Array.isArray(topic.sections)) {
+                            topic.sections.forEach(section => {
+                                if (section && section.id) {
+                                    associatedSectionIds.push(section.id);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            console.log(`DataManager: Encontrados ${associatedTopicIds.length} temas y ${associatedSectionIds.length} secciones asociados al curso ${courseId}`);
+
+            // 3. Eliminar secciones
+            if (currentData.persistent.sections) {
+                associatedSectionIds.forEach(sectionId => {
+                    if (currentData.persistent.sections[sectionId]) {
+                        delete currentData.persistent.sections[sectionId];
+                        console.log(`DataManager: Sección ${sectionId} eliminada`);
+                    }
+                });
+            }
+
+            // 4. Eliminar temas
+            associatedTopicIds.forEach(topicId => {
+                if (currentData.persistent.topics[topicId]) {
+                    delete currentData.persistent.topics[topicId];
+                    console.log(`DataManager: Tema ${topicId} eliminado`);
+                }
+            });
+
+            // 5. Eliminar curso
+            let courseDeleted = false;
+            if (currentData.persistent.courses && currentData.persistent.courses[courseId]) {
+                delete currentData.persistent.courses[courseId];
+                courseDeleted = true;
+                console.log(`DataManager: Curso ${courseId} eliminado`);
+            }
+
+            // 6. Limpiar referencias en unsynced
+            if (currentData.unsynced) {
+                const newUnsynced = {};
+
+                Object.keys(currentData.unsynced).forEach(key => {
+                    if (!key.includes(`courses_${courseId}`) &&
+                        !associatedTopicIds.some(topicId => key.includes(`topics_${topicId}`)) &&
+                        !associatedSectionIds.some(sectionId => key.includes(`sections_${sectionId}`))) {
+                        newUnsynced[key] = currentData.unsynced[key];
+                    } else {
+                        console.log(`DataManager: Eliminada referencia en unsynced: ${key}`);
+                    }
+                });
+
+                currentData.unsynced = newUnsynced;
+            }
+
+            // 7. Guardar los cambios en localStorage
+            localStorage.setItem('courseData', JSON.stringify(currentData));
+            console.log('DataManager: Cambios guardados en localStorage');
+
+            // 8. Eliminar también del sistema antiguo (para compatibilidad)
+            try {
+                const oldCourses = JSON.parse(localStorage.getItem(this.COURSES_KEY) || '[]');
+                const newCourses = oldCourses.filter(course => course.id !== courseId);
+                localStorage.setItem(this.COURSES_KEY, JSON.stringify(newCourses));
+
+                const oldTopics = JSON.parse(localStorage.getItem(this.TOPICS_KEY) || '[]');
+                const newTopics = oldTopics.filter(topic => topic.courseId !== courseId);
+                localStorage.setItem(this.TOPICS_KEY, JSON.stringify(newTopics));
+
+                console.log('DataManager: Curso eliminado también del sistema antiguo');
+            } catch (oldSystemError) {
+                console.warn('DataManager: Error al eliminar del sistema antiguo:', oldSystemError);
+            }
+
+            // 9. Sincronizar los cambios (sin descargar archivos)
+            if (typeof DataPersistence !== 'undefined') {
+                try {
+                    DataPersistence.synchronizeData(true, false);
+                    console.log('DataManager: Cambios sincronizados');
+                } catch (syncError) {
+                    console.warn('DataManager: Error al sincronizar cambios:', syncError);
+                }
+            }
+
+            return courseDeleted;
+        } catch (error) {
+            console.error('DataManager: Error al eliminar curso:', error);
+            return false;
+        }
     },
 
     // Obtener temas
@@ -291,15 +383,104 @@ const DataManager = {
 
     // Eliminar un tema
     deleteTopic(topicId) {
-        // Usar el sistema de persistencia si está disponible
-        if (typeof DataPersistence !== 'undefined') {
-            return DataPersistence.deleteData('topics', topicId);
+        console.log(`DataManager: Eliminando tema con ID ${topicId}...`);
+
+        // Asegurarse de que topicId sea numérico para comparaciones consistentes
+        if (typeof topicId === 'string' && !isNaN(topicId)) {
+            topicId = parseInt(topicId);
         }
 
-        // Fallback al sistema antiguo
-        const topics = this.getTopics();
-        const newTopics = topics.filter(topic => topic.id !== topicId);
-        this.saveTopics(newTopics);
+        // Implementación simplificada que elimina directamente del localStorage
+        try {
+            // 1. Obtener los datos actuales
+            const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
+            if (!currentData.persistent) {
+                currentData.persistent = { courses: {}, topics: {}, sections: {} };
+            }
+
+            // 2. Identificar secciones asociadas al tema
+            const associatedSectionIds = [];
+
+            // Buscar el tema y sus secciones
+            let topicFound = false;
+            if (currentData.persistent.topics && currentData.persistent.topics[topicId]) {
+                topicFound = true;
+                const topic = currentData.persistent.topics[topicId];
+
+                // Buscar secciones asociadas
+                if (topic.sections && Array.isArray(topic.sections)) {
+                    topic.sections.forEach(section => {
+                        if (section && section.id) {
+                            associatedSectionIds.push(section.id);
+                        }
+                    });
+                }
+            }
+
+            console.log(`DataManager: Encontradas ${associatedSectionIds.length} secciones asociadas al tema ${topicId}`);
+
+            // 3. Eliminar secciones
+            if (currentData.persistent.sections) {
+                associatedSectionIds.forEach(sectionId => {
+                    if (currentData.persistent.sections[sectionId]) {
+                        delete currentData.persistent.sections[sectionId];
+                        console.log(`DataManager: Sección ${sectionId} eliminada`);
+                    }
+                });
+            }
+
+            // 4. Eliminar tema
+            if (topicFound && currentData.persistent.topics[topicId]) {
+                delete currentData.persistent.topics[topicId];
+                console.log(`DataManager: Tema ${topicId} eliminado`);
+            }
+
+            // 5. Limpiar referencias en unsynced
+            if (currentData.unsynced) {
+                const newUnsynced = {};
+
+                Object.keys(currentData.unsynced).forEach(key => {
+                    if (!key.includes(`topics_${topicId}`) &&
+                        !associatedSectionIds.some(sectionId => key.includes(`sections_${sectionId}`))) {
+                        newUnsynced[key] = currentData.unsynced[key];
+                    } else {
+                        console.log(`DataManager: Eliminada referencia en unsynced: ${key}`);
+                    }
+                });
+
+                currentData.unsynced = newUnsynced;
+            }
+
+            // 6. Guardar los cambios en localStorage
+            localStorage.setItem('courseData', JSON.stringify(currentData));
+            console.log('DataManager: Cambios guardados en localStorage');
+
+            // 7. Eliminar también del sistema antiguo (para compatibilidad)
+            try {
+                const oldTopics = JSON.parse(localStorage.getItem(this.TOPICS_KEY) || '[]');
+                const newTopics = oldTopics.filter(topic => topic.id !== topicId);
+                localStorage.setItem(this.TOPICS_KEY, JSON.stringify(newTopics));
+
+                console.log('DataManager: Tema eliminado también del sistema antiguo');
+            } catch (oldSystemError) {
+                console.warn('DataManager: Error al eliminar del sistema antiguo:', oldSystemError);
+            }
+
+            // 8. Sincronizar los cambios (sin descargar archivos)
+            if (typeof DataPersistence !== 'undefined') {
+                try {
+                    DataPersistence.synchronizeData(true, false);
+                    console.log('DataManager: Cambios sincronizados');
+                } catch (syncError) {
+                    console.warn('DataManager: Error al sincronizar cambios:', syncError);
+                }
+            }
+
+            return topicFound;
+        } catch (error) {
+            console.error('DataManager: Error al eliminar tema:', error);
+            return false;
+        }
     },
 
     // Obtener todas las secciones
@@ -338,6 +519,101 @@ const DataManager = {
             return [];
         }
         return topic.sections;
+    },
+
+    // Eliminar una sección
+    deleteSection(sectionId, topicId) {
+        console.log(`DataManager: Eliminando sección con ID ${sectionId} del tema ${topicId}...`);
+
+        // Asegurarse de que los IDs sean numéricos para comparaciones consistentes
+        if (typeof sectionId === 'string' && !isNaN(sectionId)) {
+            sectionId = parseInt(sectionId);
+        }
+        if (typeof topicId === 'string' && !isNaN(topicId)) {
+            topicId = parseInt(topicId);
+        }
+
+        // Implementación simplificada que elimina directamente del localStorage
+        try {
+            // 1. Obtener los datos actuales
+            const currentData = JSON.parse(localStorage.getItem('courseData') || '{}');
+            if (!currentData.persistent) {
+                currentData.persistent = { courses: {}, topics: {}, sections: {} };
+            }
+
+            // 2. Verificar si la sección existe en el sistema de persistencia
+            let sectionDeleted = false;
+            if (currentData.persistent.sections && currentData.persistent.sections[sectionId]) {
+                delete currentData.persistent.sections[sectionId];
+                sectionDeleted = true;
+                console.log(`DataManager: Sección ${sectionId} eliminada del sistema de persistencia`);
+            }
+
+            // 3. Eliminar la sección del tema
+            let sectionRemovedFromTopic = false;
+            if (topicId && currentData.persistent.topics && currentData.persistent.topics[topicId]) {
+                const topic = currentData.persistent.topics[topicId];
+                if (topic.sections && Array.isArray(topic.sections)) {
+                    const originalLength = topic.sections.length;
+                    topic.sections = topic.sections.filter(section => section.id != sectionId);
+
+                    if (topic.sections.length < originalLength) {
+                        sectionRemovedFromTopic = true;
+                        console.log(`DataManager: Sección ${sectionId} eliminada del tema ${topicId}`);
+                    }
+                }
+            } else {
+                // Si no se proporciona topicId, buscar en todos los temas
+                if (currentData.persistent.topics) {
+                    Object.keys(currentData.persistent.topics).forEach(tid => {
+                        const topic = currentData.persistent.topics[tid];
+                        if (topic.sections && Array.isArray(topic.sections)) {
+                            const originalLength = topic.sections.length;
+                            topic.sections = topic.sections.filter(section => section.id != sectionId);
+
+                            if (topic.sections.length < originalLength) {
+                                sectionRemovedFromTopic = true;
+                                console.log(`DataManager: Sección ${sectionId} eliminada del tema ${tid}`);
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 4. Limpiar referencias en unsynced
+            if (currentData.unsynced) {
+                const newUnsynced = {};
+
+                Object.keys(currentData.unsynced).forEach(key => {
+                    if (!key.includes(`sections_${sectionId}`)) {
+                        newUnsynced[key] = currentData.unsynced[key];
+                    } else {
+                        console.log(`DataManager: Eliminada referencia en unsynced: ${key}`);
+                    }
+                });
+
+                currentData.unsynced = newUnsynced;
+            }
+
+            // 5. Guardar los cambios en localStorage
+            localStorage.setItem('courseData', JSON.stringify(currentData));
+            console.log('DataManager: Cambios guardados en localStorage');
+
+            // 6. Sincronizar los cambios (sin descargar archivos)
+            if (typeof DataPersistence !== 'undefined') {
+                try {
+                    DataPersistence.synchronizeData(true, false);
+                    console.log('DataManager: Cambios sincronizados');
+                } catch (syncError) {
+                    console.warn('DataManager: Error al sincronizar cambios:', syncError);
+                }
+            }
+
+            return sectionDeleted || sectionRemovedFromTopic;
+        } catch (error) {
+            console.error('DataManager: Error al eliminar sección:', error);
+            return false;
+        }
     },
 
     // Reiniciar todos los datos (volver a los datos de muestra)
