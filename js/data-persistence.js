@@ -513,12 +513,30 @@ const DataPersistence = {
      */
     async _checkFileExists(path, type, id, title) {
         try {
-            // Corregir la ruta si estamos en la carpeta admin
+            // Corregir la ruta según la ubicación actual
             let correctedPath = path;
-            if (window.location.pathname.includes('/admin/')) {
-                // Si estamos en la carpeta admin, necesitamos subir un nivel
-                correctedPath = '../' + path;
-                console.log(`Corrigiendo ruta para admin: ${path} -> ${correctedPath}`);
+            const currentPath = window.location.pathname;
+
+            // Determinar cuántos niveles necesitamos subir
+            let levelsUp = 0;
+
+            if (currentPath.includes('/admin/')) {
+                levelsUp = 1; // admin está un nivel por debajo de la raíz
+            } else if (currentPath.includes('/topics/')) {
+                levelsUp = 1; // topics está un nivel por debajo de la raíz
+            } else if (currentPath.includes('/sections/')) {
+                levelsUp = 1; // sections está un nivel por debajo de la raíz
+            } else if (currentPath.includes('/courses/')) {
+                levelsUp = 1; // courses está un nivel por debajo de la raíz
+            } else if (currentPath.includes('/activities/')) {
+                levelsUp = 1; // activities está un nivel por debajo de la raíz
+            }
+
+            // Aplicar la corrección si es necesario
+            if (levelsUp > 0) {
+                // Añadir '../' por cada nivel que necesitamos subir
+                correctedPath = '../'.repeat(levelsUp) + path;
+                console.log(`Corrigiendo ruta para ${currentPath}: ${path} -> ${correctedPath}`);
             }
 
             // Intentar verificar si el archivo existe
