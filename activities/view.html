@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad - MatemáticaWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/activities.css">
+    
+    <!-- MathJax para ecuaciones -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['\\(', '\\)'], ['$', '$']],
+            displayMath: [['\\[', '\\]'], ['$$', '$$']],
+            processEscapes: true,
+            processEnvironments: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        }
+    };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div id="header"></div>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                        <li class="breadcrumb-item" id="courseLink"><a href="#">Curso</a></li>
+                        <li class="breadcrumb-item" id="topicLink"><a href="#">Tema</a></li>
+                        <li class="breadcrumb-item active" id="activityTitle">Actividad</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0" id="activityTitleHeader">Cargando actividad...</h5>
+                        <div>
+                            <button class="btn btn-secondary" id="backButton">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="activityLoading" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-3">Cargando actividad...</p>
+                        </div>
+                        
+                        <div id="activityError" class="alert alert-danger d-none">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="errorMessage">Error al cargar la actividad</span>
+                        </div>
+                        
+                        <div id="activityContent" class="d-none">
+                            <!-- Aquí se cargará el contenido de la actividad -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/data-persistence.js"></script>
+    <script src="../js/data-manager.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/logger.js"></script>
+    
+    <script>
+        // Variables globales
+        let activityId = '';
+        let activityData = null;
+        let topicId = null;
+        let courseId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Cargar componentes
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+            
+            // Obtener el ID de la actividad de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            activityId = urlParams.get('id');
+            topicId = urlParams.get('topicId');
+            courseId = urlParams.get('courseId');
+            
+            if (!activityId) {
+                showError('No se especificó un ID de actividad');
+                return;
+            }
+            
+            console.log(`Cargando actividad con ID: ${activityId}`);
+            
+            // Inicializar sistema de persistencia antes de cargar los datos
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia...');
+                await initializeDataSystem();
+            }
+            
+            // Cargar la actividad
+            loadActivity();
+            
+            // Configurar el botón de volver
+            document.getElementById('backButton').addEventListener('click', () => {
+                // Si tenemos el ID del tema, volver a la vista del tema
+                if (topicId && courseId) {
+                    window.location.href = `../topics/view.html?id=${topicId}&courseId=${courseId}`;
+                } else {
+                    // Si no tenemos el ID del tema, intentar volver a la página anterior
+                    const referrer = document.referrer;
+                    
+                    if (referrer) {
+                        window.location.href = referrer;
+                    } else {
+                        // En caso contrario, ir al inicio
+                        window.location.href = '../index.html';
+                    }
+                }
+            });
+            
+            // Actualizar la navegación si tenemos el ID del tema y del curso
+            if (topicId && courseId) {
+                updateNavigation();
+            }
+        });
+        
+        // Función para actualizar la navegación
+        async function updateNavigation() {
+            try {
+                // Obtener el tema y el curso
+                const topic = DataManager.getTopicById(topicId);
+                const course = DataManager.getCourseById(courseId);
+                
+                if (topic && course) {
+                    // Actualizar los enlaces
+                    const courseLink = document.getElementById('courseLink');
+                    const topicLink = document.getElementById('topicLink');
+                    
+                    courseLink.innerHTML = `<a href="../courses/view.html?id=${courseId}">${course.title}</a>`;
+                    topicLink.innerHTML = `<a href="../topics/view.html?id=${topicId}&courseId=${courseId}">${topic.title}</a>`;
+                }
+            } catch (error) {
+                console.error('Error al actualizar la navegación:', error);
+            }
+        }
+        
+        // Función para cargar la actividad
+        function loadActivity() {
+            try {
+                console.log('Cargando actividad desde localStorage...');
+                
+                // 1. Intentar cargar la actividad desde localStorage
+                const activityDataStr = localStorage.getItem(`activity_data_${activityId}`);
+                
+                if (!activityDataStr) {
+                    console.log('No se encontró la actividad en localStorage, intentando con clave alternativa...');
+                    
+                    // 2. Intentar con la clave alternativa
+                    const alternativeDataStr = localStorage.getItem(activityId);
+                    
+                    if (!alternativeDataStr) {
+                        console.error('No se encontró la actividad con ninguna clave');
+                        showError('No se encontró la actividad especificada');
+                        return;
+                    }
+                    
+                    activityData = JSON.parse(alternativeDataStr);
+                } else {
+                    activityData = JSON.parse(activityDataStr);
+                }
+                
+                console.log('Actividad cargada:', activityData);
+                
+                // Mostrar la actividad
+                displayActivity();
+            } catch (error) {
+                console.error('Error al cargar la actividad:', error);
+                showError('Error al cargar la actividad: ' + error.message);
+            }
+        }
+        
+        // Función para mostrar la actividad
+        function displayActivity() {
+            // Ocultar el indicador de carga
+            document.getElementById('activityLoading').classList.add('d-none');
+            
+            // Mostrar el contenido
+            document.getElementById('activityContent').classList.remove('d-none');
+            
+            // Actualizar el título
+            document.getElementById('activityTitle').textContent = activityData.title || 'Actividad sin título';
+            document.getElementById('activityTitleHeader').textContent = activityData.title || 'Actividad sin título';
+            document.title = `${activityData.title || 'Actividad'} - MatemáticaWeb`;
+            
+            // Generar el contenido según el tipo de actividad
+            let contentHTML = `
+                <div class="activity-container">
+                    <h2 class="activity-title">${activityData.title || 'Actividad sin título'}</h2>
+                    ${activityData.description ? `<p class="activity-description">${activityData.description}</p>` : ''}
+            `;
+            
+            // Mostrar las preguntas
+            if (activityData.questions && activityData.questions.length > 0) {
+                contentHTML += `<form id="activityForm">`;
+                
+                activityData.questions.forEach((question, index) => {
+                    contentHTML += `
+                        <div class="question-container">
+                            <h3 class="question-title">Pregunta ${index + 1}: ${question.text}</h3>
+                            ${renderQuestionContent(question, activityData.type, index)}
+                        </div>
+                    `;
+                });
+                
+                contentHTML += `
+                    <div class="mt-4 text-center">
+                        <button type="button" class="btn btn-primary" onclick="checkAnswers()">
+                            <i class="fas fa-check-circle me-2"></i> Verificar respuestas
+                        </button>
+                    </div>
+                    </form>
+                `;
+            } else {
+                contentHTML += `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta actividad no tiene preguntas.
+                    </div>
+                `;
+            }
+            
+            contentHTML += `</div>`;
+            
+            // Actualizar el contenido
+            document.getElementById('activityContent').innerHTML = contentHTML;
+            
+            // Renderizar ecuaciones matemáticas
+            if (window.MathJax) {
+                MathJax.typeset();
+            }
+        }
+        
+        // Función para renderizar el contenido de una pregunta según su tipo
+        function renderQuestionContent(question, activityType, questionIndex) {
+            let html = '';
+            
+            switch (activityType) {
+                case 'multiple-choice':
+                    if (question.options && question.options.length > 0) {
+                        html += `<div class="options-container">`;
+                        question.options.forEach((option, index) => {
+                            html += `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="question${questionIndex}" id="option${questionIndex}_${index}" value="${index}">
+                                    <label class="form-check-label" for="option${questionIndex}_${index}">
+                                        ${option.text || option}
+                                    </label>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                    break;
+                    
+                case 'true-false':
+                    html += `
+                        <div class="options-container">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question${questionIndex}" id="true${questionIndex}" value="true">
+                                <label class="form-check-label" for="true${questionIndex}">
+                                    Verdadero
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question${questionIndex}" id="false${questionIndex}" value="false">
+                                <label class="form-check-label" for="false${questionIndex}">
+                                    Falso
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'short-answer':
+                    html += `
+                        <div class="mb-3">
+                            <input type="text" class="form-control" name="question${questionIndex}" placeholder="Tu respuesta">
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    html += '<p>Tipo de pregunta no soportado</p>';
+            }
+            
+            // Agregar contenedor para el feedback
+            html += `<div class="feedback-container mt-2" id="feedback-${questionIndex}"></div>`;
+            
+            return html;
+        }
+        
+        // Función para verificar las respuestas
+        function checkAnswers() {
+            if (!activityData || !activityData.questions) return;
+            
+            let correctCount = 0;
+            const totalQuestions = activityData.questions.length;
+            
+            activityData.questions.forEach((question, index) => {
+                const feedbackContainer = document.getElementById(`feedback-${index}`);
+                if (!feedbackContainer) return;
+                
+                let isCorrect = false;
+                let userAnswer = null;
+                
+                switch (activityData.type) {
+                    case 'multiple-choice':
+                        const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
+                        if (selectedOption) {
+                            userAnswer = parseInt(selectedOption.value);
+                            isCorrect = userAnswer === question.correctOption;
+                        }
+                        break;
+                        
+                    case 'true-false':
+                        const selectedValue = document.querySelector(`input[name="question${index}"]:checked`);
+                        if (selectedValue) {
+                            userAnswer = selectedValue.value === 'true';
+                            isCorrect = userAnswer === question.correctAnswer;
+                        }
+                        break;
+                        
+                    case 'short-answer':
+                        const answerInput = document.querySelector(`input[name="question${index}"]`);
+                        if (answerInput && answerInput.value) {
+                            userAnswer = answerInput.value.trim();
+                            
+                            // Verificar si la respuesta coincide con alguna de las respuestas correctas
+                            if (question.correctAnswers && question.correctAnswers.length > 0) {
+                                if (question.caseSensitive) {
+                                    isCorrect = question.correctAnswers.includes(userAnswer);
+                                } else {
+                                    isCorrect = question.correctAnswers.some(answer => 
+                                        answer.toLowerCase() === userAnswer.toLowerCase()
+                                    );
+                                }
+                            }
+                        }
+                        break;
+                }
+                
+                // Mostrar feedback
+                if (userAnswer !== null) {
+                    if (isCorrect) {
+                        feedbackContainer.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                ¡Correcto!
+                            </div>
+                        `;
+                        correctCount++;
+                    } else {
+                        feedbackContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle me-2"></i>
+                                Incorrecto. 
+                                ${getCorrectAnswerText(question, activityData.type)}
+                            </div>
+                        `;
+                    }
+                } else {
+                    feedbackContainer.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No has respondido esta pregunta.
+                        </div>
+                    `;
+                }
+            });
+            
+            // Mostrar resultado final
+            const activityContainer = document.querySelector('.activity-container');
+            if (activityContainer) {
+                // Eliminar resultado anterior si existe
+                const oldResult = document.getElementById('activity-result');
+                if (oldResult) {
+                    oldResult.remove();
+                }
+                
+                // Agregar nuevo resultado
+                const resultElement = document.createElement('div');
+                resultElement.id = 'activity-result';
+                resultElement.className = 'mt-4 text-center';
+                resultElement.innerHTML = `
+                    <div class="alert ${correctCount === totalQuestions ? 'alert-success' : 'alert-info'}">
+                        <h4>Resultado: ${correctCount} de ${totalQuestions} correctas</h4>
+                        <div class="progress mt-2">
+                            <div class="progress-bar ${correctCount === totalQuestions ? 'bg-success' : 'bg-info'}" 
+                                role="progressbar" 
+                                style="width: ${(correctCount / totalQuestions) * 100}%" 
+                                aria-valuenow="${correctCount}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="${totalQuestions}">
+                                ${Math.round((correctCount / totalQuestions) * 100)}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                activityContainer.appendChild(resultElement);
+            }
+        }
+        
+        // Función para obtener el texto de la respuesta correcta
+        function getCorrectAnswerText(question, activityType) {
+            switch (activityType) {
+                case 'multiple-choice':
+                    if (question.options && question.correctOption !== undefined) {
+                        const correctOption = question.options[question.correctOption];
+                        return `La respuesta correcta es: ${correctOption.text || correctOption}`;
+                    }
+                    break;
+                    
+                case 'true-false':
+                    return `La respuesta correcta es: ${question.correctAnswer ? 'Verdadero' : 'Falso'}`;
+                    
+                case 'short-answer':
+                    if (question.correctAnswers && question.correctAnswers.length > 0) {
+                        return `Respuestas aceptadas: ${question.correctAnswers.join(', ')}`;
+                    }
+                    break;
+            }
+            
+            return '';
+        }
+        
+        // Función para mostrar un error
+        function showError(message) {
+            document.getElementById('activityLoading').classList.add('d-none');
+            
+            const errorElement = document.getElementById('activityError');
+            errorElement.classList.remove('d-none');
+            
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>

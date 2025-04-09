@@ -100,25 +100,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initializeDataSystem();
     }
 
-    // Obtener el ID del tema de la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const topicId = parseInt(urlParams.get('topicId'));
-
-    if (!topicId) {
-        // Si no hay ID de tema, redirigir a la página de temas
-        window.location.href = 'topic-editor.html';
-        return;
-    }
-
-    // Guardar el ID del tema actual
-    currentTopicId = topicId;
-
-    // Cargar la información del tema
-    loadTopicInfo();
-
-    // Cargar las secciones del tema
-    loadSections();
-
     // Manejar el cierre del modal
     const sectionModal = document.getElementById('sectionModal');
     if (sectionModal) {
@@ -195,22 +176,79 @@ function loadTopicInfo() {
 
         // 2. Buscar el tema actual por ID
         currentTopic = allTopics.find(topic => topic.id == currentTopicId);
+        if (currentTopic) {
+            console.log('Tema encontrado en localStorage:', currentTopic.title);
+        }
 
         // 3. Si no se encuentra, intentar con DataManager como fallback
         if (!currentTopic && typeof DataManager !== 'undefined') {
             console.log('Tema no encontrado en localStorage, intentando con DataManager...');
             currentTopic = DataManager.getTopicById(currentTopicId);
+            if (currentTopic) {
+                console.log('Tema encontrado en DataManager:', currentTopic.title);
+            }
+        }
+
+        // 4. Si aún no se encuentra, intentar con DataPersistence
+        if (!currentTopic && typeof DataPersistence !== 'undefined') {
+            console.log('Tema no encontrado en DataManager, intentando con DataPersistence...');
+            currentTopic = DataPersistence.getData('topics', currentTopicId);
+            if (currentTopic) {
+                console.log('Tema encontrado en DataPersistence:', currentTopic.title);
+            }
+        }
+
+        // 5. Último intento: buscar en todas las claves de localStorage
+        if (!currentTopic) {
+            console.log('Tema no encontrado en ninguna fuente, buscando en todas las claves de localStorage...');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.includes('topic')) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        if (Array.isArray(data)) {
+                            const foundTopic = data.find(t => t.id == currentTopicId);
+                            if (foundTopic) {
+                                console.log(`Tema encontrado en clave alternativa: ${key}`);
+                                currentTopic = foundTopic;
+                                break;
+                            }
+                        } else if (data && data.id == currentTopicId) {
+                            console.log(`Tema encontrado en clave alternativa: ${key}`);
+                            currentTopic = data;
+                            break;
+                        }
+                    } catch (e) {
+                        // Ignorar errores de parsing
+                    }
+                }
+            }
         }
     } catch (error) {
         console.error('Error al cargar tema desde localStorage:', error);
     }
 
     if (!currentTopic) {
-        // Si no se encuentra el tema, mostrar un mensaje de error
-        document.getElementById('topicTitle').textContent = 'Tema no encontrado';
-        document.getElementById('topicDescription').textContent = 'El tema solicitado no existe.';
-        console.error(`No se pudo encontrar el tema con ID ${currentTopicId} en ninguna fuente`);
-        return;
+        // Si no se encuentra el tema, intentar crearlo con datos básicos
+        console.warn(`No se pudo encontrar el tema con ID ${currentTopicId} en ninguna fuente, creando uno básico`);
+
+        // Crear un tema básico para evitar errores
+        currentTopic = {
+            id: currentTopicId,
+            title: 'Tema ' + currentTopicId,
+            description: 'Tema creado automáticamente',
+            sections: []
+        };
+
+        // Guardar el tema básico en localStorage
+        try {
+            const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+            allTopics.push(currentTopic);
+            localStorage.setItem('matematicaweb_topics', JSON.stringify(allTopics));
+            console.log('Tema básico guardado en localStorage');
+        } catch (error) {
+            console.error('Error al guardar tema básico:', error);
+        }
     }
 
     // Verificar que el tema tenga un array de secciones
@@ -219,9 +257,8 @@ function loadTopicInfo() {
         currentTopic.sections = [];
     }
 
-    // Mostrar la información del tema
-    document.getElementById('topicTitle').textContent = currentTopic.title;
-    document.getElementById('topicDescription').textContent = currentTopic.description;
+    // Actualizar la información del tema en la interfaz
+    updateTopicInfo();
 }
 
 function loadSections() {
@@ -235,7 +272,18 @@ function loadSections() {
     // Si no hay tema, mostrar mensaje
     if (!currentTopic) {
         sectionsContainer.innerHTML = '<div class="alert alert-info">No hay un tema seleccionado</div>';
-        return;
+
+        // Intentar cargar el tema nuevamente
+        loadTopicInfo();
+
+        // Si aún no hay tema, salir
+        if (!currentTopic) {
+            return;
+        }
+
+        // Actualizar la interfaz con la información del tema
+        document.getElementById('topicTitle').textContent = currentTopic.title;
+        document.getElementById('topicDescription').textContent = currentTopic.description || '';
     }
 
     // VERIFICAR Y CARGAR DESDE LOCALSTORAGE SI ES NECESARIO
@@ -559,10 +607,15 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
     if (section.type === 'activity') {
         const activityInfo = document.createElement('div');
         activityInfo.className = 'mt-2 p-2 bg-light rounded';
+
+        // Verificar si hay un ID de actividad válido
+        const activityId = section.content || '';
+        const hasValidId = activityId && activityId.startsWith('activity_');
+
         activityInfo.innerHTML = `
                 <div class="d-flex align-items-center">
-                <i class="fas fa-link me-2" style="color: ${iconData.color};"></i>
-                    <div class="small">ID: ${section.content}</div>
+                <i class="fas fa-${hasValidId ? 'link' : 'exclamation-triangle'} me-2" style="color: ${hasValidId ? iconData.color : '#dc3545'};"></i>
+                    <div class="small">ID: ${hasValidId ? activityId : 'No se especificó un ID válido'}</div>
                 </div>
         `;
         sectionElement.appendChild(activityInfo);
@@ -868,6 +921,10 @@ function showContentFields() {
             break;
 
         case 'activity':
+            // Generar un ID único para la actividad
+            const activityId = 'activity_' + Date.now();
+            console.log(`Generando ID único para nueva actividad: ${activityId}`);
+
             // Opciones para crear diferentes tipos de actividades interactivas
             contentFields.innerHTML = `
                 <div class="mb-3">
@@ -879,6 +936,7 @@ function showContentFields() {
                         <option value="short-answer">Respuesta Corta</option>
                     </select>
                 </div>
+                <input type="hidden" id="activityId" value="${activityId}">
 
                 <div id="activityOptions" class="d-none">
                     <div class="mb-3">
@@ -904,16 +962,55 @@ function showContentFields() {
                     </div>
                 </div>
 
-                <div id="activityInfo" class="mt-3 d-none alert alert-info">
-                    <span id="activityInfoText"></span>
+                <div id="activityInfo" class="mt-3 alert alert-info">
+                    <span id="activityInfoText">ID de actividad generado: ${activityId}</span>
                     <div class="mt-2">
+                        <button type="button" id="createActivityBtn" class="btn btn-sm btn-primary" onclick="createNewActivity()">
+                            <i class="fas fa-plus-circle"></i> Crear Actividad
+                        </button>
                         <button type="button" id="viewActivityBtn" class="btn btn-sm btn-primary d-none">
                             <i class="fas fa-eye"></i> Ver/Editar Actividad
                         </button>
                     </div>
                 </div>
-                <input type="hidden" id="activityId">
+                <input type="hidden" id="activityId" value="${activityId}">
             `;
+
+            // Registrar la actividad en el registro global
+            try {
+                // Crear un registro básico para la actividad
+                const activityData = {
+                    id: activityId,
+                    title: "Nueva Actividad",
+                    type: "generic",
+                    created: Date.now()
+                };
+
+                // Guardar los datos básicos de la actividad
+                localStorage.setItem(`activity_data_${activityId}`, JSON.stringify(activityData));
+
+                // Actualizar el registro de actividades
+                let activityRegistry = [];
+                try {
+                    activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                } catch (parseError) {
+                    console.warn('Error al parsear el registro de actividades, creando uno nuevo:', parseError);
+                }
+
+                // Agregar la nueva actividad al registro
+                activityRegistry.push({
+                    id: activityId,
+                    title: "Nueva Actividad",
+                    type: "generic",
+                    created: Date.now()
+                });
+
+                // Guardar el registro actualizado
+                localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+                console.log(`Actividad registrada en el registro de actividades (total: ${activityRegistry.length})`);
+            } catch (error) {
+                console.error('Error al registrar la actividad:', error);
+            }
             break;
 
         default:
@@ -931,8 +1028,19 @@ function createNewActivity() {
         console.log('Iniciando creación de actividad desde el editor de secciones');
     }
 
-    // Abrir el creador de actividades en una nueva ventana
-    window.open('activity-creator-simple.html', '_blank', 'width=1200,height=800');
+    // Verificar si ya tenemos un tipo de actividad seleccionado
+    const activityType = document.getElementById('activityType');
+    if (activityType && activityType.value) {
+        // Si ya tenemos un tipo seleccionado, simplemente guardamos la actividad
+        const activityId = saveActivity();
+        if (activityId) {
+            console.log(`Actividad creada con ID: ${activityId}`);
+            return activityId;
+        }
+    } else {
+        // Si no hay tipo seleccionado, mostrar mensaje
+        alert('Por favor, seleccione un tipo de actividad primero');
+    }
 
     // Escuchar el mensaje de la ventana del creador de actividades
     window.addEventListener('message', function(event) {
@@ -1357,20 +1465,45 @@ function previewSection(sectionId) {
             `;
             break;
         case 'activity':
-            previewContent = `
-                <div class="section-preview-content">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Actividad con ID: ${section.content}
+            // Verificar si hay un ID de actividad válido
+            const activityId = section.content || '';
+            const hasValidId = activityId && activityId.startsWith('activity_');
+
+            if (hasValidId) {
+                previewContent = `
+                    <div class="section-preview-content">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Actividad con ID: ${activityId}
+                        </div>
+                        <div class="text-center">
+                            <a href="../activities/view.html?id=${activityId}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-eye me-2"></i>
+                                Ver actividad
+                            </a>
+                            <a href="activity-loader.html?id=${activityId}" class="btn btn-outline-secondary ms-2" target="_blank">
+                                <i class="fas fa-edit me-2"></i>
+                                Editar actividad
+                            </a>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <a href="activity-loader.html?id=${section.content}" class="btn btn-primary" target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>
-                            Ver actividad
-                        </a>
+                `;
+            } else {
+                previewContent = `
+                    <div class="section-preview-content">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No se ha especificado un ID de actividad válido.
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-primary" onclick="generateActivityId('${section.id}')">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Generar ID de actividad
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
             break;
         case 'youtube':
             previewContent = `
@@ -3127,8 +3260,92 @@ function saveSection() {
                     sectionData.content = activityId.value;
                 }
                 console.log(`ID de actividad extraído: ${sectionData.content}`);
+
+                // Verificar si la actividad ya existe en el sistema
+                const activityDataStr = localStorage.getItem(`activity_data_${sectionData.content}`);
+                if (!activityDataStr) {
+                    // Si no existe, crear un registro básico
+                    console.log('Creando registro básico para la actividad:', sectionData.content);
+
+                    // Crear un registro básico para la actividad
+                    const activityData = {
+                        id: sectionData.content,
+                        title: sectionData.title || "Nueva Actividad",
+                        type: "generic",
+                        created: Date.now()
+                    };
+
+                    // Guardar los datos básicos de la actividad
+                    localStorage.setItem(`activity_data_${sectionData.content}`, JSON.stringify(activityData));
+
+                    // Actualizar el registro de actividades
+                    let activityRegistry = [];
+                    try {
+                        activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                    } catch (parseError) {
+                        console.warn('Error al parsear el registro de actividades, creando uno nuevo:', parseError);
+                    }
+
+                    // Agregar la nueva actividad al registro si no existe ya
+                    if (!activityRegistry.some(a => a.id === sectionData.content)) {
+                        activityRegistry.push({
+                            id: sectionData.content,
+                            title: sectionData.title || "Nueva Actividad",
+                            type: "generic",
+                            created: Date.now()
+                        });
+
+                        // Guardar el registro actualizado
+                        localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+                        console.log(`Actividad registrada en el registro de actividades (total: ${activityRegistry.length})`);
+                    }
+                }
             } else {
-                console.warn('No se encontró un ID de actividad válido');
+                // Si no hay ID, generamos uno nuevo
+                const newActivityId = 'activity_' + Date.now();
+                sectionData.content = newActivityId;
+                console.log(`Generando nuevo ID de actividad: ${newActivityId}`);
+
+                // Registrar la actividad en el sistema
+                try {
+                    // Crear un registro básico para la actividad
+                    const activityData = {
+                        id: newActivityId,
+                        title: sectionData.title || "Nueva Actividad",
+                        type: "generic",
+                        created: Date.now()
+                    };
+
+                    // Guardar los datos básicos de la actividad
+                    localStorage.setItem(`activity_data_${newActivityId}`, JSON.stringify(activityData));
+
+                    // Actualizar el registro de actividades
+                    let activityRegistry = [];
+                    try {
+                        activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                    } catch (parseError) {
+                        console.warn('Error al parsear el registro de actividades, creando uno nuevo:', parseError);
+                    }
+
+                    // Agregar la nueva actividad al registro
+                    activityRegistry.push({
+                        id: newActivityId,
+                        title: sectionData.title || "Nueva Actividad",
+                        type: "generic",
+                        created: Date.now()
+                    });
+
+                    // Guardar el registro actualizado
+                    localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+                    console.log(`Actividad registrada en el registro de actividades (total: ${activityRegistry.length})`);
+
+                    // Actualizar el campo oculto con el nuevo ID
+                    if (activityId) {
+                        activityId.value = newActivityId;
+                    }
+                } catch (error) {
+                    console.error('Error al registrar la actividad:', error);
+                }
             }
         } else {
             // Para otros tipos, buscamos un campo con el nombre del tipo
@@ -3554,8 +3771,9 @@ function saveActivity() {
     const activityData = generateActivityContent();
     if (!activityData) return null;
 
-    // Generar un ID único para la actividad
-    const activityId = 'activity_' + Date.now();
+    // Obtener el ID de actividad del campo oculto o generar uno nuevo si no existe
+    const activityIdInput = document.getElementById('activityId');
+    const activityId = activityIdInput && activityIdInput.value ? activityIdInput.value : 'activity_' + Date.now();
 
     // Determinar qué plantilla usar según el tipo de actividad
     let templateFile = '';
@@ -3646,19 +3864,37 @@ function saveActivity() {
     // Mostrar información
     const activityInfo = document.getElementById('activityInfo');
     const activityInfoText = document.getElementById('activityInfoText');
-    const activityIdInput = document.getElementById('activityId');
 
-    if (activityInfo && activityInfoText && activityIdInput) {
+    if (activityInfo && activityInfoText) {
         activityInfo.classList.remove('d-none');
         activityInfoText.textContent = `Actividad creada con éxito: ${activityData.title}`;
-        activityIdInput.value = activityId;
+        // Actualizar el campo de ID de actividad si existe
+        const activityIdField = document.getElementById('activityId');
+        if (activityIdField) {
+            activityIdField.value = activityId;
+        }
 
         // Agregar botón para ver/editar la actividad
         const viewActivityBtn = document.getElementById('viewActivityBtn');
         if (viewActivityBtn) {
             viewActivityBtn.classList.remove('d-none');
             viewActivityBtn.onclick = function() {
-                window.open(`../admin/activity-loader.html?id=${activityId}`, '_blank');
+                // Abrir una vista previa en lugar del editor
+                const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+                document.getElementById('previewModalTitle').textContent = `Vista previa: ${activityData.title}`;
+                document.getElementById('previewModalContent').innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Actividad con ID: ${activityId}
+                    </div>
+                    <div class="text-center">
+                        <a href="../activities/view.html?id=${activityId}" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            Ver actividad
+                        </a>
+                    </div>
+                `;
+                previewModal.show();
             };
         }
     }
@@ -3704,12 +3940,16 @@ function createNewActivity() {
     // Mostrar información
     const activityInfo = document.getElementById('activityInfo');
     const activityInfoText = document.getElementById('activityInfoText');
-    const activityIdInput = document.getElementById('activityId');
 
-    if (activityInfo && activityInfoText && activityIdInput) {
+    if (activityInfo && activityInfoText) {
         activityInfo.classList.remove('d-none');
         activityInfoText.textContent = `Se ha creado una nueva actividad con ID: ${activityId}. Por favor, complete la actividad en la ventana abierta.`;
-        activityIdInput.value = activityId;
+
+        // Actualizar el campo de ID de actividad si existe
+        const activityIdField = document.getElementById('activityId');
+        if (activityIdField) {
+            activityIdField.value = activityId;
+        }
 
         // Agregar botón para ver/editar la actividad
         const viewActivityBtn = document.getElementById('viewActivityBtn');
@@ -3728,3 +3968,154 @@ function createNewActivity() {
 function openActivitySelector() {
     alert('Esta funcionalidad está en desarrollo. Por favor, cree una nueva actividad.');
 }
+
+// Función para actualizar la información del tema en la interfaz
+function updateTopicInfo() {
+    // Obtener los elementos de la interfaz
+    const topicTitleElement = document.getElementById('topicTitle');
+    const topicDescriptionElement = document.getElementById('topicDescription');
+
+    // Verificar que los elementos existan
+    if (!topicTitleElement || !topicDescriptionElement) {
+        console.error('No se encontraron los elementos para mostrar la información del tema');
+        return;
+    }
+
+    if (!currentTopic) {
+        topicTitleElement.textContent = 'Tema no encontrado';
+        topicDescriptionElement.textContent = 'El tema solicitado no existe.';
+        return;
+    }
+
+    // Actualizar la interfaz con la información del tema
+    topicTitleElement.textContent = currentTopic.title || 'Tema sin título';
+    topicDescriptionElement.textContent = currentTopic.description || 'Sin descripción';
+
+    // Actualizar el título de la página
+    document.title = `Editor de Secciones - ${currentTopic.title || 'Tema sin título'}`;
+
+    console.log(`Información del tema actualizada: ${currentTopic.title} (ID: ${currentTopic.id})`);
+}
+
+// Función para generar un ID de actividad para una sección
+function generateActivityId(sectionId) {
+    console.log(`Generando ID de actividad para la sección: ${sectionId}`);
+
+    // Verificar que tengamos el tema actual
+    if (!currentTopic || !currentTopic.sections) {
+        console.error("No hay tema o secciones cargadas");
+        alert("Error: No se pudo encontrar la sección.");
+        return;
+    }
+
+    // Buscar la sección
+    const sectionIndex = currentTopic.sections.findIndex(section => section.id == sectionId);
+
+    if (sectionIndex === -1) {
+        console.error(`No se encontró la sección con ID ${sectionId}`);
+        alert("Error: No se pudo encontrar la sección.");
+        return;
+    }
+
+    // Generar un nuevo ID de actividad
+    const newActivityId = 'activity_' + Date.now();
+    console.log(`Nuevo ID de actividad generado: ${newActivityId}`);
+
+    // Actualizar la sección con el nuevo ID
+    currentTopic.sections[sectionIndex].content = newActivityId;
+
+    // Registrar la actividad en el sistema
+    try {
+        // Crear un registro básico para la actividad
+        const activityData = {
+            id: newActivityId,
+            title: currentTopic.sections[sectionIndex].title || "Nueva Actividad",
+            type: "generic",
+            created: Date.now()
+        };
+
+        // Guardar los datos básicos de la actividad
+        localStorage.setItem(`activity_data_${newActivityId}`, JSON.stringify(activityData));
+
+        // Actualizar el registro de actividades
+        let activityRegistry = [];
+        try {
+            activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+        } catch (parseError) {
+            console.warn('Error al parsear el registro de actividades, creando uno nuevo:', parseError);
+        }
+
+        // Agregar la nueva actividad al registro
+        activityRegistry.push({
+            id: newActivityId,
+            title: currentTopic.sections[sectionIndex].title || "Nueva Actividad",
+            type: "generic",
+            created: Date.now()
+        });
+
+        // Guardar el registro actualizado
+        localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+        console.log(`Actividad registrada en el registro de actividades (total: ${activityRegistry.length})`);
+
+        // Guardar el tema actualizado
+        saveTopic();
+
+        // Mostrar mensaje de éxito
+        alert(`ID de actividad generado correctamente: ${newActivityId}`);
+
+        // Actualizar la vista previa
+        previewSection(sectionId);
+
+        // Recargar las secciones para mostrar los cambios
+        loadSections();
+    } catch (error) {
+        console.error('Error al registrar la actividad:', error);
+        alert('Error al generar el ID de actividad. Por favor, intente nuevamente.');
+    }
+}
+
+// Agregar al evento DOMContentLoaded existente
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener el ID del tema de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const topicId = parseInt(urlParams.get('topicId'));
+
+    if (!topicId) {
+        // Si no hay ID de tema, redirigir a la página de temas
+        window.location.href = 'topic-editor.html';
+        return;
+    }
+
+    // Guardar el ID del tema actual
+    currentTopicId = topicId;
+
+    // Cargar la información del tema
+    loadTopicInfo();
+
+    // Cargar las secciones
+    loadSections();
+
+    // Configurar el evento para el botón de nueva sección
+    const newSectionBtn = document.getElementById('newSectionBtn');
+    if (newSectionBtn) {
+        newSectionBtn.addEventListener('click', function() {
+            openSectionModal();
+        });
+    }
+
+    // Configurar el evento para el botón de guardar sección
+    const saveSectionBtn = document.getElementById('saveSectionBtn');
+    if (saveSectionBtn) {
+        saveSectionBtn.addEventListener('click', function() {
+            saveSection();
+        });
+    }
+
+    // Configurar el evento para el botón de volver
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            window.location.href = 'topics-manager.html';
+        });
+    }
+});

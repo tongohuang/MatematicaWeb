@@ -418,6 +418,22 @@ const DataPersistence = {
      * @param {Object} data - Datos a verificar
      */
     _checkSpecialSectionTypes(data) {
+        // Ejecutar en un setTimeout para no bloquear la carga principal
+        setTimeout(() => {
+            try {
+                this._checkSpecialSectionTypesAsync(data);
+            } catch (error) {
+                console.error('Error al verificar secciones especiales:', error);
+            }
+        }, 500);
+    },
+
+    /**
+     * Implementación asíncrona de la verificación de secciones especiales
+     * @private
+     * @param {Object} data - Datos a verificar
+     */
+    async _checkSpecialSectionTypesAsync(data) {
         if (!data || !data.topics) return;
 
         console.log('Verificando secciones especiales (HTML y Activity)...');
@@ -464,22 +480,24 @@ const DataPersistence = {
         // Registrar información sobre las secciones especiales
         if (htmlSections.length > 0) {
             console.log(`Encontradas ${htmlSections.length} secciones de tipo HTML:`);
-            htmlSections.forEach(section => {
+            // Usar Promise.all para verificar todos los archivos en paralelo
+            await Promise.all(htmlSections.map(async (section) => {
                 console.log(`- ${section.title} (ID: ${section.id}, Archivo: ${section.content})`);
                 // Verificar si el archivo existe
-                this._checkFileExists(`activities/html/${section.content}`, 'HTML', section.id, section.title);
-            });
+                await this._checkFileExists(`activities/html/${section.content}`, 'HTML', section.id, section.title);
+            }));
         } else {
             console.log('No se encontraron secciones de tipo HTML');
         }
 
         if (activitySections.length > 0) {
             console.log(`Encontradas ${activitySections.length} secciones de tipo Activity:`);
-            activitySections.forEach(section => {
+            // Usar Promise.all para verificar todos los archivos en paralelo
+            await Promise.all(activitySections.map(async (section) => {
                 console.log(`- ${section.title} (ID: ${section.id}, Archivo: ${section.content})`);
                 // Verificar si el archivo existe
-                this._checkFileExists(`activities/templates/${section.content}`, 'Activity', section.id, section.title);
-            });
+                await this._checkFileExists(`activities/templates/${section.content}`, 'Activity', section.id, section.title);
+            }));
         } else {
             console.log('No se encontraron secciones de tipo Activity');
         }
@@ -495,20 +513,38 @@ const DataPersistence = {
      */
     async _checkFileExists(path, type, id, title) {
         try {
-            const response = await fetch(path, { method: 'HEAD' });
-            if (response.ok) {
-                console.log(`✅ Archivo ${path} encontrado para la sección ${type} "${title}" (ID: ${id})`);
-            } else {
-                console.warn(`⚠️ Archivo ${path} NO ENCONTRADO para la sección ${type} "${title}" (ID: ${id})`);
-                // Usar archivo de ejemplo como fallback
-                if (type === 'HTML') {
-                    console.log(`   Usando ejemplo-simple.html como fallback para la sección HTML "${title}"`);
-                } else if (type === 'Activity') {
-                    console.log(`   Usando ejemplo-simple.html como fallback para la sección Activity "${title}"`);
-                }
+            // Corregir la ruta si estamos en la carpeta admin
+            let correctedPath = path;
+            if (window.location.pathname.includes('/admin/')) {
+                // Si estamos en la carpeta admin, necesitamos subir un nivel
+                correctedPath = '../' + path;
+                console.log(`Corrigiendo ruta para admin: ${path} -> ${correctedPath}`);
             }
+
+            // Intentar verificar si el archivo existe
+            try {
+                const response = await fetch(correctedPath, { method: 'HEAD' });
+                if (response.ok) {
+                    console.log(`✅ Archivo ${correctedPath} encontrado para la sección ${type} "${title}" (ID: ${id})`);
+                    return true;
+                } else {
+                    console.warn(`⚠️ Archivo ${correctedPath} NO ENCONTRADO para la sección ${type} "${title}" (ID: ${id})`);
+                }
+            } catch (fetchError) {
+                console.warn(`Error al verificar archivo ${correctedPath}:`, fetchError);
+            }
+
+            // Si llegamos aquí, el archivo no existe o hubo un error
+            // Usar archivo de ejemplo como fallback
+            if (type === 'HTML') {
+                console.log(`   Usando ejemplo-simple.html como fallback para la sección HTML "${title}"`);
+            } else if (type === 'Activity') {
+                console.log(`   Usando ejemplo-simple.html como fallback para la sección Activity "${title}"`);
+            }
+            return false;
         } catch (error) {
-            console.error(`Error verificando archivo ${path}:`, error);
+            console.error(`Error general verificando archivo ${path}:`, error);
+            return false;
         }
     },
 

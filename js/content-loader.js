@@ -13,10 +13,76 @@ function loadHTMLContent(url, containerId, fallbackUrl, isActivity = false) {
     const isNetlify = window.location.hostname.includes('netlify.app') ||
                      window.location.hostname.includes('netlify.com');
 
-    // Si es una actividad y estamos en Netlify, usar la versión estática
-    if (isActivity && isNetlify) {
-        console.log('Entorno Netlify detectado, usando versión estática para actividad');
-        url = '../activities/templates/activity-static.html';
+    // Si es una actividad, verificar si es un ID o una URL
+    if (isActivity) {
+        // Verificar si la URL es un ID de actividad (activity_TIMESTAMP)
+        if (url.includes('activity_')) {
+            // Extraer el ID de la actividad
+            const activityId = url.split('/').pop();
+            console.log('ID de actividad detectado:', activityId);
+
+            // Intentar cargar la actividad desde localStorage con diferentes claves
+            let activityData = null;
+
+            // 1. Intentar con la clave principal
+            activityData = localStorage.getItem(`activity_data_${activityId}`);
+
+            // 2. Si no se encuentra, intentar con la clave alternativa
+            if (!activityData) {
+                activityData = localStorage.getItem(activityId);
+                if (activityData) {
+                    console.log('Actividad encontrada en localStorage con clave alternativa');
+                }
+            } else {
+                console.log('Actividad encontrada en localStorage con clave principal');
+            }
+
+            // 3. Si no se encuentra, buscar en el registro de actividades
+            if (!activityData) {
+                try {
+                    const activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+                    const registryEntry = activityRegistry.find(a => a.id === activityId);
+                    if (registryEntry) {
+                        console.log('Actividad encontrada en el registro, creando datos básicos');
+                        // Crear datos básicos para la actividad
+                        const basicData = {
+                            id: activityId,
+                            title: registryEntry.title || 'Actividad',
+                            type: registryEntry.type || 'generic',
+                            questions: []
+                        };
+                        activityData = JSON.stringify(basicData);
+
+                        // Guardar para futuras referencias
+                        localStorage.setItem(`activity_data_${activityId}`, activityData);
+                    }
+                } catch (e) {
+                    console.warn('Error al buscar en el registro de actividades:', e);
+                }
+            }
+
+            // 4. Si se encontró la actividad, cargar la vista de actividad
+            if (activityData) {
+                console.log('Actividad encontrada, cargando vista de actividad');
+                url = '../activities/view.html?id=' + activityId;
+            } else if (isNetlify) {
+                // Si estamos en Netlify y no encontramos la actividad, usar la versión estática
+                console.log('Entorno Netlify detectado, usando versión estática para actividad');
+                url = '../activities/templates/activity-static.html';
+            } else {
+                // Si no encontramos la actividad y no estamos en Netlify, usar el fallback
+                console.log('Actividad no encontrada en ninguna fuente, usando fallback');
+                if (fallbackUrl) {
+                    url = fallbackUrl;
+                } else {
+                    url = '../activities/templates/activity-static.html';
+                }
+            }
+        } else if (isNetlify) {
+            // Si es una URL y estamos en Netlify, usar la versión estática
+            console.log('Entorno Netlify detectado, usando versión estática para actividad');
+            url = '../activities/templates/activity-static.html';
+        }
     }
 
     // Mostrar indicador de carga
