@@ -14,7 +14,6 @@
     <script src="../js/error-handler.js"></script>
     <script src="../js/polyfill.min.js"></script>
     <script src="../js/netlify-activity-handler.js"></script>
-    <script src="../js/activity-renderer.js"></script>
 </head>
 <body>
     <div id="header"></div>
@@ -98,12 +97,8 @@
     <script>
         // Variables globales
         let currentTopicId = null;
-        let currentCourseId = null;
         let currentTopic = null;
-
-        // Las funciones de renderizado de actividades ahora están en activity-renderer.js
-
-        // Variable para el curso actual
+        let currentCourseId = null;
         let currentCourse = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -404,7 +399,7 @@
                     // Construir la ruta base dependiendo del entorno
                     const basePath = isNetlifyEnv ?
                         (window.location.origin + '/activities/html/') :
-                        '/activities/html/';
+                        '../activities/html/';
 
                     const htmlPath = basePath + section.content;
                     const fallbackHtmlPath = basePath + 'ejemplo-simple.html';
@@ -469,101 +464,86 @@
                     break;
 
                 case 'activity':
-                    console.log('Cargando actividad:', section.content);
+                    // Verificar si el archivo existe
+                    // Usar rutas absolutas para Netlify
+                    const isNetlifyEnvActivity = window.location.hostname.includes('netlify.app') ||
+                                               window.location.hostname.includes('netlify.com');
 
-                    // Verificar si el contenido es un ID de actividad (activity_TIMESTAMP)
-                    if (section.content && section.content.includes('activity_')) {
-                        console.log('ID de actividad detectado:', section.content);
+                    // Construir la ruta base dependiendo del entorno
+                    const basePathActivity = isNetlifyEnvActivity ?
+                        (window.location.origin + '/activities/templates/') :
+                        '../activities/templates/';
+
+                    const activityPath = basePathActivity + section.content;
+                    const fallbackActivityPath = basePathActivity + 'ejemplo-simple.html';
+
+                    console.log('Ruta Actividad:', activityPath);
+                    console.log('Ruta fallback Actividad:', fallbackActivityPath);
+
+                    // Detectar si estamos en Netlify
+                    const isNetlifyActivity = window.location.hostname.includes('netlify.app') ||
+                                             window.location.hostname.includes('netlify.com');
+
+                    console.log('Cargando Actividad en ' + (isNetlifyActivity ? 'Netlify' : 'Local') + ': ' + activityPath);
+                    console.log('Tipo de contenido de la sección:', section.type);
+                    console.log('Contenido de la sección:', section.content);
+
+                    // En Netlify, usar iframe como con HTML
+                    if (isNetlifyActivity) {
+                        console.log('Entorno Netlify detectado, cargando Actividad con iframe');
 
                         // Crear un ID único para el contenedor
                         const containerId = `activity-container-${section.id}`;
 
-                        // Crear el contenedor para la actividad
+                        // Crear el contenedor para el contenido de la actividad
                         contentHtml = `
                             <div class="activity-container">
-                                <div id="${containerId}" class="activity-content" style="min-height:400px;">
-                                    <div class="text-center p-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Cargando...</span>
-                                        </div>
-                                        <p class="mt-2">Cargando actividad...</p>
-                                    </div>
-                                </div>
+                                <div id="${containerId}" class="activity-content" style="min-height:400px;"></div>
                             </div>
                         `;
 
-                        // Cargar la actividad desde localStorage
+                        // Cargar el contenido de la actividad usando AJAX en lugar de iframe
                         setTimeout(() => {
-                            // Intentar cargar la actividad desde localStorage
-                            let activityData = null;
-
-                            // 1. Intentar con la clave principal
-                            const activityDataStr = localStorage.getItem(`activity_data_${section.content}`);
-
-                            // 2. Si no se encuentra, intentar con la clave alternativa
-                            if (!activityDataStr) {
-                                const alternativeDataStr = localStorage.getItem(section.content);
-                                if (alternativeDataStr) {
-                                    activityData = JSON.parse(alternativeDataStr);
-                                    console.log('Actividad encontrada en localStorage con clave alternativa');
-                                }
-                            } else {
-                                activityData = JSON.parse(activityDataStr);
-                                console.log('Actividad encontrada en localStorage con clave principal');
-                            }
-
-                            // 3. Si no se encuentra, buscar en el registro de actividades
-                            if (!activityData) {
-                                try {
-                                    const activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
-                                    const registryEntry = activityRegistry.find(a => a.id === section.content);
-                                    if (registryEntry) {
-                                        console.log('Actividad encontrada en el registro, creando datos básicos');
-                                        // Crear datos básicos para la actividad
-                                        activityData = {
-                                            id: section.content,
-                                            title: registryEntry.title || 'Actividad',
-                                            type: registryEntry.type || 'generic',
-                                            questions: []
-                                        };
-                                    }
-                                } catch (e) {
-                                    console.warn('Error al buscar en el registro de actividades:', e);
-                                }
-                            }
-
-                            // 4. Si se encontró la actividad, mostrarla
-                            if (activityData) {
-                                console.log('Actividad encontrada, mostrando directamente');
-                                // Mostrar la actividad directamente en la página
-                                const activityContainer = document.getElementById(containerId);
-                                if (activityContainer) {
-                                    // Renderizar la actividad directamente
-                                    renderActivity(activityData, activityContainer);
-                                }
-                            } else {
-                                // Si no se encuentra la actividad, mostrar mensaje de error
-                                const activityContainer = document.getElementById(containerId);
-                                if (activityContainer) {
-                                    activityContainer.innerHTML = `
-                                        <div class="alert alert-warning">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>
-                                            <strong>Actividad no encontrada</strong>
-                                            <p>No se pudo cargar la actividad con ID: ${section.content}</p>
-                                        </div>
-                                    `;
-                                }
-                            }
+                            console.log('Cargando contenido de actividad usando AJAX:', activityPath);
+                            // Pasar true como cuarto parámetro para indicar que es una actividad
+                            loadHTMLContent(activityPath, containerId, fallbackActivityPath, true);
                         }, 100);
                     } else {
-                        // Si no es un ID de actividad válido, mostrar mensaje de error
+                        // En local, usar iframe como antes
                         contentHtml = `
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>ID de actividad no válido</strong>
-                                <p>El ID de actividad no tiene el formato correcto: ${section.content || 'No especificado'}</p>
+                            <div class="activity-container">
+                                <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
+                                        id="activity-iframe-${section.id}"></iframe>
                             </div>
                         `;
+
+                        // Verificar si el archivo existe después de cargar
+                        setTimeout(() => {
+                            const iframe = document.getElementById(`activity-iframe-${section.id}`);
+                            if (iframe) {
+                                try {
+                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open('HEAD', activityPath, true);
+                                    xhr.onreadystatechange = function() {
+                                        if (xhr.readyState === 4) {
+                                            if (xhr.status !== 200) {
+                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
+                                                iframe.src = fallbackActivityPath;
+                                            }
+                                        }
+                                    };
+                                    xhr.onerror = function() {
+                                        console.error('Error verificando archivo ' + activityPath + ':', xhr.statusText);
+                                        iframe.src = fallbackActivityPath;
+                                    };
+                                    xhr.send();
+                                } catch (error) {
+                                    console.error('Error al verificar archivo de actividad:', error);
+                                    iframe.src = fallbackActivityPath;
+                                }
+                            }
+                        }, 500);
                     }
                     break;
 

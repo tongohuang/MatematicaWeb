@@ -130,45 +130,6 @@ function loadFeaturedCourses() {
     }
 }
 
-// Función para cargar el pie de página
-function loadFooter() {
-    const footerElement = document.getElementById('footer');
-    if (footerElement) {
-        footerElement.innerHTML = `
-            <footer class="footer mt-5 py-3 bg-light">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <h5>MatemáticaWeb</h5>
-                            <p>Plataforma educativa para el aprendizaje de matemáticas.</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h5>Enlaces Útiles</h5>
-                            <ul class="list-unstyled">
-                                <li><a href="../index.html">Inicio</a></li>
-                                <li><a href="../courses/index.html">Cursos</a></li>
-                                <li><a href="../admin/index.html">Administración</a></li>
-                            </ul>
-                        </div>
-                        <div class="col-md-4">
-                            <h5>Síguenos</h5>
-                            <div class="social-links">
-                                <a href="#" class="me-2"><i class="fab fa-facebook"></i></a>
-                                <a href="#" class="me-2"><i class="fab fa-twitter"></i></a>
-                                <a href="#" class="me-2"><i class="fab fa-instagram"></i></a>
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="text-center">
-                        <p>&copy; 2023 MatemáticaWeb. Todos los derechos reservados.</p>
-                    </div>
-                </div>
-            </footer>
-        `;
-    }
-}
-
 // Inicialización de elementos de la interfaz
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar tooltips de Bootstrap si están disponibles
@@ -176,7 +137,4 @@ document.addEventListener('DOMContentLoaded', () => {
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     }
-
-    // Cargar el pie de página
-    loadFooter();
 });

@@ -450,23 +450,23 @@ class TextEditor {
                             const equationSpan = document.createElement('span');
                             equationSpan.className = 'math-equation';
                             equationSpan.setAttribute('data-latex', latex);
-                            
+
                             // Usar doble dólar para modo display
                             equationSpan.innerHTML = `$$${latex}$$`;
-                            
+
                             // Forzar el foco en el editor
                             editorContent.focus();
-                            
+
                             // Insertar la ecuación
                             window.currentTextEditor.insertNodeAtCursor(equationSpan);
-                            
+
                             // Agregar un espacio después de la ecuación para permitir seguir escribiendo
                             const spaceNode = document.createTextNode(' ');
                             editorContent.appendChild(spaceNode);
-                            
+
                             // Sincronizar el contenido
                             window.currentTextEditor.syncContent();
-                            
+
                             // Renderizar la ecuación con MathJax
                             if (typeof MathJax !== 'undefined') {
                                 MathJax.typeset([equationSpan]);
@@ -487,7 +487,7 @@ class TextEditor {
         if (latexTemplatesBtn && latexTemplatesModal) {
             latexTemplatesBtn.addEventListener('click', () => {
                 latexTemplatesModal.style.display = 'block';
-                
+
                 // Renderizar las ecuaciones con MathJax si está disponible
                 if (typeof MathJax !== 'undefined') {
                     MathJax.typeset();
@@ -511,17 +511,17 @@ class TextEditor {
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     const tab = button.dataset.tab;
-                    
+
                     // Quitar clase activa de todos los botones
                     tabButtons.forEach(btn => btn.classList.remove('active'));
                     // Agregar clase activa al botón clickeado
                     button.classList.add('active');
-                    
+
                     // Ocultar todos los tabs
                     latexTemplatesModal.querySelectorAll('.latex-templates-tab').forEach(tabContent => {
                         tabContent.style.display = 'none';
                     });
-                    
+
                     // Mostrar el tab seleccionado
                     const selectedTab = document.getElementById(`${tab}-tab`);
                     if (selectedTab) {
@@ -541,23 +541,23 @@ class TextEditor {
                             const equationSpan = document.createElement('span');
                             equationSpan.className = 'math-equation';
                             equationSpan.setAttribute('data-latex', latex);
-                            
+
                             // Usar doble dólar para modo display
                             equationSpan.innerHTML = `$$${latex}$$`;
-                            
+
                             // Forzar el foco en el editor
                             editorContent.focus();
-                            
+
                             // Insertar la ecuación
                             window.currentTextEditor.insertNodeAtCursor(equationSpan);
-                            
+
                             // Agregar un espacio después de la ecuación para permitir seguir escribiendo
                             const spaceNode = document.createTextNode(' ');
                             window.currentTextEditor.insertNodeAtCursor(spaceNode);
-                            
+
                             // Sincronizar el contenido
                             window.currentTextEditor.syncContent();
-                            
+
                             // Renderizar la ecuación con MathJax
                             if (typeof MathJax !== 'undefined') {
                                 MathJax.typeset([equationSpan]);
@@ -581,7 +581,7 @@ class TextEditor {
         if (insertTableBtn && tableModal && tableSizeGrid) {
             insertTableBtn.addEventListener('click', () => {
                 tableModal.style.display = 'block';
-                
+
                 // Resetear selección
                 tableSizeGrid.querySelectorAll('.table-size-cell').forEach(cell => {
                     cell.classList.remove('selected');
@@ -621,7 +621,7 @@ class TextEditor {
                     tableSizeGrid.querySelectorAll('.table-size-cell').forEach(c => {
                         const r = parseInt(c.dataset.row);
                         const c2 = parseInt(c.dataset.col);
-                        
+
                         if (r <= row && c2 <= col) {
                             c.classList.add('selected');
                         } else {
@@ -660,11 +660,11 @@ class TextEditor {
         // Actualizar estado de botones según el formato actual
         this.toolbar.querySelectorAll('.text-editor-btn[data-command]').forEach(button => {
             const command = button.dataset.command;
-            
+
             // Para comandos que se pueden consultar con document.queryCommandState
-            if (['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 
+            if (['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList',
                  'justifyLeft', 'justifyCenter', 'justifyRight'].includes(command)) {
-                
+
                 if (document.queryCommandState(command)) {
                     button.classList.add('active');
                 } else {
@@ -677,7 +677,7 @@ class TextEditor {
     insertTable(rows, cols) {
         // Crear la tabla
         let tableHTML = '<div class="table-container"><table class="text-editor-table">';
-        
+
         // Crear filas y columnas
         for (let i = 0; i < rows; i++) {
             tableHTML += '<tr>';
@@ -691,9 +691,9 @@ class TextEditor {
             }
             tableHTML += '</tr>';
         }
-        
+
         tableHTML += '</table></div>';
-        
+
         // Insertar la tabla en el editor
         this.editorContent.focus();
         document.execCommand('insertHTML', false, tableHTML);
@@ -707,13 +707,13 @@ class TextEditor {
                 const range = selection.getRangeAt(0);
                 range.deleteContents();
                 range.insertNode(node);
-                
+
                 // Mover el cursor después del nodo insertado
                 range.setStartAfter(node);
                 range.setEndAfter(node);
                 selection.removeAllRanges();
                 selection.addRange(range);
-                
+
                 // Trigger para MathJax
                 if (typeof MathJax !== 'undefined' && node.classList.contains('math-equation')) {
                     setTimeout(() => {
@@ -755,13 +755,13 @@ function initTextEditor() {
                     const newEditorContent = editorContent.cloneNode(true);
                     editorContent.parentNode.replaceChild(newEditorContent, editorContent);
                 }
-                
+
                 // Eliminar modales existentes
                 ['equationModal', 'tableModal', 'latexTemplatesModal'].forEach(id => {
                     const modal = document.getElementById(id);
                     if (modal) modal.remove();
                 });
-                
+
                 // Limpiar el contenedor
                 textEditorContainer.innerHTML = `<textarea class="form-control" id="textContent" rows="6" required></textarea>`;
                 textContent = document.getElementById('textContent');
@@ -769,22 +769,22 @@ function initTextEditor() {
                 console.error('Error al limpiar el editor existente:', e);
             }
         }
-        
+
         // Crear nuevo editor
         window.currentTextEditor = new TextEditor('textEditorContainer', 'textContent');
-        
+
         // Aplicar foco al editor y asegurar fondo claro
         const editorContent = document.getElementById('textEditorContent');
         if (editorContent) {
             // Asegurar fondo claro
             editorContent.style.backgroundColor = '#fff';
             editorContent.style.color = '#212529';
-            
+
             setTimeout(() => {
                 editorContent.focus();
             }, 50);
         }
-        
+
         // Asegurarse de que los modales estén correctamente posicionados
         setTimeout(() => {
             // Mover los modales al body para evitar problemas con el z-index
@@ -793,17 +793,17 @@ function initTextEditor() {
                 if (modal) {
                     // Asegurarse de que el modal esté en el body
                     document.body.appendChild(modal);
-                    
+
                     // Aplicar z-index alto para asegurar que estén por encima de todo
                     modal.style.zIndex = '10000';
                 }
             });
-            
+
             // Asegurar que los eventos específicos sean reconectados
             reconnectColorPickerEvents();
             reconnectEquationEvents();
             reconnectLatexTemplatesEvents();
-            
+
             // Renderizar ecuaciones si hay alguna
             if (typeof MathJax !== 'undefined') {
                 MathJax.typeset();
@@ -816,16 +816,16 @@ function initTextEditor() {
 function reconnectColorPickerEvents() {
     const textColorBtn = document.getElementById('textColorBtn');
     const colorPickerDropdown = document.getElementById('colorPickerDropdown');
-    
+
     if (textColorBtn && colorPickerDropdown) {
         // Eliminar eventos existentes mediante clonación
         const newTextColorBtn = textColorBtn.cloneNode(true);
         textColorBtn.parentNode.replaceChild(newTextColorBtn, textColorBtn);
-        
+
         // Agregar nuevo evento de clic
         newTextColorBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             // Asegurar que el dropdown sea visible y esté encima de todo
             colorPickerDropdown.style.display = 'block';
             colorPickerDropdown.style.position = 'absolute';
@@ -837,9 +837,9 @@ function reconnectColorPickerEvents() {
             colorPickerDropdown.style.borderRadius = '0.25rem';
             colorPickerDropdown.style.padding = '8px';
             colorPickerDropdown.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.15)';
-            
+
             colorPickerDropdown.classList.toggle('show');
-            
+
             // Asegurar foco en el editor
             const editorContent = document.getElementById('textEditorContent');
             if (editorContent) {
@@ -848,41 +848,41 @@ function reconnectColorPickerEvents() {
                 }, 50);
             }
         });
-        
+
         // Eventos para los elementos de color
         colorPickerDropdown.querySelectorAll('.color-picker-item').forEach(item => {
             // Eliminar eventos existentes
             const newItem = item.cloneNode(true);
             item.parentNode.replaceChild(newItem, item);
-            
+
             // Agregar nuevo evento de clic
             newItem.addEventListener('click', () => {
                 const color = newItem.dataset.color;
                 const editorContent = document.getElementById('textEditorContent');
-                
+
                 if (editorContent) {
                     // Asegurar que el foco esté en el editor
                     editorContent.focus();
-                    
+
                     // Aplicar el color al texto seleccionado
                     document.execCommand('foreColor', false, color);
-                    
+
                     // Actualizar el contenido del textarea
                     if (window.currentTextEditor) {
                         window.currentTextEditor.syncContent();
                     }
                 }
-                
+
                 // Ocultar el dropdown
                 colorPickerDropdown.classList.remove('show');
                 colorPickerDropdown.style.display = 'none';
             });
         });
-        
+
         // Cerrar el selector de color al hacer clic fuera
         document.addEventListener('click', (e) => {
-            if (newTextColorBtn && colorPickerDropdown && 
-                !newTextColorBtn.contains(e.target) && 
+            if (newTextColorBtn && colorPickerDropdown &&
+                !newTextColorBtn.contains(e.target) &&
                 !colorPickerDropdown.contains(e.target)) {
                 colorPickerDropdown.classList.remove('show');
                 colorPickerDropdown.style.display = 'none';
@@ -895,67 +895,67 @@ function reconnectColorPickerEvents() {
 function reconnectEquationEvents() {
     const insertEquationBtn = document.getElementById('insertEquationBtn');
     const equationModal = document.getElementById('equationModal');
-    
+
     if (insertEquationBtn && equationModal) {
         // Eliminar eventos existentes mediante clonación
         const newInsertEquationBtn = insertEquationBtn.cloneNode(true);
         insertEquationBtn.parentNode.replaceChild(newInsertEquationBtn, insertEquationBtn);
-        
+
         // Agregar nuevo evento de clic
         newInsertEquationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             // Asegurarse que el editor tenga el foco para la inserción posterior
             const editorContent = document.getElementById('textEditorContent');
             if (editorContent) {
                 editorContent.focus();
             }
-            
+
             // Mostrar el modal
             equationModal.style.display = 'block';
-            
+
             // Limpiar y preparar el input y la vista previa
             const equationInput = document.getElementById('equationInput');
             const equationPreview = document.getElementById('equationPreview');
-            
+
             if (equationInput) {
                 equationInput.value = '';
                 // Asegurar que el input sea usable
                 equationInput.disabled = false;
                 equationInput.style.backgroundColor = '#fff';
                 equationInput.style.color = '#212529';
-                
+
                 // Dar foco al input
                 setTimeout(() => {
                     equationInput.focus();
                 }, 50);
             }
-            
+
             if (equationPreview) {
                 equationPreview.innerHTML = '<div class="text-center text-muted"><small>La vista previa aparecerá aquí</small></div>';
             }
         });
-        
+
         // Eventos para cerrar el modal
         const closeEquationModal = document.getElementById('closeEquationModal');
         const cancelEquationBtn = document.getElementById('cancelEquationBtn');
-        
+
         if (closeEquationModal) {
             closeEquationModal.addEventListener('click', () => {
                 equationModal.style.display = 'none';
             });
         }
-        
+
         if (cancelEquationBtn) {
             cancelEquationBtn.addEventListener('click', () => {
                 equationModal.style.display = 'none';
             });
         }
-        
+
         // Evento para la vista previa de la ecuación
         const equationInput = document.getElementById('equationInput');
         const equationPreview = document.getElementById('equationPreview');
-        
+
         if (equationInput && equationPreview) {
             equationInput.addEventListener('input', () => {
                 const latex = equationInput.value;
@@ -970,10 +970,10 @@ function reconnectEquationEvents() {
                 }
             });
         }
-        
+
         // Evento para insertar la ecuación
         const insertEquationModalBtn = document.getElementById('insertEquationModalBtn');
-        
+
         if (insertEquationModalBtn && equationInput) {
             insertEquationModalBtn.addEventListener('click', () => {
                 const latex = equationInput.value;
@@ -984,23 +984,23 @@ function reconnectEquationEvents() {
                         const equationSpan = document.createElement('span');
                         equationSpan.className = 'math-equation';
                         equationSpan.setAttribute('data-latex', latex);
-                        
+
                         // Usar doble dólar para modo display
                         equationSpan.innerHTML = `$$${latex}$$`;
-                        
+
                         // Forzar el foco en el editor
                         editorContent.focus();
-                        
+
                         // Insertar la ecuación
                         window.currentTextEditor.insertNodeAtCursor(equationSpan);
-                        
+
                         // Agregar un espacio después de la ecuación para permitir seguir escribiendo
                         const spaceNode = document.createTextNode(' ');
                         editorContent.appendChild(spaceNode);
-                        
+
                         // Sincronizar el contenido
                         window.currentTextEditor.syncContent();
-                        
+
                         // Renderizar la ecuación con MathJax
                         if (typeof MathJax !== 'undefined') {
                             MathJax.typeset([equationSpan]);
@@ -1017,63 +1017,63 @@ function reconnectEquationEvents() {
 function reconnectLatexTemplatesEvents() {
     const latexTemplatesBtn = document.getElementById('latexTemplatesBtn');
     const latexTemplatesModal = document.getElementById('latexTemplatesModal');
-    
+
     if (latexTemplatesBtn && latexTemplatesModal) {
         // Eliminar eventos existentes mediante clonación
         const newLatexTemplatesBtn = latexTemplatesBtn.cloneNode(true);
         latexTemplatesBtn.parentNode.replaceChild(newLatexTemplatesBtn, latexTemplatesBtn);
-        
+
         // Agregar nuevo evento de clic
         newLatexTemplatesBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             // Asegurarse que el editor tenga el foco para la inserción posterior
             const editorContent = document.getElementById('textEditorContent');
             if (editorContent) {
                 editorContent.focus();
             }
-            
+
             // Mostrar el modal
             latexTemplatesModal.style.display = 'block';
-            
+
             // Renderizar las ecuaciones con MathJax si está disponible
             if (typeof MathJax !== 'undefined') {
                 MathJax.typeset();
             }
         });
-        
+
         // Eventos para cerrar el modal
         const closeLatexTemplatesModal = document.getElementById('closeLatexTemplatesModal');
         const cancelLatexTemplatesBtn = document.getElementById('cancelLatexTemplatesBtn');
-        
+
         if (closeLatexTemplatesModal) {
             closeLatexTemplatesModal.addEventListener('click', () => {
                 latexTemplatesModal.style.display = 'none';
             });
         }
-        
+
         if (cancelLatexTemplatesBtn) {
             cancelLatexTemplatesBtn.addEventListener('click', () => {
                 latexTemplatesModal.style.display = 'none';
             });
         }
-        
+
         // Eventos para las pestañas
         const tabButtons = latexTemplatesModal.querySelectorAll('.latex-tab-btn');
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const tab = button.dataset.tab;
-                
+
                 // Quitar clase activa de todos los botones
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 // Agregar clase activa al botón clickeado
                 button.classList.add('active');
-                
+
                 // Ocultar todos los tabs
                 latexTemplatesModal.querySelectorAll('.latex-templates-tab').forEach(tabContent => {
                     tabContent.style.display = 'none';
                 });
-                
+
                 // Mostrar el tab seleccionado
                 const selectedTab = document.getElementById(`${tab}-tab`);
                 if (selectedTab) {
@@ -1081,7 +1081,7 @@ function reconnectLatexTemplatesEvents() {
                 }
             });
         });
-        
+
         // Eventos para los elementos de plantilla
         latexTemplatesModal.querySelectorAll('.latex-template-item').forEach(item => {
             item.addEventListener('click', () => {
@@ -1093,23 +1093,23 @@ function reconnectLatexTemplatesEvents() {
                         const equationSpan = document.createElement('span');
                         equationSpan.className = 'math-equation';
                         equationSpan.setAttribute('data-latex', latex);
-                        
+
                         // Usar doble dólar para modo display
                         equationSpan.innerHTML = `$$${latex}$$`;
-                        
+
                         // Forzar el foco en el editor
                         editorContent.focus();
-                        
+
                         // Insertar la ecuación
                         window.currentTextEditor.insertNodeAtCursor(equationSpan);
-                        
+
                         // Agregar un espacio después de la ecuación para permitir seguir escribiendo
                         const spaceNode = document.createTextNode(' ');
                         window.currentTextEditor.insertNodeAtCursor(spaceNode);
-                        
+
                         // Sincronizar el contenido
                         window.currentTextEditor.syncContent();
-                        
+
                         // Renderizar la ecuación con MathJax
                         if (typeof MathJax !== 'undefined') {
                             MathJax.typeset([equationSpan]);
