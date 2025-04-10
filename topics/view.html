@@ -9,6 +9,60 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
+    <style>
+        /* Estilos para actividades */
+        .activity-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .activity-content {
+            padding: 20px;
+        }
+
+        .activity-header {
+            margin-bottom: 20px;
+        }
+
+        .activity-header h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #0d6efd;
+        }
+
+        .activity-description {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .question-card {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .options-list {
+            margin-top: 10px;
+        }
+
+        .form-check {
+            margin-bottom: 10px;
+        }
+
+        .activity-feedback {
+            margin-top: 20px;
+        }
+
+        .question-feedback .card {
+            margin-bottom: 15px;
+        }
+    </style>
     <script src="../js/netlify-debug.js"></script>
     <script src="../js/content-loader.js"></script>
     <script src="../js/error-handler.js"></script>
@@ -464,86 +518,56 @@
                     break;
 
                 case 'activity':
-                    // Verificar si el archivo existe
-                    // Usar rutas absolutas para Netlify
-                    const isNetlifyEnvActivity = window.location.hostname.includes('netlify.app') ||
-                                               window.location.hostname.includes('netlify.com');
+                    console.log('Renderizando actividad con ID:', section.content);
 
-                    // Construir la ruta base dependiendo del entorno
-                    const basePathActivity = isNetlifyEnvActivity ?
-                        (window.location.origin + '/activities/templates/') :
-                        '../activities/templates/';
+                    // Limpiar el ID de la actividad (quitar prefijo si existe)
+                    const activityId = section.content.replace('activity_', '');
+                    const activityKey = `activity_${activityId}`;
 
-                    const activityPath = basePathActivity + section.content;
-                    const fallbackActivityPath = basePathActivity + 'ejemplo-simple.html';
+                    // Crear un ID único para el contenedor
+                    const containerId = `activity-container-${section.id}`;
 
-                    console.log('Ruta Actividad:', activityPath);
-                    console.log('Ruta fallback Actividad:', fallbackActivityPath);
+                    // Intentar cargar la actividad desde localStorage
+                    let activityData = null;
+                    try {
+                        activityData = JSON.parse(localStorage.getItem(activityKey));
+                        console.log('Actividad cargada desde localStorage:', activityData ? 'Sí' : 'No');
+                    } catch (e) {
+                        console.error('Error al cargar actividad desde localStorage:', e);
+                    }
 
-                    // Detectar si estamos en Netlify
-                    const isNetlifyActivity = window.location.hostname.includes('netlify.app') ||
-                                             window.location.hostname.includes('netlify.com');
-
-                    console.log('Cargando Actividad en ' + (isNetlifyActivity ? 'Netlify' : 'Local') + ': ' + activityPath);
-                    console.log('Tipo de contenido de la sección:', section.type);
-                    console.log('Contenido de la sección:', section.content);
-
-                    // En Netlify, usar iframe como con HTML
-                    if (isNetlifyActivity) {
-                        console.log('Entorno Netlify detectado, cargando Actividad con iframe');
-
-                        // Crear un ID único para el contenedor
-                        const containerId = `activity-container-${section.id}`;
-
-                        // Crear el contenedor para el contenido de la actividad
+                    if (activityData) {
+                        // Generar HTML para la actividad
                         contentHtml = `
                             <div class="activity-container">
-                                <div id="${containerId}" class="activity-content" style="min-height:400px;"></div>
+                                <div id="${containerId}" class="activity-content">
+                                    <div class="activity-header">
+                                        <h3>${activityData.title || 'Actividad sin título'}</h3>
+                                        <p class="activity-description">${activityData.description || ''}</p>
+                                    </div>
+                                    <form id="activity-form-${section.id}" class="activity-form">
+                                        ${renderActivityQuestions(activityData, section.id)}
+                                        <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
+                                            <button type="button" class="btn btn-success btn-lg" onclick="checkActivityAnswers('${section.id}', '${activityId}')">
+                                                <i class="fas fa-paper-plane me-2"></i> Enviar respuestas
+                                            </button>
+                                        </div>
+                                    </form>
+                                    <div id="activity-feedback-${section.id}" class="activity-feedback mt-3" style="display:none;"></div>
+                                </div>
                             </div>
                         `;
-
-                        // Cargar el contenido de la actividad usando AJAX en lugar de iframe
-                        setTimeout(() => {
-                            console.log('Cargando contenido de actividad usando AJAX:', activityPath);
-                            // Pasar true como cuarto parámetro para indicar que es una actividad
-                            loadHTMLContent(activityPath, containerId, fallbackActivityPath, true);
-                        }, 100);
                     } else {
-                        // En local, usar iframe como antes
+                        // Mostrar mensaje de error si no se encuentra la actividad
                         contentHtml = `
                             <div class="activity-container">
-                                <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
-                                        id="activity-iframe-${section.id}"></iframe>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Actividad no encontrada</strong>
+                                    <p>No se pudo cargar la actividad con ID: ${activityId}</p>
+                                </div>
                             </div>
                         `;
-
-                        // Verificar si el archivo existe después de cargar
-                        setTimeout(() => {
-                            const iframe = document.getElementById(`activity-iframe-${section.id}`);
-                            if (iframe) {
-                                try {
-                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
-                                    const xhr = new XMLHttpRequest();
-                                    xhr.open('HEAD', activityPath, true);
-                                    xhr.onreadystatechange = function() {
-                                        if (xhr.readyState === 4) {
-                                            if (xhr.status !== 200) {
-                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                                iframe.src = fallbackActivityPath;
-                                            }
-                                        }
-                                    };
-                                    xhr.onerror = function() {
-                                        console.error('Error verificando archivo ' + activityPath + ':', xhr.statusText);
-                                        iframe.src = fallbackActivityPath;
-                                    };
-                                    xhr.send();
-                                } catch (error) {
-                                    console.error('Error al verificar archivo de actividad:', error);
-                                    iframe.src = fallbackActivityPath;
-                                }
-                            }
-                        }, 500);
                     }
                     break;
 
@@ -702,6 +726,439 @@
                 default:
                     return 'Desconocido';
             }
+        }
+
+        // Función para renderizar las preguntas de una actividad
+        // Función para verificar las respuestas de una actividad
+        function checkActivityAnswers(sectionId, activityId) {
+            console.log(`Verificando respuestas para actividad ${activityId} en sección ${sectionId}`);
+
+            // Limpiar el ID de la actividad (quitar prefijo si existe)
+            const cleanActivityId = activityId.replace('activity_', '');
+            const activityKey = `activity_${cleanActivityId}`;
+
+            // Cargar la actividad desde localStorage
+            let activityData = null;
+            try {
+                activityData = JSON.parse(localStorage.getItem(activityKey));
+            } catch (e) {
+                console.error('Error al cargar actividad para verificación:', e);
+                showInlineActivityFeedback(sectionId, 'error', 'Error al cargar la actividad');
+                return;
+            }
+
+            if (!activityData) {
+                console.error('No se encontró la actividad para verificación');
+                showInlineActivityFeedback(sectionId, 'error', 'No se encontró la actividad');
+                return;
+            }
+
+            // Obtener las respuestas del usuario
+            const userAnswers = [];
+            const activityType = activityData.type || 'multiple-choice';
+
+            activityData.questions.forEach((question, index) => {
+                const inputName = `question_${sectionId}_${index}`;
+                let userAnswer = null;
+
+                switch (activityType) {
+                    case 'multiple-choice':
+                        const selectedOption = document.querySelector(`input[name="${inputName}"]:checked`);
+                        userAnswer = selectedOption ? parseInt(selectedOption.value) : null;
+                        break;
+
+                    case 'true-false':
+                        const selectedValue = document.querySelector(`input[name="${inputName}"]:checked`);
+                        if (selectedValue) {
+                            userAnswer = selectedValue.value === 'true';
+                        }
+                        break;
+
+                    case 'short-answer':
+                        const inputField = document.querySelector(`input[name="${inputName}"]`);
+                        userAnswer = inputField ? inputField.value.trim() : null;
+                        break;
+                }
+
+                // Obtener la respuesta correcta (puede estar en diferentes propiedades según el tipo)
+                let correctAnswer = question.correctAnswer;
+
+                // Para compatibilidad con diferentes formatos de actividades
+                if (correctAnswer === undefined && activityType === 'multiple-choice' && question.correctOption !== undefined) {
+                    correctAnswer = question.correctOption;
+                }
+
+                if (correctAnswer === undefined && activityType === 'short-answer' && question.correctAnswers) {
+                    correctAnswer = question.correctAnswers[0];
+                }
+
+                console.log(`Pregunta ${index} - Respuesta correcta:`, correctAnswer);
+
+                userAnswers.push({
+                    questionIndex: index,
+                    userAnswer: userAnswer,
+                    correctAnswer: correctAnswer,
+                    isCorrect: compareAnswers(userAnswer, correctAnswer, activityType)
+                });
+            });
+
+            // Calcular resultados
+            const totalQuestions = userAnswers.length;
+            const answeredQuestions = userAnswers.filter(a => a.userAnswer !== null && a.userAnswer !== '').length;
+            const correctAnswers = userAnswers.filter(a => a.isCorrect).length;
+
+            // Verificar si todas las preguntas fueron respondidas
+            if (answeredQuestions < totalQuestions) {
+                showInlineActivityFeedback(sectionId, 'warning', 'Por favor, responde todas las preguntas antes de enviar.');
+                return;
+            }
+
+            // Calcular el tipo de feedback basado en los resultados
+            const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+            const feedbackType = percentage >= 70 ? 'success' : (percentage >= 40 ? 'warning' : 'danger');
+
+            // Mostrar resumen de resultados solo si hay más de una pregunta
+            const summaryElement = document.getElementById(`activity-summary-${sectionId}`);
+            if (summaryElement) {
+                // Solo mostrar el resumen si hay más de una pregunta
+                if (totalQuestions > 1) {
+                    summaryElement.innerHTML = `
+                        <div class="alert alert-${feedbackType} mb-4">
+                            <h5><i class="fas ${percentage >= 70 ? 'fa-check-circle' : 'fa-info-circle'} me-2"></i> Resultados</h5>
+                            <p>Has respondido correctamente ${correctAnswers} de ${totalQuestions} preguntas (${percentage}%).</p>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-${feedbackType}" role="progressbar" style="width: ${percentage}%"
+                                    aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">${percentage}%</div>
+                            </div>
+                        </div>
+                    `;
+                    summaryElement.style.display = 'block';
+                } else {
+                    // Para una sola pregunta, no mostrar el resumen
+                    summaryElement.style.display = 'none';
+                }
+            }
+
+            // Mostrar feedback para cada pregunta individualmente
+            userAnswers.forEach((answer) => {
+                const questionIndex = answer.questionIndex;
+                const questionCard = document.querySelector(`#activity-form-${sectionId} [data-question-index="${questionIndex}"]`);
+                if (!questionCard) return;
+
+                // Limpiar feedback anterior si existe
+                const existingFeedback = questionCard.querySelector('.question-feedback');
+                if (existingFeedback) {
+                    existingFeedback.remove();
+                }
+
+                // Crear elemento de feedback
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = `question-feedback alert ${answer.isCorrect ? 'alert-success' : 'alert-danger'} mt-3`;
+
+                // Contenido del feedback
+                if (answer.isCorrect) {
+                    feedbackDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>¡Correcto!</strong>
+                    `;
+                } else {
+                    let feedbackContent = `
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>Incorrecto.</strong>
+                    `;
+
+                    // Añadir la respuesta correcta si está disponible
+                    if (answer.correctAnswer !== undefined && answer.correctAnswer !== null) {
+                        const question = activityData.questions[questionIndex];
+
+                        switch (activityType) {
+                            case 'multiple-choice':
+                                if (question.options && question.options[answer.correctAnswer] !== undefined) {
+                                    feedbackContent += `<p class="mb-0 mt-2">Respuesta correcta: ${question.options[answer.correctAnswer]}</p>`;
+                                }
+                                break;
+
+                            case 'true-false':
+                                feedbackContent += `<p class="mb-0 mt-2">Respuesta correcta: ${answer.correctAnswer === true ? 'Verdadero' : 'Falso'}</p>`;
+                                break;
+
+                            case 'short-answer':
+                                feedbackContent += `<p class="mb-0 mt-2">Respuesta correcta: ${answer.correctAnswer}</p>`;
+                                break;
+                        }
+                    }
+
+                    feedbackDiv.innerHTML = feedbackContent;
+                }
+
+                // Añadir el feedback a la tarjeta de pregunta
+                questionCard.appendChild(feedbackDiv);
+
+                // Marcar visualmente las opciones correctas/incorrectas
+                switch (activityType) {
+                    case 'multiple-choice':
+                    case 'true-false':
+                        const options = questionCard.querySelectorAll('.form-check');
+                        options.forEach((option, optIndex) => {
+                            const input = option.querySelector('input');
+                            const label = option.querySelector('label');
+
+                            if (input && input.checked) {
+                                if (answer.isCorrect) {
+                                    // Respuesta correcta
+                                    label.classList.add('text-success', 'fw-bold');
+                                    option.classList.add('border-success', 'border', 'rounded', 'p-2');
+                                } else {
+                                    // Respuesta incorrecta
+                                    label.classList.add('text-danger', 'fw-bold');
+                                    option.classList.add('border-danger', 'border', 'rounded', 'p-2');
+                                }
+                            }
+
+                            // Marcar la opción correcta si la respuesta fue incorrecta
+                            if (!answer.isCorrect && activityType === 'multiple-choice' &&
+                                optIndex === answer.correctAnswer) {
+                                const correctLabel = option.querySelector('label');
+                                if (correctLabel) {
+                                    correctLabel.classList.add('text-success');
+                                }
+                            }
+
+                            if (!answer.isCorrect && activityType === 'true-false') {
+                                const value = input.value === 'true';
+                                if (value === answer.correctAnswer) {
+                                    const correctLabel = option.querySelector('label');
+                                    if (correctLabel) {
+                                        correctLabel.classList.add('text-success');
+                                    }
+                                }
+                            }
+
+                            // Deshabilitar las opciones después de enviar
+                            if (input) {
+                                input.disabled = true;
+                            }
+                        });
+                        break;
+
+                    case 'short-answer':
+                        const inputField = questionCard.querySelector('input[type="text"]');
+                        if (inputField) {
+                            inputField.disabled = true;
+                            if (answer.isCorrect) {
+                                inputField.classList.add('border-success', 'bg-success', 'bg-opacity-10', 'text-success', 'fw-bold');
+                            } else {
+                                inputField.classList.add('border-danger', 'bg-danger', 'bg-opacity-10', 'text-danger', 'fw-bold');
+                            }
+                        }
+                        break;
+                }
+            });
+
+            // Deshabilitar el botón de enviar
+            const submitButton = document.querySelector(`#activity-form-${sectionId} button[type="button"]`);
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-check me-2"></i> Respuestas enviadas';
+                submitButton.classList.remove('btn-success');
+                submitButton.classList.add('btn-secondary');
+            }
+
+            // Hacer scroll al elemento apropiado
+            if (totalQuestions > 1 && summaryElement) {
+                // Si hay más de una pregunta, hacer scroll al resumen
+                summaryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (userAnswers.length > 0) {
+                // Si hay una sola pregunta, hacer scroll a la primera pregunta
+                const firstQuestionCard = document.querySelector(`#activity-form-${sectionId} [data-question-index="${userAnswers[0].questionIndex}"]`);
+                if (firstQuestionCard) {
+                    firstQuestionCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        // Función para comparar respuestas
+        function compareAnswers(userAnswer, correctAnswer, activityType) {
+            if (userAnswer === null || userAnswer === undefined || userAnswer === '') {
+                return false;
+            }
+
+            console.log('Comparando respuestas:', { userAnswer, correctAnswer, activityType });
+
+            switch (activityType) {
+                case 'multiple-choice':
+                    // Asegurarse de que ambos sean números para comparación
+                    if (typeof userAnswer === 'string') {
+                        userAnswer = parseInt(userAnswer);
+                    }
+                    if (typeof correctAnswer === 'string') {
+                        correctAnswer = parseInt(correctAnswer);
+                    }
+
+                    console.log('Multiple choice comparison:', { userAnswer, correctAnswer, result: userAnswer === correctAnswer });
+                    return userAnswer === correctAnswer;
+
+                case 'true-false':
+                    // Convertir a booleano si es necesario
+                    if (typeof userAnswer === 'string') {
+                        userAnswer = userAnswer.toLowerCase() === 'true';
+                    }
+                    if (typeof correctAnswer === 'string') {
+                        correctAnswer = correctAnswer.toLowerCase() === 'true';
+                    }
+
+                    console.log('True-false comparison:', { userAnswer, correctAnswer, result: userAnswer === correctAnswer });
+                    return userAnswer === correctAnswer;
+
+                case 'short-answer':
+                    // Comparación insensible a mayúsculas/minúsculas
+                    if (typeof userAnswer !== 'string' || typeof correctAnswer !== 'string') {
+                        console.log('Short answer types:', { userAnswerType: typeof userAnswer, correctAnswerType: typeof correctAnswer });
+                        return false;
+                    }
+
+                    const result = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+                    console.log('Short answer comparison:', { userAnswer, correctAnswer, result });
+                    return result;
+
+                default:
+                    console.log('Unknown activity type:', activityType);
+                    return false;
+            }
+        }
+
+        // Función para mostrar feedback de actividad en línea
+        function showInlineActivityFeedback(sectionId, type, message) {
+            // Buscar el contenedor de la actividad
+            const activityContainer = document.querySelector(`#activity-form-${sectionId}`);
+            if (!activityContainer) return;
+
+            // Buscar o crear el elemento de feedback
+            let feedbackElement = document.getElementById(`activity-inline-feedback-${sectionId}`);
+            if (!feedbackElement) {
+                feedbackElement = document.createElement('div');
+                feedbackElement.id = `activity-inline-feedback-${sectionId}`;
+                feedbackElement.className = 'activity-inline-feedback mb-3';
+
+                // Insertar al principio del formulario
+                activityContainer.insertBefore(feedbackElement, activityContainer.firstChild);
+            }
+
+            // Determinar la clase de alerta según el tipo
+            let alertClass = 'alert-info';
+            let icon = 'fa-info-circle';
+            switch (type) {
+                case 'success':
+                    alertClass = 'alert-success';
+                    icon = 'fa-check-circle';
+                    break;
+                case 'warning':
+                    alertClass = 'alert-warning';
+                    icon = 'fa-exclamation-triangle';
+                    break;
+                case 'danger':
+                case 'error':
+                    alertClass = 'alert-danger';
+                    icon = 'fa-times-circle';
+                    break;
+            }
+
+            // Mostrar el mensaje
+            feedbackElement.innerHTML = `
+                <div class="alert ${alertClass} d-flex align-items-center">
+                    <i class="fas ${icon} me-2"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+            feedbackElement.style.display = 'block';
+
+            // Hacer scroll al feedback
+            feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Función para mostrar feedback de actividad (mantener por compatibilidad)
+        function showActivityFeedback(sectionId, type, message) {
+            showInlineActivityFeedback(sectionId, type, message);
+        }
+
+        function renderActivityQuestions(activityData, sectionId) {
+            if (!activityData.questions || !activityData.questions.length) {
+                return '<div class="alert alert-info">Esta actividad no tiene preguntas.</div>';
+            }
+
+            const activityType = activityData.type || 'multiple-choice';
+
+            // Añadir contenedor para el resumen de resultados
+            let questionsHtml = `
+                <div id="activity-summary-${sectionId}" class="activity-summary" style="display: none;"></div>
+            `;
+
+            activityData.questions.forEach((question, index) => {
+                questionsHtml += `
+                    <div class="question-card mb-4" data-question-index="${index}">
+                        <p class="fw-bold">${index + 1}. ${question.text || 'Sin texto'}</p>
+                `;
+
+                // Renderizar opciones según el tipo de actividad
+                switch (activityType) {
+                    case 'multiple-choice':
+                        if (question.options && question.options.length > 0) {
+                            questionsHtml += '<div class="options-list">';
+                            question.options.forEach((option, optIndex) => {
+                                questionsHtml += `
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="question_${sectionId}_${index}"
+                                               id="option_${sectionId}_${index}_${optIndex}" value="${optIndex}">
+                                        <label class="form-check-label" for="option_${sectionId}_${index}_${optIndex}">
+                                            ${option}
+                                        </label>
+                                    </div>
+                                `;
+                            });
+                            questionsHtml += '</div>';
+                        } else {
+                            questionsHtml += '<p class="text-muted">No hay opciones definidas</p>';
+                        }
+                        break;
+
+                    case 'true-false':
+                        questionsHtml += `
+                            <div class="options-list">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="question_${sectionId}_${index}"
+                                           id="option_${sectionId}_${index}_true" value="true">
+                                    <label class="form-check-label" for="option_${sectionId}_${index}_true">
+                                        Verdadero
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="question_${sectionId}_${index}"
+                                           id="option_${sectionId}_${index}_false" value="false">
+                                    <label class="form-check-label" for="option_${sectionId}_${index}_false">
+                                        Falso
+                                    </label>
+                                </div>
+                            </div>
+                        `;
+                        break;
+
+                    case 'short-answer':
+                        questionsHtml += `
+                            <div class="form-group">
+                                <input type="text" class="form-control" name="question_${sectionId}_${index}"
+                                       placeholder="Tu respuesta">
+                            </div>
+                        `;
+                        break;
+
+                    default:
+                        questionsHtml += `<p class="text-muted">Tipo de pregunta no soportado: ${activityType}</p>`;
+                }
+
+                questionsHtml += '</div>'; // Cierre de question-card
+            });
+
+            return questionsHtml;
         }
     </script>
 </body>

@@ -776,40 +776,28 @@ function showContentFields() {
                 </div>
             `;
 
-            // Inicializar el editor matemático después de un pequeño retraso
+            // Inicializar el editor de texto limpio después de un pequeño retraso
             setTimeout(() => {
                 try {
-                    console.log("Inicializando editor matemático para nueva sección de texto");
-                    if (typeof initNewMathEditor === 'function') {
-                        const success = initNewMathEditor('textContent');
-                        console.log(`Editor matemático inicializado con éxito: ${success}`);
-
-                        // Inicializar los botones de formato después de un breve retraso
-                        setTimeout(() => {
-                            if (typeof initFormatButtons === 'function') {
-                                console.log("Inicializando botones de formato para nueva sección");
-                                initFormatButtons();
-
-                                // Inicializar explícitamente los eventos de la paleta de colores
-                                setTimeout(() => {
-                                    console.log("Inicializando eventos de color para nueva sección");
-                                    initColorPickerEvents();
-
-                                    // Verificar si el botón de color es visible
-                                    const colorBtn = document.getElementById('textColorBtn');
-                                    if (colorBtn) {
-                                        colorBtn.style.display = 'inline-flex';
-                                        colorBtn.style.visibility = 'visible';
-                                        colorBtn.style.opacity = '1';
-                                    }
-                                }, 500);
-                            }
-                        }, 300);
+                    console.log("Inicializando editor de texto limpio para nueva sección de texto");
+                    if (typeof initCleanTextEditor === 'function') {
+                        const success = initCleanTextEditor('textContent');
+                        console.log(`Editor de texto limpio inicializado con éxito: ${success}`);
                     } else {
-                        console.error("La función initNewMathEditor no está disponible");
+                        console.error("Función initCleanTextEditor no disponible");
+                        // Mostrar el textarea como fallback
+                        const textareaContent = document.getElementById('textContent');
+                        if (textareaContent) {
+                            textareaContent.style.display = 'block';
+                        }
                     }
                 } catch (error) {
-                    console.error("Error al inicializar el editor:", error);
+                    console.error("Error al inicializar el editor de texto limpio:", error);
+                    // Mostrar el textarea como fallback
+                    const textareaContent = document.getElementById('textContent');
+                    if (textareaContent) {
+                        textareaContent.style.display = 'block';
+                    }
                 }
             }, 200);
             break;
@@ -1057,28 +1045,41 @@ function editSection(sectionId) {
 
     console.log(`Editando sección: "${section.title}" (ID: ${section.id}, Tipo: ${section.type})`);
 
-    // Limpiar cualquier instancia anterior del editor
+    // Limpiar cualquier editor previo
+    if (typeof window.cleanupEditor === 'function') {
+        try {
+            window.cleanupEditor();
+            console.log("Editor de texto limpio limpiado correctamente");
+        } catch (error) {
+            console.error("Error al limpiar editor de texto limpio:", error);
+        }
+    }
+
+    // Limpiar cualquier editor matemático previo (compatibilidad)
     if (typeof window.cleanupMathEditor === 'function') {
         try {
             window.cleanupMathEditor();
-            console.log("Editor matemático limpiado correctamente");
+            console.log("Editor matemático antiguo limpiado correctamente");
         } catch (error) {
-            console.error("Error al limpiar editor existente:", error);
+            console.error("Error al limpiar editor matemático antiguo:", error);
         }
     }
 
     // Eliminar elementos relacionados con el editor que pudieran haber quedado
     document.getElementById('colorPalette')?.remove();
-    document.getElementById('mathSymbolsDropdown')?.remove();
-    document.getElementById('equationModal')?.remove();
-    document.getElementById('tableModal')?.remove();
-    document.getElementById('latexTemplatesModal')?.remove();
 
-    // Remover cualquier instancia previa del editor matemático
-    const previousEditor = document.querySelector('.math-editor-container');
-    if (previousEditor) {
+    // Remover cualquier instancia previa del editor
+    const previousCleanEditor = document.querySelector('.clean-text-editor-container');
+    if (previousCleanEditor) {
+        console.log("Removiendo editor de texto limpio previo del DOM");
+        previousCleanEditor.remove();
+    }
+
+    // Remover cualquier instancia previa del editor matemático (compatibilidad)
+    const previousMathEditor = document.querySelector('.math-editor-container');
+    if (previousMathEditor) {
         console.log("Removiendo editor matemático previo del DOM");
-        previousEditor.remove();
+        previousMathEditor.remove();
     }
 
     // Establecer los valores en el formulario
@@ -1137,118 +1138,42 @@ function editSection(sectionId) {
                     // Establecer el ID del textarea como objetivo global para el editor
                     window._mathEditorTargetId = 'textContent';
 
-                    // Inicializar el editor con varias verificaciones y un sistema de reintentos
-                    let editorInitialized = false;
-                    let attemptCount = 0;
-                    const maxAttempts = 3;
+                    // Inicializar el editor de texto limpio directamente
+                    try {
+                        console.log("Inicializando editor de texto limpio...");
 
-                    function attemptInitEditor() {
-                        if (editorInitialized || attemptCount >= maxAttempts) return;
+                        // Verificar que la función esté disponible
+                        if (typeof initCleanTextEditor === 'function') {
+                            const success = initCleanTextEditor('textContent');
 
-                        attemptCount++;
-                        console.log(`Intento ${attemptCount}/${maxAttempts} de inicializar el editor...`);
+                            if (success) {
+                                console.log("Editor de texto limpio inicializado correctamente");
 
-                        try {
-                            if (typeof initNewMathEditor === 'function') {
-                                console.log("Usando el nuevo editor matemático...");
-                                const success = initNewMathEditor('textContent');
-
-                                if (success) {
-                                    editorInitialized = true;
-                                    console.log("Editor inicializado correctamente");
-
-                                    // Esperar a que se complete la inicialización antes de configurar botones
-                                    setTimeout(() => {
-                                        console.log("Verificando editor y configurando botones...");
-
-                                        // Verificar que el editor esté en el DOM y sea editable
-                                        const mathEditor = document.getElementById('mathEditorContent');
-                                        if (mathEditor) {
-                                            // Asegurar que sea editable
-                                            mathEditor.contentEditable = 'true';
-
-                                            // Ocultar el textarea original
-                                            if (textContentElem) {
-                                                textContentElem.style.display = 'none';
-                                            }
-
-                                            // Inicializar los botones de formato con un retraso adicional
-                                            setTimeout(() => {
-                                                if (typeof initFormatButtons === 'function') {
-                                                    try {
-                                                        console.log("Inicializando botones de formato explícitamente...");
-                                                        initFormatButtons();
-
-                                                        // Inicializar eventos de color picker usando nuestra función auxiliar
-                                                        setTimeout(() => {
-                                                            console.log("Inicializando selector de color de manera directa");
-                                                            createColorButton();
-                                                            createColorPalette();
-
-                                                            // Añadir inicialización de eventos para la paleta de colores
-                                                            initColorPickerEvents();
-
-                                                            // Verificar si el botón existe y tiene el evento
-                                                            const colorBtn = document.getElementById('textColorBtn');
-                                                            if (colorBtn) {
-                                                                // Asegurarnos que el botón es visible
-                                                                colorBtn.style.display = 'inline-flex';
-                                                                colorBtn.style.visibility = 'visible';
-                                                                colorBtn.style.opacity = '1';
-
-                                                                console.log("Botón de color verificado y visible");
-                                                            }
-                                                        }, 600);
-
-                                                        // Verificar que los botones respondan a eventos
-                                                        console.log("Botones inicializados, ahora verificando funcionalidad...");
-
-                                                        // Enfocar el editor para permitir la edición
-                                                        mathEditor.focus();
-                                                    } catch (error) {
-                                                        console.error("Error al inicializar botones de formato:", error);
-                                                    }
-                                                } else {
-                                                    console.error("Función initFormatButtons no disponible");
-                                                }
-                                            }, 500);
-                                        } else {
-                                            console.error("Editor no encontrado después de inicialización");
-
-                                            // Si no hay editor, mostrar el textarea
-                                            if (textContentElem) {
-                                                textContentElem.style.display = 'block';
-                                            }
-                                        }
-                                    }, 300);
-                                } else {
-                                    console.error("Fallo al inicializar el editor en el intento " + attemptCount);
-
-                                    // Reintentar después de un tiempo
-                                    if (attemptCount < maxAttempts) {
-                                        setTimeout(attemptInitEditor, 500);
-                                    } else {
-                                        // Si agotamos los intentos, mostrar el textarea
-                                        console.error("Agotados los intentos de inicializar el editor");
-                                        textContentElem.style.display = 'block';
-                                    }
+                                // Ocultar el textarea original
+                                if (textContentElem) {
+                                    textContentElem.style.display = 'none';
                                 }
                             } else {
-                                console.error("Función initNewMathEditor no disponible");
-                                textContentElem.style.display = 'block';
+                                console.error("Fallo al inicializar el editor de texto limpio");
+                                // Mostrar el textarea como fallback
+                                if (textContentElem) {
+                                    textContentElem.style.display = 'block';
+                                }
                             }
-                        } catch (error) {
-                            console.error("Error durante la inicialización del editor:", error);
-                            if (attemptCount < maxAttempts) {
-                                setTimeout(attemptInitEditor, 500);
-                            } else {
+                        } else {
+                            console.error("Función initCleanTextEditor no disponible");
+                            // Mostrar el textarea como fallback
+                            if (textContentElem) {
                                 textContentElem.style.display = 'block';
                             }
                         }
+                    } catch (error) {
+                        console.error("Error al inicializar el editor de texto limpio:", error);
+                        // Mostrar el textarea como fallback
+                        if (textContentElem) {
+                            textContentElem.style.display = 'block';
+                        }
                     }
-
-                    // Iniciar el proceso de inicialización
-                    attemptInitEditor();
                 } else {
                     console.error("No se encontró el textarea #textContent después de showContentFields()");
                 }
@@ -1344,6 +1269,20 @@ function previewSection(sectionId) {
         return;
     }
 
+    console.log(`Previsualizando sección: "${section.title}" (Tipo: ${section.type}, Contenido: ${section.content})`);
+
+    // Si es una actividad, verificar si existe en localStorage
+    if (section.type === 'activity') {
+        // Listar todas las claves de actividades en localStorage para depuración
+        console.log('Claves de actividades en localStorage:');
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.includes('activity')) {
+                console.log(`- ${key}`);
+            }
+        }
+    }
+
     // Modal para previsualizar la sección
     let previewContent = '';
 
@@ -1357,20 +1296,216 @@ function previewSection(sectionId) {
             `;
             break;
         case 'activity':
-            previewContent = `
-                <div class="section-preview-content">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Actividad con ID: ${section.content}
+            // Cargar la actividad desde localStorage
+            try {
+                // Limpiar el ID de la actividad (eliminar prefijo si existe)
+                const cleanActivityId = section.content.replace('activity_', '');
+                const activityKey = `activity_${cleanActivityId}`;
+                console.log(`Buscando actividad con clave: ${activityKey}`);
+
+                // Intentar obtener la actividad
+                let activityData = null;
+                try {
+                    activityData = JSON.parse(localStorage.getItem(activityKey));
+                } catch (e) {
+                    console.error(`Error al parsear actividad con clave ${activityKey}:`, e);
+                }
+                if (activityData) {
+                    // Crear una vista previa de la actividad
+                    let questionsPreview = '';
+                    if (activityData.questions && activityData.questions.length > 0) {
+                        questionsPreview = '<div class="mt-3"><h6>Preguntas:</h6>';
+
+                        // Determinar el tipo de actividad
+                        const activityType = activityData.type || 'multiple-choice';
+
+                        activityData.questions.forEach((question, index) => {
+                            questionsPreview += `<div class="card mb-3 question-card">
+                                <div class="card-body">
+                                    <p class="fw-bold">${index + 1}. ${question.text || 'Sin texto'}</p>`;
+
+                            // Mostrar opciones según el tipo de pregunta (como lo vería el usuario)
+                            switch (activityType) {
+                                case 'multiple-choice':
+                                    if (question.options && question.options.length > 0) {
+                                        questionsPreview += '<div class="options-list">';
+                                        question.options.forEach((option, optIndex) => {
+                                            questionsPreview += `
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="question_${index}" id="option_${index}_${optIndex}">
+                                                    <label class="form-check-label" for="option_${index}_${optIndex}">
+                                                        ${option}
+                                                    </label>
+                                                </div>`;
+                                        });
+                                        questionsPreview += '</div>';
+                                    } else {
+                                        questionsPreview += '<p class="text-muted">No hay opciones definidas</p>';
+                                    }
+                                    break;
+
+                                case 'true-false':
+                                    questionsPreview += `
+                                        <div class="options-list">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="question_${index}" id="option_${index}_true">
+                                                <label class="form-check-label" for="option_${index}_true">
+                                                    Verdadero
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="question_${index}" id="option_${index}_false">
+                                                <label class="form-check-label" for="option_${index}_false">
+                                                    Falso
+                                                </label>
+                                            </div>
+                                        </div>`;
+                                    break;
+
+                                case 'short-answer':
+                                    questionsPreview += `
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" placeholder="Tu respuesta">
+                                        </div>`;
+                                    break;
+
+                                default:
+                                    questionsPreview += `<p class="text-muted">Tipo de pregunta no soportado: ${activityType}</p>`;
+                            }
+
+                            questionsPreview += '</div></div>';
+                        });
+
+                        questionsPreview += '</div>';
+                    }
+
+                    // Añadir estilos personalizados para la previsualización
+                    const customStyles = `
+                        <style>
+                            .activity-preview {
+                                max-width: 100%;
+                                margin: 0 auto;
+                                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                border-radius: 5px;
+                                overflow: hidden;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                            }
+                            .activity-header {
+                                background-color: #0d6efd;
+                                color: white;
+                                padding: 15px 20px;
+                                margin-bottom: 0;
+                                font-size: 1.5rem;
+                            }
+                            .activity-content {
+                                background-color: #ffffff;
+                                padding: 20px;
+                            }
+                            .activity-description {
+                                margin-bottom: 20px;
+                                font-style: italic;
+                                color: #6c757d;
+                            }
+                            .question-card {
+                                border: 1px solid #e9ecef;
+                                border-radius: 5px;
+                                margin-bottom: 20px;
+                                box-shadow: none;
+                                background-color: #f8f9fa;
+                            }
+                            .question-card .card-body {
+                                padding: 20px;
+                            }
+                            .options-list {
+                                margin-top: 10px;
+                            }
+                            .form-check {
+                                margin-bottom: 10px;
+                                padding-left: 30px;
+                            }
+                            .form-check-input {
+                                margin-top: 0.25rem;
+                            }
+                            .form-control {
+                                padding: 10px 15px;
+                                border: 1px solid #ced4da;
+                                border-radius: 4px;
+                                width: 100%;
+                                margin-top: 5px;
+                            }
+                            .form-control::placeholder {
+                                color: #adb5bd;
+                            }
+                            .activity-footer {
+                                margin-top: 10px;
+                                text-align: center;
+                                border-top: 1px solid #e9ecef;
+                                padding-top: 15px;
+                            }
+                        </style>
+                    `;
+
+                    previewContent = `
+                        <div class="section-preview-content">
+                            ${customStyles}
+                            <div class="activity-preview">
+                                <h3 class="activity-header">${activityData.title || 'Actividad sin título'}</h3>
+                                <div class="activity-content">
+                                    <p class="activity-description">${activityData.description || 'Sin descripción'}</p>
+                                    ${questionsPreview}
+                                    <div class="d-grid gap-2 col-md-6 mx-auto mt-4 mb-3">
+                                        <button type="button" class="btn btn-success btn-lg" onclick="showPreviewSubmitMessage()">
+                                            <i class="fas fa-paper-plane me-2"></i> Enviar respuestas
+                                        </button>
+                                    </div>
+                                    <script>
+                                        function showPreviewSubmitMessage() {
+                                            alert('Esta es solo una vista previa. En la actividad real, este botón enviaría las respuestas para su evaluación.');
+                                        }
+                                    </script>
+                                    <div class="activity-footer">
+                                        <a href="activity-loader.html?id=${cleanActivityId}" class="btn btn-outline-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt me-2"></i>
+                                            Ver actividad completa
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    previewContent = `
+                        <div class="section-preview-content">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No se encontró la actividad con ID: ${cleanActivityId}
+                            </div>
+                            <div class="text-center">
+                                <a href="activity-loader.html?id=${cleanActivityId}" class="btn btn-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt me-2"></i>
+                                    Intentar cargar actividad
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error al cargar la actividad para previsualización:', error);
+                previewContent = `
+                    <div class="section-preview-content">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error al cargar la actividad: ${error.message}
+                        </div>
+                        <div class="text-center">
+                            <a href="activity-loader.html?id=${cleanActivityId}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-external-link-alt me-2"></i>
+                                Ver actividad
+                            </a>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <a href="activity-loader.html?id=${section.content}" class="btn btn-primary" target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>
-                            Ver actividad
-                        </a>
-                    </div>
-                </div>
-            `;
+                `;
+            }
             break;
         case 'youtube':
             previewContent = `
@@ -3083,21 +3218,28 @@ function saveSection() {
     // Captura del contenido según el tipo de sección
     try {
         if (sectionData.type === 'text') {
-            // Para texto, intentamos obtener el contenido del editor visualmente
-            const mathEditorContent = document.getElementById('mathEditorContent');
-            if (mathEditorContent) {
-                console.log('Obteniendo contenido del editor visual');
-                sectionData.content = mathEditorContent.innerHTML;
+            // Primero intentamos obtener el contenido del editor de texto limpio
+            const cleanTextEditor = document.getElementById('cleanTextEditorContent');
+            if (cleanTextEditor) {
+                console.log('Obteniendo contenido del editor de texto limpio');
+                sectionData.content = cleanTextEditor.innerHTML;
             } else {
-                // Si no existe el editor visual, buscamos el textarea
-                const textareaContent = document.getElementById('textContent');
-                if (textareaContent) {
-                    console.log('Obteniendo contenido del textarea');
-                    sectionData.content = textareaContent.value;
+                // Si no existe el editor limpio, intentamos con el editor visual antiguo
+                const mathEditorContent = document.getElementById('mathEditorContent');
+                if (mathEditorContent) {
+                    console.log('Obteniendo contenido del editor visual antiguo');
+                    sectionData.content = mathEditorContent.innerHTML;
                 } else {
-                    console.error("No se encontró el editor ni el textarea");
-                    alert('Error: No se pudo obtener el contenido. Por favor intente nuevamente.');
-                    return false;
+                    // Si no existe ningún editor visual, buscamos el textarea
+                    const textareaContent = document.getElementById('textContent');
+                    if (textareaContent) {
+                        console.log('Obteniendo contenido del textarea');
+                        sectionData.content = textareaContent.value;
+                    } else {
+                        console.error("No se encontró ningún editor ni el textarea");
+                        alert('Error: No se pudo obtener el contenido. Por favor intente nuevamente.');
+                        return false;
+                    }
                 }
             }
         } else if (sectionData.type === 'youtube') {

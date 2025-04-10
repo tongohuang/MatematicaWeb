@@ -1,0 +1,536 @@
+/**
+ * Editor de texto limpio para WebMatematica
+ * 
+ * Este editor reemplaza al editor matemático anterior y proporciona una interfaz
+ * más simple y estable para editar contenido de texto con formato.
+ */
+
+// Variable global para mantener referencia al editor
+window.cleanTextEditor = null;
+
+/**
+ * Inicializa el editor de texto limpio
+ * @param {string} targetId - ID del textarea que se convertirá en editor
+ * @returns {boolean} - true si se inicializó correctamente, false en caso contrario
+ */
+function initCleanTextEditor(targetId) {
+    console.log(`Inicializando editor de texto limpio para: ${targetId}`);
+    
+    // Verificar que existe el textarea
+    const textarea = document.getElementById(targetId);
+    if (!textarea) {
+        console.error(`No se encontró el textarea con ID: ${targetId}`);
+        return false;
+    }
+    
+    try {
+        // Limpiar cualquier instancia previa
+        cleanupEditor();
+        
+        // Crear el contenedor para el editor
+        const editorContainer = document.createElement('div');
+        editorContainer.className = 'clean-text-editor-container';
+        editorContainer.style.border = '1px solid #ced4da';
+        editorContainer.style.borderRadius = '0.25rem';
+        editorContainer.style.marginBottom = '1rem';
+        
+        // Crear la barra de herramientas
+        const toolbar = createToolbar();
+        editorContainer.appendChild(toolbar);
+        
+        // Crear el área editable
+        const editorContent = document.createElement('div');
+        editorContent.id = 'cleanTextEditorContent';
+        editorContent.className = 'clean-text-editor-content';
+        editorContent.contentEditable = true;
+        editorContent.style.padding = '10px';
+        editorContent.style.minHeight = '200px';
+        editorContent.style.outline = 'none';
+        
+        // Guardar referencia al textarea asociado
+        editorContent.dataset.targetTextareaId = targetId;
+        
+        // Establecer el contenido inicial desde el textarea
+        editorContent.innerHTML = textarea.value || '';
+        
+        // Añadir el área editable al contenedor
+        editorContainer.appendChild(editorContent);
+        
+        // Insertar el editor antes del textarea
+        textarea.parentNode.insertBefore(editorContainer, textarea);
+        
+        // Ocultar el textarea original
+        textarea.style.display = 'none';
+        
+        // Guardar referencia global al editor
+        window.cleanTextEditor = editorContent;
+        
+        // Inicializar eventos
+        initEditorEvents(editorContent, textarea);
+        
+        // Añadir estilos
+        addEditorStyles();
+        
+        console.log('Editor de texto limpio inicializado correctamente');
+        return true;
+    } catch (error) {
+        console.error('Error al inicializar el editor de texto limpio:', error);
+        return false;
+    }
+}
+
+/**
+ * Crea la barra de herramientas del editor
+ * @returns {HTMLElement} - El elemento de la barra de herramientas
+ */
+function createToolbar() {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'clean-text-editor-toolbar';
+    toolbar.style.backgroundColor = '#f8f9fa';
+    toolbar.style.borderBottom = '1px solid #ced4da';
+    toolbar.style.padding = '8px';
+    toolbar.style.display = 'flex';
+    toolbar.style.flexWrap = 'wrap';
+    toolbar.style.gap = '5px';
+    
+    // HTML para la barra de herramientas
+    toolbar.innerHTML = `
+        <!-- Formato de texto -->
+        <div class="toolbar-group">
+            <button type="button" class="editor-btn" data-command="bold" title="Negrita">
+                <i class="fas fa-bold"></i>
+            </button>
+            <button type="button" class="editor-btn" data-command="italic" title="Cursiva">
+                <i class="fas fa-italic"></i>
+            </button>
+            <button type="button" class="editor-btn" data-command="underline" title="Subrayado">
+                <i class="fas fa-underline"></i>
+            </button>
+            <button type="button" class="editor-btn" id="textColorBtn" title="Color de texto">
+                <i class="fas fa-palette"></i>
+            </button>
+        </div>
+        
+        <!-- Listas -->
+        <div class="toolbar-group">
+            <button type="button" class="editor-btn" data-command="insertUnorderedList" title="Lista con viñetas">
+                <i class="fas fa-list-ul"></i>
+            </button>
+            <button type="button" class="editor-btn" data-command="insertOrderedList" title="Lista numerada">
+                <i class="fas fa-list-ol"></i>
+            </button>
+        </div>
+        
+        <!-- Alineación -->
+        <div class="toolbar-group">
+            <button type="button" class="editor-btn" data-command="justifyLeft" title="Alinear a la izquierda">
+                <i class="fas fa-align-left"></i>
+            </button>
+            <button type="button" class="editor-btn" data-command="justifyCenter" title="Centrar">
+                <i class="fas fa-align-center"></i>
+            </button>
+            <button type="button" class="editor-btn" data-command="justifyRight" title="Alinear a la derecha">
+                <i class="fas fa-align-right"></i>
+            </button>
+        </div>
+        
+        <!-- Tablas -->
+        <div class="toolbar-group">
+            <button type="button" class="editor-btn" id="insertTableBtn" title="Insertar tabla">
+                <i class="fas fa-table"></i>
+            </button>
+        </div>
+    `;
+    
+    return toolbar;
+}
+
+/**
+ * Inicializa los eventos del editor
+ * @param {HTMLElement} editorContent - El elemento del editor
+ * @param {HTMLElement} textarea - El textarea asociado
+ */
+function initEditorEvents(editorContent, textarea) {
+    // Sincronizar con el textarea cuando cambia el contenido
+    editorContent.addEventListener('input', function() {
+        textarea.value = editorContent.innerHTML;
+    });
+    
+    // Inicializar eventos para los botones de formato
+    const formatButtons = document.querySelectorAll('.editor-btn[data-command]');
+    formatButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const command = this.dataset.command;
+            if (!command) return;
+            
+            // Enfocar el editor antes de aplicar el comando
+            editorContent.focus();
+            
+            // Aplicar el comando
+            document.execCommand(command, false, null);
+            
+            // Actualizar el estado de los botones
+            updateButtonStates();
+            
+            // Sincronizar con el textarea
+            textarea.value = editorContent.innerHTML;
+        });
+    });
+    
+    // Inicializar el selector de color
+    initColorPicker(editorContent, textarea);
+    
+    // Inicializar el botón de tabla
+    initTableButton(editorContent, textarea);
+    
+    // Eventos para actualizar el estado de los botones
+    editorContent.addEventListener('mouseup', updateButtonStates);
+    editorContent.addEventListener('keyup', function(e) {
+        const relevantKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', 'Backspace', 'Delete'];
+        if (relevantKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+            updateButtonStates();
+        }
+    });
+    
+    // Llamar a updateButtonStates una vez al inicio
+    updateButtonStates();
+}
+
+/**
+ * Actualiza el estado de los botones según el formato actual
+ */
+function updateButtonStates() {
+    try {
+        const formatButtons = document.querySelectorAll('.editor-btn[data-command]');
+        formatButtons.forEach(button => {
+            const command = button.dataset.command;
+            if (!command) return;
+            
+            const isActive = document.queryCommandState(command);
+            if (isActive) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    } catch (error) {
+        console.error('Error al actualizar estados de botones:', error);
+    }
+}
+
+/**
+ * Inicializa el selector de color
+ * @param {HTMLElement} editorContent - El elemento del editor
+ * @param {HTMLElement} textarea - El textarea asociado
+ */
+function initColorPicker(editorContent, textarea) {
+    // Crear la paleta de colores
+    createColorPalette();
+    
+    // Configurar el botón de color
+    const colorBtn = document.getElementById('textColorBtn');
+    if (colorBtn) {
+        colorBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const colorPalette = document.getElementById('colorPalette');
+            if (!colorPalette) return;
+            
+            // Posicionar la paleta cerca del botón
+            const buttonRect = colorBtn.getBoundingClientRect();
+            colorPalette.style.top = (buttonRect.bottom + window.scrollY + 5) + 'px';
+            colorPalette.style.left = (buttonRect.left + window.scrollX) + 'px';
+            
+            // Mostrar/ocultar la paleta
+            colorPalette.classList.toggle('show');
+            
+            // Enfocar el editor
+            editorContent.focus();
+        });
+    }
+}
+
+/**
+ * Crea la paleta de colores
+ */
+function createColorPalette() {
+    // Eliminar paleta existente si hay
+    const existingPalette = document.getElementById('colorPalette');
+    if (existingPalette) {
+        existingPalette.remove();
+    }
+    
+    // Crear la paleta
+    const colorPalette = document.createElement('div');
+    colorPalette.id = 'colorPalette';
+    colorPalette.className = 'color-palette';
+    colorPalette.style.position = 'absolute';
+    colorPalette.style.zIndex = '9999';
+    colorPalette.style.backgroundColor = '#fff';
+    colorPalette.style.border = '1px solid #ced4da';
+    colorPalette.style.borderRadius = '4px';
+    colorPalette.style.padding = '10px';
+    colorPalette.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+    colorPalette.style.display = 'none';
+    colorPalette.style.width = '160px';
+    
+    // Título
+    const title = document.createElement('div');
+    title.textContent = 'Seleccionar color';
+    title.style.fontSize = '14px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '8px';
+    title.style.textAlign = 'center';
+    title.style.color = '#333';
+    title.style.borderBottom = '1px solid #eee';
+    title.style.paddingBottom = '5px';
+    colorPalette.appendChild(title);
+    
+    // Contenedor de colores
+    const colorGrid = document.createElement('div');
+    colorGrid.style.display = 'grid';
+    colorGrid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+    colorGrid.style.gap = '5px';
+    colorPalette.appendChild(colorGrid);
+    
+    // Colores
+    const colors = [
+        '#000000', '#434343', '#666666', '#999999', '#b7b7b7',
+        '#cccccc', '#d9d9d9', '#efefef', '#f3f3f3', '#ffffff',
+        '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00',
+        '#00ffff', '#4a86e8', '#0000ff', '#9900ff', '#ff00ff',
+        '#e6b8af', '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3',
+        '#d0e0e3', '#c9daf8', '#cfe2f3', '#d9d2e9', '#ead1dc'
+    ];
+    
+    colors.forEach(color => {
+        const colorOption = document.createElement('div');
+        colorOption.style.width = '22px';
+        colorOption.style.height = '22px';
+        colorOption.style.backgroundColor = color;
+        colorOption.style.cursor = 'pointer';
+        colorOption.style.border = '1px solid #dee2e6';
+        colorOption.style.borderRadius = '3px';
+        colorOption.style.transition = 'transform 0.1s ease';
+        colorOption.title = color;
+        
+        // Borde para colores claros
+        if (color.toLowerCase() === '#ffffff' || color.toLowerCase() === '#f3f3f3' || color.toLowerCase() === '#efefef') {
+            colorOption.style.border = '1px solid #ccc';
+        }
+        
+        // Evento para aplicar el color
+        colorOption.addEventListener('click', function() {
+            document.execCommand('foreColor', false, color);
+            colorPalette.classList.remove('show');
+            
+            // Sincronizar con el textarea
+            const editorContent = document.getElementById('cleanTextEditorContent');
+            if (editorContent) {
+                const targetId = editorContent.dataset.targetTextareaId;
+                if (targetId) {
+                    const textarea = document.getElementById(targetId);
+                    if (textarea) {
+                        textarea.value = editorContent.innerHTML;
+                    }
+                }
+            }
+        });
+        
+        // Efecto hover
+        colorOption.addEventListener('mouseover', function() {
+            this.style.transform = 'scale(1.1)';
+            this.style.boxShadow = '0 0 3px rgba(0, 0, 0, 0.2)';
+        });
+        
+        colorOption.addEventListener('mouseout', function() {
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = 'none';
+        });
+        
+        colorGrid.appendChild(colorOption);
+    });
+    
+    // Instrucción
+    const instruction = document.createElement('div');
+    instruction.textContent = 'Haga clic para aplicar color';
+    instruction.style.marginTop = '8px';
+    instruction.style.paddingTop = '8px';
+    instruction.style.borderTop = '1px solid #eee';
+    instruction.style.fontSize = '12px';
+    instruction.style.color = '#666';
+    instruction.style.textAlign = 'center';
+    colorPalette.appendChild(instruction);
+    
+    // Cerrar la paleta al hacer clic fuera de ella
+    document.addEventListener('click', function(e) {
+        if (colorPalette.classList.contains('show') && 
+            !colorPalette.contains(e.target) && 
+            e.target.id !== 'textColorBtn' && 
+            !e.target.closest('#textColorBtn')) {
+            colorPalette.classList.remove('show');
+        }
+    });
+    
+    // Añadir al DOM
+    document.body.appendChild(colorPalette);
+}
+
+/**
+ * Inicializa el botón de tabla
+ * @param {HTMLElement} editorContent - El elemento del editor
+ * @param {HTMLElement} textarea - El textarea asociado
+ */
+function initTableButton(editorContent, textarea) {
+    const tableBtn = document.getElementById('insertTableBtn');
+    if (tableBtn) {
+        tableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Crear una tabla simple 3x3
+            const tableHTML = `
+                <table style="width:100%; border-collapse:collapse; margin:10px 0;">
+                    <tr>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                        <td style="border:1px solid #ced4da; padding:8px;"></td>
+                    </tr>
+                </table>
+            `;
+            
+            // Insertar la tabla en el editor
+            document.execCommand('insertHTML', false, tableHTML);
+            
+            // Sincronizar con el textarea
+            textarea.value = editorContent.innerHTML;
+        });
+    }
+}
+
+/**
+ * Añade estilos CSS para el editor
+ */
+function addEditorStyles() {
+    // Verificar si ya existen los estilos
+    if (document.getElementById('clean-text-editor-styles')) {
+        return;
+    }
+    
+    // Crear elemento de estilo
+    const style = document.createElement('style');
+    style.id = 'clean-text-editor-styles';
+    style.textContent = `
+        .clean-text-editor-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ced4da;
+        }
+        
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            border-right: 1px solid #dee2e6;
+            padding-right: 5px;
+            margin-right: 5px;
+        }
+        
+        .toolbar-group:last-child {
+            border-right: none;
+            padding-right: 0;
+            margin-right: 0;
+        }
+        
+        .editor-btn {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #495057;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            min-height: 32px;
+            margin: 0 2px;
+        }
+        
+        .editor-btn:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .editor-btn.active {
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+        }
+        
+        .color-palette {
+            display: none;
+        }
+        
+        .color-palette.show {
+            display: block;
+        }
+        
+        .clean-text-editor-content {
+            padding: 10px;
+            min-height: 200px;
+            outline: none;
+        }
+        
+        .clean-text-editor-content:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+    `;
+    
+    // Añadir al DOM
+    document.head.appendChild(style);
+}
+
+/**
+ * Limpia el editor y libera recursos
+ */
+function cleanupEditor() {
+    try {
+        // Eliminar el contenedor del editor
+        const editorContainer = document.querySelector('.clean-text-editor-container');
+        if (editorContainer) {
+            editorContainer.remove();
+        }
+        
+        // Eliminar la paleta de colores
+        const colorPalette = document.getElementById('colorPalette');
+        if (colorPalette) {
+            colorPalette.remove();
+        }
+        
+        // Limpiar la referencia global
+        window.cleanTextEditor = null;
+        
+        return true;
+    } catch (error) {
+        console.error('Error al limpiar el editor:', error);
+        return false;
+    }
+}
+
+// Exponer funciones globalmente
+window.initCleanTextEditor = initCleanTextEditor;
+window.cleanupEditor = cleanupEditor;
