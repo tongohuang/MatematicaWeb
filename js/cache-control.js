@@ -88,8 +88,33 @@ const CacheControl = {
     /**
      * Limpia la caché de localStorage
      * @param {boolean} fullClean - Si es true, limpia también los datos de courseData
+     * @param {boolean} hardReset - Si es true, limpia completamente localStorage
      */
-    clearLocalStorageCache(fullClean = false) {
+    clearLocalStorageCache(fullClean = false, hardReset = false) {
+        // Si es un hard reset, limpiar todo localStorage excepto algunas claves esenciales
+        if (hardReset) {
+            console.log('%c[Control de Caché] HARD RESET: Limpiando completamente localStorage', 'color: #FF0000; font-weight: bold');
+
+            // Guardar temporalmente solo algunas claves esenciales que no queremos perder
+            const adminSession = localStorage.getItem('admin_session');
+            const authToken = localStorage.getItem('auth_token');
+
+            // Limpiar todo localStorage
+            localStorage.clear();
+            console.log('localStorage limpiado completamente (HARD RESET)');
+
+            // Restaurar solo las claves esenciales
+            if (adminSession) localStorage.setItem('admin_session', adminSession);
+            if (authToken) localStorage.setItem('auth_token', authToken);
+
+            // Limpiar también sessionStorage
+            sessionStorage.clear();
+            console.log('SessionStorage limpiado completamente');
+
+            return;
+        }
+
+        // Limpieza normal (no hard reset)
         // Limpiar solo las claves relacionadas con la caché
         const cacheKeys = [
             'jsonData_courseData',
@@ -100,12 +125,23 @@ const CacheControl = {
             'lastGeneratedJSON',
             'lastJSONGenerationTime',
             'siteVersion',
-            'netlify_cache_cleared'
+            'netlify_cache_cleared',
+            'courseData',
+            'matematicaweb_courses',
+            'matematicaweb_topics',
+            'activity_registry'
         ];
 
-        // Si es limpieza completa, añadir también courseData
+        // Si es limpieza completa, añadir también courseData y otros datos
         if (fullClean) {
-            cacheKeys.push('courseData');
+            // Buscar todas las claves que empiezan con 'activity_data_'
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('activity_data_')) {
+                    cacheKeys.push(key);
+                }
+            }
+
             // Limpiar también sessionStorage
             sessionStorage.clear();
             console.log('SessionStorage limpiado completamente');
@@ -247,18 +283,25 @@ const CacheControl = {
      * Limpia la caché y recarga la página (para usuarios)
      * @param {boolean} showSuccess - Si es true, muestra un mensaje de éxito antes de recargar
      * @param {boolean} fullClean - Si es true, realiza una limpieza completa incluyendo courseData
+     * @param {boolean} hardReset - Si es true, realiza un hard reset completo de localStorage
      */
-    clearCache(showSuccess = false, fullClean = true) {
+    clearCache(showSuccess = false, fullClean = true, hardReset = false) {
         console.log('%c[Control de Caché] Limpiando caché manualmente...', 'color: #2196F3; font-weight: bold');
 
+        // Si es un hard reset, mostrar confirmación
+        if (hardReset && !confirm('ATENCIÓN: Estás a punto de realizar un restablecimiento completo que borrará TODOS los datos almacenados localmente. Esta acción no se puede deshacer.\n\n¿Deseas continuar?')) {
+            console.log('Hard reset cancelado por el usuario');
+            return;
+        }
+
         // Limpiar caché de localStorage
-        this.clearLocalStorageCache(fullClean);
+        this.clearLocalStorageCache(fullClean, hardReset);
 
         // Resetear la preferencia de ocultar el banner
         localStorage.removeItem('hideCacheBanner');
 
         // Forzar carga desde el repositorio si DataPersistence está disponible
-        if (typeof DataPersistence !== 'undefined') {
+        if (typeof DataPersistence !== 'undefined' && !hardReset) {
             console.log('Forzando carga de datos desde el repositorio...');
 
             // Intentar cargar datos desde el repositorio antes de recargar
@@ -267,20 +310,20 @@ const CacheControl = {
                     console.log('Datos cargados correctamente desde el repositorio');
 
                     // Mostrar mensaje de éxito si se solicita
-                    this._showSuccessAndReload(showSuccess);
+                    this._showSuccessAndReload(showSuccess, hardReset);
                 }).catch(error => {
                     console.error('Error cargando datos desde el repositorio:', error);
                     // Recargar de todos modos
-                    this._showSuccessAndReload(showSuccess);
+                    this._showSuccessAndReload(showSuccess, hardReset);
                 });
             } catch (error) {
                 console.error('Error iniciando carga de datos:', error);
                 // Recargar de todos modos
-                this._showSuccessAndReload(showSuccess);
+                this._showSuccessAndReload(showSuccess, hardReset);
             }
         } else {
-            // Si DataPersistence no está disponible, simplemente recargar
-            this._showSuccessAndReload(showSuccess);
+            // Si DataPersistence no está disponible o es un hard reset, simplemente recargar
+            this._showSuccessAndReload(showSuccess, hardReset);
         }
     },
 
@@ -288,8 +331,9 @@ const CacheControl = {
      * Muestra un mensaje de éxito y recarga la página
      * @private
      * @param {boolean} showSuccess - Si es true, muestra un mensaje de éxito antes de recargar
+     * @param {boolean} hardReset - Si es true, realiza un hard reload completo
      */
-    _showSuccessAndReload(showSuccess) {
+    _showSuccessAndReload(showSuccess, hardReset = false) {
         if (showSuccess) {
             // Crear alerta de éxito
             const successAlert = document.createElement('div');
@@ -302,13 +346,17 @@ const CacheControl = {
             successAlert.style.maxWidth = '500px';
             successAlert.style.width = '90%';
 
+            let message = hardReset ?
+                '¡Restablecimiento completo realizado! Todos los datos locales han sido borrados.' :
+                '¡Caché limpiada correctamente!';
+
             successAlert.innerHTML = `
                 <div class="d-flex align-items-center">
                     <div class="me-3">
                         <i class="fas fa-check-circle fa-lg"></i>
                     </div>
                     <div>
-                        <strong>¡Caché limpiada correctamente!</strong>
+                        <strong>${message}</strong>
                         <p class="mb-0">La página se recargará en unos segundos para mostrar la última versión.</p>
                     </div>
                 </div>
@@ -320,10 +368,31 @@ const CacheControl = {
 
             // Esperar un momento antes de recargar
             setTimeout(() => {
-                window.location.reload(true);
+                this._hardReload(hardReset);
             }, 2000);
         } else {
             // Recargar inmediatamente
+            this._hardReload(hardReset);
+        }
+    },
+
+    /**
+     * Realiza una recarga forzada de la página
+     * @private
+     * @param {boolean} hardReset - Si es true, realiza un hard reload completo
+     */
+    _hardReload(hardReset = false) {
+        if (hardReset) {
+            console.log('%c[Control de Caché] Realizando HARD RELOAD...', 'color: #FF0000; font-weight: bold');
+
+            // Intentar usar la API de navegación para forzar una recarga completa
+            if (window.location.href.indexOf('?') === -1) {
+                window.location.href = window.location.href + '?forceReload=' + Date.now();
+            } else {
+                window.location.href = window.location.href + '&forceReload=' + Date.now();
+            }
+        } else {
+            // Recarga normal
             window.location.reload(true);
         }
     }

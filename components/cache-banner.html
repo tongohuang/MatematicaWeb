@@ -1,17 +1,22 @@
 <!-- Banner de actualización de caché -->
 <div class="container mt-3" id="cacheUpdateBanner">
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        <div class="d-flex align-items-center">
-            <div class="me-3">
-                <i class="fas fa-exclamation-triangle fa-lg"></i>
+        <div class="d-flex flex-column flex-md-row">
+            <div class="d-flex align-items-center flex-grow-1">
+                <div class="me-3">
+                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                </div>
+                <div>
+                    <h5 class="alert-heading mb-1">IMPORTANTE: ¿No ves el contenido más reciente?</h5>
+                    <p class="mb-0">Si acabas de acceder al sitio o no ves los últimos cambios, es necesario limpiar la caché. Haz clic en el botón para cargar la última versión.</p>
+                </div>
             </div>
-            <div>
-                <h5 class="alert-heading mb-1">IMPORTANTE: ¿No ves el contenido más reciente?</h5>
-                <p class="mb-0">Si acabas de acceder al sitio o no ves los últimos cambios, es necesario limpiar la caché. Haz clic en el botón para cargar la última versión.</p>
-            </div>
-            <div class="ms-auto">
-                <button type="button" class="btn btn-danger" onclick="window.CacheControl.clearCache(true, true)">
+            <div class="ms-md-auto mt-3 mt-md-0 d-flex">
+                <button type="button" class="btn btn-danger me-2" onclick="window.CacheControl.clearCache(true, true)">
                     <i class="fas fa-sync-alt me-2"></i>Forzar actualización
+                </button>
+                <button type="button" class="btn btn-outline-danger" onclick="window.CacheControl.clearCache(true, true, true)" title="Borra todos los datos almacenados localmente y recarga completamente la página">
+                    <i class="fas fa-trash-alt me-2"></i>Restablecer completamente
                 </button>
             </div>
         </div>

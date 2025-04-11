@@ -54,9 +54,14 @@ const DataPersistence = {
                             window.location.hostname.includes('netlify.com');
             const isProduction = isNetlify || window.location.hostname !== 'localhost';
 
+            // Verificar si hay un parámetro de forzar recarga en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasForceReloadParam = urlParams.has('forceReload');
+
             // En Netlify, siempre intentar cargar desde el repositorio primero
             // para asegurar que los datos estén actualizados
-            const shouldForceRepoData = isNetlify || isProduction || forceRepoData;
+            // También forzar si hay un parámetro de forzar recarga en la URL
+            const shouldForceRepoData = isNetlify || isProduction || forceRepoData || hasForceReloadParam;
 
             if (shouldForceRepoData) {
                 console.log('Forzando carga de datos desde el repositorio...');
@@ -111,8 +116,21 @@ const DataPersistence = {
 
                     // Función para añadir timestamp a las URLs
                     const addTimestamp = (url) => {
-                        const separator = url.includes('?') ? '&' : '?';
-                        return `${url}${separator}t=${timestamp}`;
+                        // Verificar si hay un parámetro de forzar recarga en la URL actual
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const forceReloadParam = urlParams.get('forceReload');
+
+                        // Usar el parámetro de forzar recarga si existe, o generar uno nuevo
+                        const timeParam = forceReloadParam || timestamp;
+
+                        // Limpiar la URL de cualquier parámetro de tiempo anterior
+                        let cleanUrl = url;
+                        if (url.includes('?t=') || url.includes('&t=')) {
+                            cleanUrl = url.replace(/[\?&]t=[^&]*/, '');
+                        }
+
+                        const separator = cleanUrl.includes('?') ? '&' : '?';
+                        return `${cleanUrl}${separator}t=${timeParam}`;
                     };
 
                     // Intentar cargar desde archivos separados primero
