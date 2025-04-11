@@ -22,34 +22,66 @@
 let allResources = [];
 let resourcesInUse = [];
 
+// Objeto global para acceder a las funciones desde otros scripts
+window.ResourceManager = {
+    /**
+     * Obtiene la lista de recursos de un tipo específico
+     * @param {string} type - Tipo de recurso (html, pdf, image)
+     * @returns {Promise<Array>} - Promesa que se resuelve con la lista de nombres de recursos
+     */
+    getResourceList: async function(type) {
+        console.log(`ResourceManager.getResourceList(${type}) llamado`);
+        return await getResourcesByType(type);
+    }
+};
+
 /**
  * Inicializa el administrador de recursos
  */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Inicializando administrador de recursos...');
 
-    // Cargar recursos
-    loadResources();
+    // Verificar si estamos en la página de administración de recursos
+    const isResourceManagerPage = window.location.pathname.includes('resource-manager.html');
 
-    // Configurar eventos de filtrado
-    document.getElementById('resourceType').addEventListener('change', filterResources);
-    document.getElementById('searchResource').addEventListener('input', filterResources);
-    document.getElementById('showUsed').addEventListener('change', filterResources);
-    document.getElementById('showUnused').addEventListener('change', filterResources);
+    if (isResourceManagerPage) {
+        console.log('Estamos en la página de administración de recursos');
 
-    // Configurar evento de actualización
-    document.getElementById('refreshResourceList').addEventListener('click', loadResources);
+        // Cargar recursos
+        loadResources();
 
-    // Configurar evento de exportación
-    document.getElementById('exportResourceList').addEventListener('click', exportResourceList);
+        // Configurar eventos de filtrado
+        const resourceTypeElement = document.getElementById('resourceType');
+        const searchResourceElement = document.getElementById('searchResource');
+        const showUsedElement = document.getElementById('showUsed');
+        const showUnusedElement = document.getElementById('showUnused');
 
-    // Configurar evento de actualización de índices
-    document.getElementById('updateResourceIndexes').addEventListener('click', function() {
-        updateResourceIndexes().then(() => {
-            // Recargar recursos después de actualizar los índices
-            loadResources();
-        });
-    });
+        if (resourceTypeElement) resourceTypeElement.addEventListener('change', filterResources);
+        if (searchResourceElement) searchResourceElement.addEventListener('input', filterResources);
+        if (showUsedElement) showUsedElement.addEventListener('change', filterResources);
+        if (showUnusedElement) showUnusedElement.addEventListener('change', filterResources);
+
+        // Configurar evento de actualización
+        const refreshResourceListElement = document.getElementById('refreshResourceList');
+        if (refreshResourceListElement) refreshResourceListElement.addEventListener('click', loadResources);
+
+        // Configurar evento de exportación
+        const exportResourceListElement = document.getElementById('exportResourceList');
+        if (exportResourceListElement) exportResourceListElement.addEventListener('click', exportResourceList);
+
+        // Configurar evento de actualización de índices
+        const updateResourceIndexesElement = document.getElementById('updateResourceIndexes');
+        if (updateResourceIndexesElement) {
+            updateResourceIndexesElement.addEventListener('click', function() {
+                updateResourceIndexes().then(() => {
+                    // Recargar recursos después de actualizar los índices
+                    loadResources();
+                });
+            });
+        }
+    } else {
+        console.log('No estamos en la página de administración de recursos, omitiendo inicialización');
+    }
 });
 
 /**
@@ -58,8 +90,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadResources() {
     console.log('Cargando recursos...');
 
+    // Verificar si estamos en la página de administración de recursos
+    const resourceListElement = document.getElementById('resourceList');
+    if (!resourceListElement) {
+        console.log('No se encontró el elemento resourceList, omitiendo carga de recursos');
+        return;
+    }
+
     // Mostrar indicador de carga
-    document.getElementById('resourceList').innerHTML = `
+    resourceListElement.innerHTML = `
         <div class="text-center py-5 col-12">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando...</span>
@@ -341,6 +380,12 @@ function getResourcesInUse() {
 function displayResources(resources) {
     const resourceList = document.getElementById('resourceList');
 
+    // Verificar si el elemento existe
+    if (!resourceList) {
+        console.log('No se encontró el elemento resourceList, omitiendo visualización de recursos');
+        return;
+    }
+
     if (resources.length === 0) {
         resourceList.innerHTML = `
             <div class="col-12 text-center py-5">
@@ -415,10 +460,21 @@ function displayResources(resources) {
  * Filtra los recursos según los criterios seleccionados
  */
 function filterResources() {
-    const typeFilter = document.getElementById('resourceType').value;
-    const searchFilter = document.getElementById('searchResource').value.toLowerCase();
-    const showUsed = document.getElementById('showUsed').checked;
-    const showUnused = document.getElementById('showUnused').checked;
+    // Verificar si los elementos existen
+    const resourceTypeElement = document.getElementById('resourceType');
+    const searchResourceElement = document.getElementById('searchResource');
+    const showUsedElement = document.getElementById('showUsed');
+    const showUnusedElement = document.getElementById('showUnused');
+
+    if (!resourceTypeElement || !searchResourceElement || !showUsedElement || !showUnusedElement) {
+        console.log('No se encontraron los elementos de filtrado, omitiendo filtrado de recursos');
+        return;
+    }
+
+    const typeFilter = resourceTypeElement.value;
+    const searchFilter = searchResourceElement.value.toLowerCase();
+    const showUsed = showUsedElement.checked;
+    const showUnused = showUnusedElement.checked;
 
     // Definir los tipos de recursos permitidos
     const allowedResourceTypes = ['html', 'pdf', 'image'];
@@ -478,10 +534,21 @@ function filterResources() {
  * @param {string} name - Nombre del recurso
  */
 function previewResource(path, type, name) {
-    const modal = new bootstrap.Modal(document.getElementById('resourcePreviewModal'));
-    const modalTitle = document.getElementById('resourcePreviewModalLabel');
-    const modalContent = document.getElementById('resourcePreviewContent');
-    const downloadLink = document.getElementById('resourceDownloadLink');
+    const modalElement = document.getElementById('resourcePreviewModal');
+    const modalTitleElement = document.getElementById('resourcePreviewModalLabel');
+    const modalContentElement = document.getElementById('resourcePreviewContent');
+    const downloadLinkElement = document.getElementById('resourceDownloadLink');
+
+    // Verificar si los elementos existen
+    if (!modalElement || !modalTitleElement || !modalContentElement || !downloadLinkElement) {
+        console.log('No se encontraron los elementos necesarios para la vista previa, omitiendo vista previa');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalElement);
+    const modalTitle = modalTitleElement;
+    const modalContent = modalContentElement;
+    const downloadLink = downloadLinkElement;
 
     // Determinar la carpeta según el tipo
     let folderPath = '';
@@ -533,10 +600,20 @@ function previewResource(path, type, name) {
  * @param {boolean} inUse - Indica si el recurso está en uso
  */
 function showDeleteConfirmation(path, type, name, inUse) {
-    const modal = new bootstrap.Modal(document.getElementById('deleteResourceModal'));
-    const modalTitle = document.getElementById('deleteResourceModalLabel');
+    const modalElement = document.getElementById('deleteResourceModal');
+    const modalTitleElement = document.getElementById('deleteResourceModalLabel');
     const warningElement = document.getElementById('resourceUsageWarning');
-    const confirmButton = document.getElementById('confirmDeleteResource');
+    const confirmButtonElement = document.getElementById('confirmDeleteResource');
+
+    // Verificar si los elementos existen
+    if (!modalElement || !modalTitleElement || !warningElement || !confirmButtonElement) {
+        console.log('No se encontraron los elementos necesarios para la confirmación de eliminación, omitiendo confirmación');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalElement);
+    const modalTitle = modalTitleElement;
+    const confirmButton = confirmButtonElement;
 
     modalTitle.textContent = `Eliminar: ${name}`;
 
@@ -587,10 +664,17 @@ function deleteResource(path, type, name) {
 function exportResourceList() {
     console.log('Exportando lista de recursos...');
 
+    // Verificar si hay recursos para exportar
+    if (!allResources || allResources.length === 0) {
+        console.log('No hay recursos para exportar');
+        alert('No hay recursos para exportar');
+        return;
+    }
+
     // Crear objeto para exportar
     const exportData = {
         resources: allResources,
-        resourcesInUse: resourcesInUse,
+        resourcesInUse: resourcesInUse || [],
         exportDate: new Date().toISOString()
     };
 
@@ -635,6 +719,12 @@ function getResourceTypeIcon(type) {
 function updateResourceStats(resources, filtered = false) {
     const statsElement = document.getElementById('resourceStats');
 
+    // Verificar si el elemento existe
+    if (!statsElement) {
+        console.log('No se encontró el elemento resourceStats, omitiendo actualización de estadísticas');
+        return;
+    }
+
     // Contar recursos por tipo
     const htmlCount = resources.filter(r => r.type === 'html').length;
     const pdfCount = resources.filter(r => r.type === 'pdf').length;
@@ -672,6 +762,13 @@ function updateResourceIndexes() {
 
     // Mostrar mensaje de actualización
     const statsElement = document.getElementById('resourceStats');
+
+    // Verificar si el elemento existe
+    if (!statsElement) {
+        console.log('No se encontró el elemento resourceStats, omitiendo actualización de índices');
+        return Promise.resolve();
+    }
+
     const originalText = statsElement.textContent;
     statsElement.innerHTML = `
         <div class="d-flex align-items-center">

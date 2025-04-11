@@ -1,0 +1,46 @@
+<!-- Banner de actualización de caché -->
+<div class="container mt-3" id="cacheUpdateBanner">
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="fas fa-sync-alt fa-lg"></i>
+            </div>
+            <div>
+                <h5 class="alert-heading mb-1">¿No ves el contenido más reciente?</h5>
+                <p class="mb-0">Es posible que estés viendo una versión anterior almacenada en caché. Haz clic en el botón para cargar la última versión.</p>
+            </div>
+            <div class="ms-auto">
+                <button type="button" class="btn btn-primary" onclick="window.CacheControl.clearCache(true)">
+                    <i class="fas fa-sync-alt me-2"></i>Actualizar sitio
+                </button>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="localStorage.setItem('hideCacheBanner', 'true')"></button>
+    </div>
+</div>
+
+<style>
+    /* Estilos para el banner de caché */
+    #cacheUpdateBanner .alert {
+        border-left: 4px solid #0dcaf0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #cacheUpdateBanner .btn-primary {
+        transition: all 0.2s;
+    }
+    #cacheUpdateBanner .btn-primary:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<script>
+    // Controlar la visibilidad del banner de caché
+    document.addEventListener('DOMContentLoaded', () => {
+        const cacheUpdateBanner = document.getElementById('cacheUpdateBanner');
+        const hideCacheBanner = localStorage.getItem('hideCacheBanner') === 'true';
+        
+        if (hideCacheBanner && cacheUpdateBanner) {
+            cacheUpdateBanner.style.display = 'none';
+        }
+    });
+</script>

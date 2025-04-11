@@ -77,6 +77,8 @@
 <body>
     <div id="header"></div>
 
+    <div id="cacheBanner"></div>
+
     <main class="container mt-4">
         <div class="row">
             <div class="col-12">
@@ -179,6 +181,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+            loadComponent('cacheBanner', '../components/cache-banner.html');
 
             // Inicializar sistema de persistencia antes de cargar los datos
             if (typeof initializeDataSystem === 'function') {

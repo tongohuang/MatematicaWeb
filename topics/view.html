@@ -98,6 +98,8 @@
 <body>
     <div id="header"></div>
 
+    <div id="cacheBanner"></div>
+
     <main class="container mt-4">
         <div id="topicContent">
             <nav aria-label="breadcrumb" class="mb-4">
@@ -187,6 +189,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+            loadComponent('cacheBanner', '../components/cache-banner.html');
 
             // Configurar el botón de mostrar/ocultar panel lateral
             setupSidebarToggle();

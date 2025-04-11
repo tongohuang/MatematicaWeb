@@ -36,6 +36,8 @@
 <body>
     <div id="header"></div>
 
+    <div id="cacheBanner"></div>
+
     <main class="container mt-4">
         <div id="courseContent">
             <div class="row">
@@ -100,6 +102,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+            loadComponent('cacheBanner', '../components/cache-banner.html');
 
             // Configurar el botón de mostrar/ocultar panel lateral
             setupSidebarToggle();

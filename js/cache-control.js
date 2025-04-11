@@ -220,6 +220,57 @@ const CacheControl = {
         const minute = String(now.getMinutes()).padStart(2, '0');
 
         return `${year}.${month}.${day}-${hour}${minute}`;
+    },
+
+    /**
+     * Limpia la caché y recarga la página (para usuarios)
+     * @param {boolean} showSuccess - Si es true, muestra un mensaje de éxito antes de recargar
+     */
+    clearCache(showSuccess = false) {
+        console.log('%c[Control de Caché] Limpiando caché manualmente...', 'color: #2196F3; font-weight: bold');
+
+        // Limpiar caché de localStorage
+        this.clearLocalStorageCache();
+
+        // Resetear la preferencia de ocultar el banner
+        localStorage.removeItem('hideCacheBanner');
+
+        if (showSuccess) {
+            // Crear alerta de éxito
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            successAlert.style.top = '20px';
+            successAlert.style.left = '50%';
+            successAlert.style.transform = 'translateX(-50%)';
+            successAlert.style.zIndex = '9999';
+            successAlert.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            successAlert.style.maxWidth = '500px';
+            successAlert.style.width = '90%';
+
+            successAlert.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-check-circle fa-lg"></i>
+                    </div>
+                    <div>
+                        <strong>¡Caché limpiada correctamente!</strong>
+                        <p class="mb-0">La página se recargará en unos segundos para mostrar la última versión.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            // Añadir al body
+            document.body.appendChild(successAlert);
+
+            // Esperar un momento antes de recargar
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 2000);
+        } else {
+            // Recargar inmediatamente
+            window.location.reload(true);
+        }
     }
 };
 
