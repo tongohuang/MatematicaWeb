@@ -10,6 +10,28 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
     <style>
+        /* Estilos para el panel lateral desplegable */
+        #mainContent.expanded {
+            width: 100%;
+            flex: 0 0 100%;
+            max-width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        #sidebarColumn {
+            transition: all 0.3s ease;
+        }
+
+        #sidebarColumn.hidden {
+            display: none;
+        }
+
+        @media (max-width: 767.98px) {
+            #toggleSidebarBtn {
+                display: none;
+            }
+        }
+
         /* Estilos para actividades */
         .activity-container {
             background-color: #fff;
@@ -86,10 +108,13 @@
             </nav>
 
             <div class="row">
-                <div class="col-md-8">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 id="sectionTitleHeader">Cargando...</h2>
+                <div class="col-md-8" id="mainContent">
+                    <div class="d-flex justify-content-end align-items-center mb-3">
+                        <!-- Título eliminado para evitar duplicación -->
                         <div class="navigation-buttons">
+                            <button id="toggleSidebarBtn" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-bars"></i> <span id="toggleSidebarText">Ocultar panel</span>
+                            </button>
                             <a href="#" id="backToCourseBtn" class="btn btn-outline-primary me-2">
                                 <i class="fas fa-arrow-left"></i> Volver al curso
                             </a>
@@ -107,7 +132,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" id="sidebarColumn">
                     <div class="topic-sidebar">
                         <div class="topic-info">
                             <h4>Información del Tema</h4>
@@ -144,9 +169,54 @@
         let currentSection = null;
         let currentTopic = null;
 
+        // Función para configurar el botón de mostrar/ocultar panel lateral
+        function setupSidebarToggle() {
+            const toggleBtn = document.getElementById('toggleSidebarBtn');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarColumn = document.getElementById('sidebarColumn');
+            const toggleText = document.getElementById('toggleSidebarText');
+
+            if (!toggleBtn || !mainContent || !sidebarColumn || !toggleText) {
+                console.error('No se encontraron los elementos necesarios para el toggle del sidebar');
+                return;
+            }
+
+            // Verificar si hay una preferencia guardada
+            const sidebarHidden = localStorage.getItem('section_sidebar_hidden') === 'true';
+
+            // Aplicar estado inicial
+            if (sidebarHidden) {
+                mainContent.classList.add('expanded');
+                sidebarColumn.classList.add('hidden');
+                toggleText.textContent = 'Mostrar panel';
+            }
+
+            toggleBtn.addEventListener('click', function() {
+                // Cambiar estado
+                const isCurrentlyHidden = sidebarColumn.classList.contains('hidden');
+
+                if (isCurrentlyHidden) {
+                    // Mostrar panel
+                    mainContent.classList.remove('expanded');
+                    sidebarColumn.classList.remove('hidden');
+                    toggleText.textContent = 'Ocultar panel';
+                    localStorage.setItem('section_sidebar_hidden', 'false');
+                } else {
+                    // Ocultar panel
+                    mainContent.classList.add('expanded');
+                    sidebarColumn.classList.add('hidden');
+                    toggleText.textContent = 'Mostrar panel';
+                    localStorage.setItem('section_sidebar_hidden', 'true');
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
+
+            // Configurar el botón de mostrar/ocultar panel lateral
+            setupSidebarToggle();
 
             // Inicializar sistema de persistencia antes de cargar los datos
             if (typeof initializeDataSystem === 'function') {
@@ -246,7 +316,7 @@
                 // Actualizar la navegación
                 document.title = `${currentSection.title} - MatemáticaWeb`;
                 document.getElementById('sectionTitle').textContent = currentSection.title;
-                document.getElementById('sectionTitleHeader').textContent = currentSection.title;
+                // Ya no actualizamos el título del encabezado porque lo eliminamos para evitar duplicación
 
                 const courseLink = document.getElementById('courseLink');
                 courseLink.textContent = course.title;
