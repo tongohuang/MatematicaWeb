@@ -1608,10 +1608,28 @@ function previewSection(sectionId) {
         case 'pdf':
             previewContent = `
                 <div class="section-preview-content">
-                    <div class="pdf-container text-center">
-                        <a href="../activities/pdf/${section.content}" target="_blank" download class="btn btn-primary">
-                            <i class="fas fa-file-pdf me-2"></i> Descargar PDF
-                        </a>
+                    <div class="pdf-container">
+                        <div class="pdf-viewer mb-3">
+                            <object data="../activities/pdf/${section.content}" type="application/pdf" width="100%" height="500px">
+                                <div class="pdf-fallback">
+                                    <p>Tu navegador no puede mostrar el PDF incrustado. Puedes:</p>
+                                    <a href="../activities/pdf/${section.content}" target="_blank" download class="btn btn-primary">
+                                        <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                                    </a>
+                                    <a href="../activities/pdf/${section.content}" target="_blank" class="btn btn-secondary ms-2">
+                                        <i class="fas fa-external-link-alt me-2"></i> Abrir en nueva pestaña
+                                    </a>
+                                </div>
+                            </object>
+                        </div>
+                        <div class="pdf-controls">
+                            <a href="../activities/pdf/${section.content}" target="_blank" download class="btn btn-primary">
+                                <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                            </a>
+                            <a href="../activities/pdf/${section.content}" target="_blank" class="btn btn-secondary">
+                                <i class="fas fa-external-link-alt me-2"></i> Abrir en nueva pestaña
+                            </a>
+                        </div>
                     </div>
                 </div>
             `;

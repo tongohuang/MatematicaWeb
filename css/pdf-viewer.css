@@ -1,0 +1,92 @@
+/**
+ * Estilos para el visor de PDF
+ * Este archivo contiene estilos específicos para mejorar la apariencia
+ * y funcionalidad del visor de documentos PDF en la plataforma.
+ */
+
+/* Contenedor principal del PDF */
+.pdf-container {
+    margin: 20px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Visor de PDF */
+.pdf-viewer {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #f1f1f1;
+}
+
+/* Elemento embed para PDF */
+.pdf-viewer embed,
+.pdf-viewer iframe {
+    display: block;
+    border: none;
+    width: 100%;
+    min-height: 600px;
+}
+
+/* Controles del PDF */
+.pdf-controls {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Mensaje de fallback para navegadores que no soportan PDF incrustados */
+.pdf-fallback {
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* Estilos para modo oscuro */
+@media (prefers-color-scheme: dark) {
+    .pdf-container {
+        background-color: #343a40;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    .pdf-viewer {
+        border-color: #495057;
+        background-color: #212529;
+    }
+    
+    .pdf-controls {
+        background-color: #343a40;
+        border-color: #495057;
+    }
+    
+    .pdf-fallback {
+        background-color: #343a40;
+        border-color: #495057;
+        color: #f8f9fa;
+    }
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .pdf-viewer embed,
+    .pdf-viewer iframe {
+        min-height: 400px;
+    }
+    
+    .pdf-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .pdf-controls .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}

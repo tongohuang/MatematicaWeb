@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
+    <link rel="stylesheet" href="../css/pdf-viewer.css">
     <style>
         /* Estilos para actividades */
         .activity-container {
@@ -513,18 +514,40 @@
 
                 case 'image':
                     contentHtml = `
-                        <div class="image-container">
-                            <img src="${section.content}" alt="${section.title}">
+                        <div class="section-preview-content">
+                            <div class="image-container text-center">
+                                <img src="../activities/images/${section.content}" alt="${section.title}" style="max-width: 100%; max-height: 600px;">
+                            </div>
                         </div>
                     `;
                     break;
 
                 case 'pdf':
                     contentHtml = `
-                        <div class="pdf-container">
-                            <a href="${section.content}" target="_blank" download>
-                                <i class="fas fa-file-pdf"></i> Descargar PDF
-                            </a>
+                        <div class="section-preview-content">
+                            <div class="pdf-container">
+                                <div class="pdf-viewer mb-3">
+                                    <object data="../activities/pdf/${section.content}" type="application/pdf" width="100%" height="600px">
+                                        <div class="pdf-fallback">
+                                            <p>Tu navegador no puede mostrar el PDF incrustado. Puedes:</p>
+                                            <a href="../activities/pdf/${section.content}" target="_blank" download class="btn btn-primary">
+                                                <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                                            </a>
+                                            <a href="../activities/pdf/${section.content}" target="_blank" class="btn btn-secondary ms-2">
+                                                <i class="fas fa-external-link-alt me-2"></i> Abrir en nueva pestaña
+                                            </a>
+                                        </div>
+                                    </object>
+                                </div>
+                                <div class="pdf-controls">
+                                    <a href="../activities/pdf/${section.content}" target="_blank" download class="btn btn-primary">
+                                        <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                                    </a>
+                                    <a href="../activities/pdf/${section.content}" target="_blank" class="btn btn-secondary">
+                                        <i class="fas fa-external-link-alt me-2"></i> Abrir en nueva pestaña
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     `;
                     break;

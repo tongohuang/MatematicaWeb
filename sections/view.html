@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
+    <link rel="stylesheet" href="../css/pdf-viewer.css">
     <style>
         /* Estilos para el panel lateral desplegable */
         #mainContent.expanded {
@@ -429,10 +430,28 @@
                 case 'pdf':
                     contentHtml = `
                         <div class="section-preview-content">
-                            <div class="pdf-container text-center">
-                                <a href="../activities/pdf/${currentSection.content}" target="_blank" download class="btn btn-primary">
-                                    <i class="fas fa-file-pdf me-2"></i> Descargar PDF
-                                </a>
+                            <div class="pdf-container">
+                                <div class="pdf-viewer mb-3">
+                                    <object data="../activities/pdf/${currentSection.content}" type="application/pdf" width="100%" height="600px">
+                                        <div class="pdf-fallback">
+                                            <p>Tu navegador no puede mostrar el PDF incrustado. Puedes:</p>
+                                            <a href="../activities/pdf/${currentSection.content}" target="_blank" download class="btn btn-primary">
+                                                <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                                            </a>
+                                            <a href="../activities/pdf/${currentSection.content}" target="_blank" class="btn btn-secondary ms-2">
+                                                <i class="fas fa-external-link-alt me-2"></i> Abrir en nueva pestaña
+                                            </a>
+                                        </div>
+                                    </object>
+                                </div>
+                                <div class="pdf-controls">
+                                    <a href="../activities/pdf/${currentSection.content}" target="_blank" download class="btn btn-primary">
+                                        <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                                    </a>
+                                    <a href="../activities/pdf/${currentSection.content}" target="_blank" class="btn btn-secondary">
+                                        <i class="fas fa-external-link-alt me-2"></i> Abrir en nueva pestaña
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     `;
