@@ -109,6 +109,9 @@ function createToolbar() {
             <button type="button" class="editor-btn" id="textColorBtn" title="Color de texto">
                 <i class="fas fa-palette"></i>
             </button>
+            <button type="button" class="editor-btn" id="fontSizeBtn" title="Tamaño de letra">
+                <i class="fas fa-text-height"></i>
+            </button>
         </div>
 
         <!-- Listas -->
@@ -184,6 +187,9 @@ function initEditorEvents(editorContent, textarea) {
 
     // Inicializar el botón de tabla
     initTableButton(editorContent, textarea);
+
+    // Inicializar el botón de tamaño de letra
+    initFontSizeButton(editorContent, textarea);
 
     // Eventos para actualizar el estado de los botones
     editorContent.addEventListener('mouseup', updateButtonStates);
@@ -640,34 +646,272 @@ function initTableButton(editorContent, textarea) {
         tableBtn.addEventListener('click', function(e) {
             e.preventDefault();
 
-            // Crear una tabla simple 3x3
-            const tableHTML = `
-                <table style="width:100%; border-collapse:collapse; margin:10px 0;">
-                    <tr>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                    </tr>
-                    <tr>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                    </tr>
-                    <tr>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                        <td style="border:1px solid #ced4da; padding:8px;"></td>
-                    </tr>
-                </table>
+            // Eliminar modal existente si hay
+            const existingModal = document.getElementById('tableModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Crear el modal para configurar la tabla
+            const modal = document.createElement('div');
+            modal.id = 'tableModal';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            modal.style.zIndex = '9999';
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+
+            // Contenido del modal
+            modal.innerHTML = `
+                <div style="background-color: #fff; border-radius: 5px; padding: 20px; width: 400px; max-width: 90%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0; font-size: 18px;">Insertar tabla</h3>
+                        <button id="closeTableModal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">&times;</button>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label for="tableRows" style="display: block; margin-bottom: 5px; font-weight: bold;">Filas:</label>
+                        <input type="number" id="tableRows" min="1" max="20" value="3" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label for="tableCols" style="display: block; margin-bottom: 5px; font-weight: bold;">Columnas:</label>
+                        <input type="number" id="tableCols" min="1" max="10" value="3" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="cancelTableBtn" style="padding: 8px 15px; border: 1px solid #ced4da; background-color: #f8f9fa; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                        <button id="insertTableBtn" style="padding: 8px 15px; border: none; background-color: #0d6efd; color: white; border-radius: 4px; cursor: pointer;">Insertar</button>
+                    </div>
+                </div>
             `;
 
-            // Insertar la tabla en el editor
-            document.execCommand('insertHTML', false, tableHTML);
+            // Añadir el modal al DOM
+            document.body.appendChild(modal);
+
+            // Enfocar el input de filas
+            setTimeout(() => {
+                document.getElementById('tableRows').focus();
+            }, 100);
+
+            // Manejar el cierre del modal
+            document.getElementById('closeTableModal').addEventListener('click', function() {
+                modal.remove();
+            });
+
+            document.getElementById('cancelTableBtn').addEventListener('click', function() {
+                modal.remove();
+            });
+
+            // Manejar la inserción de la tabla
+            document.getElementById('insertTableBtn').addEventListener('click', function() {
+                // Obtener filas y columnas
+                const rows = parseInt(document.getElementById('tableRows').value) || 3;
+                const cols = parseInt(document.getElementById('tableCols').value) || 3;
+
+                // Validar límites
+                const validRows = Math.min(Math.max(rows, 1), 20);
+                const validCols = Math.min(Math.max(cols, 1), 10);
+
+                // Generar HTML de la tabla
+                let tableHTML = `<table style="width:100%; border-collapse:collapse; margin:10px 0;">`;
+
+                // Generar filas y columnas
+                for (let i = 0; i < validRows; i++) {
+                    tableHTML += `<tr>`;
+                    for (let j = 0; j < validCols; j++) {
+                        tableHTML += `<td style="border:1px solid #ced4da; padding:8px;"></td>`;
+                    }
+                    tableHTML += `</tr>`;
+                }
+
+                tableHTML += `</table>`;
+
+                // Insertar la tabla en el editor
+                editorContent.focus();
+                document.execCommand('insertHTML', false, tableHTML);
+
+                // Sincronizar con el textarea
+                textarea.value = editorContent.innerHTML;
+
+                // Cerrar el modal
+                modal.remove();
+            });
+
+            // Cerrar el modal al hacer clic fuera
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+
+            // Permitir cerrar con Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && document.getElementById('tableModal')) {
+                    modal.remove();
+                }
+            });
+        });
+    }
+}
+
+/**
+ * Inicializa el botón de tamaño de letra
+ * @param {HTMLElement} editorContent - El elemento del editor
+ * @param {HTMLElement} textarea - El textarea asociado
+ */
+function initFontSizeButton(editorContent, textarea) {
+    // Eliminar paleta existente si hay
+    const existingPalette = document.getElementById('fontSizePalette');
+    if (existingPalette) {
+        existingPalette.remove();
+    }
+
+    // Crear la paleta de tamaños
+    const fontSizePalette = document.createElement('div');
+    fontSizePalette.id = 'fontSizePalette';
+    fontSizePalette.style.position = 'absolute';
+    fontSizePalette.style.zIndex = '9999';
+    fontSizePalette.style.backgroundColor = '#fff';
+    fontSizePalette.style.border = '1px solid #ced4da';
+    fontSizePalette.style.borderRadius = '4px';
+    fontSizePalette.style.padding = '12px';
+    fontSizePalette.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+    fontSizePalette.style.display = 'none';
+    fontSizePalette.style.width = '220px';
+
+    // Título
+    const title = document.createElement('div');
+    title.textContent = 'Seleccionar tamaño de letra';
+    title.style.fontSize = '14px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '8px';
+    title.style.textAlign = 'center';
+    title.style.color = '#333';
+    title.style.borderBottom = '1px solid #eee';
+    title.style.paddingBottom = '5px';
+    fontSizePalette.appendChild(title);
+
+    // Contenedor de tamaños
+    const sizeGrid = document.createElement('div');
+    sizeGrid.style.display = 'grid';
+    sizeGrid.style.gridTemplateColumns = '1fr';
+    sizeGrid.style.gap = '6px';
+    fontSizePalette.appendChild(sizeGrid);
+
+    // Variable para almacenar la selección
+    let savedRange = null;
+
+    // Tamaños de letra
+    const sizes = [
+        { value: '1', label: 'Muy pequeño', size: '10px' },
+        { value: '2', label: 'Pequeño', size: '13px' },
+        { value: '3', label: 'Normal', size: '16px' },
+        { value: '4', label: 'Mediano', size: '18px' },
+        { value: '5', label: 'Grande', size: '24px' },
+        { value: '6', label: 'Muy grande', size: '32px' },
+        { value: '7', label: 'Extra grande', size: '48px' }
+    ];
+
+    sizes.forEach(size => {
+        const sizeOption = document.createElement('div');
+        sizeOption.style.padding = '8px 10px';
+        sizeOption.style.cursor = 'pointer';
+        sizeOption.style.borderRadius = '3px';
+        sizeOption.style.fontSize = size.size;
+        sizeOption.textContent = size.label;
+        sizeOption.title = `Tamaño ${size.label}`;
+
+        // Efecto hover
+        sizeOption.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#f0f0f0';
+        });
+
+        sizeOption.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'transparent';
+        });
+
+        // Evento para aplicar el tamaño
+        sizeOption.addEventListener('click', function() {
+            // Enfocar el editor
+            editorContent.focus();
+
+            // Restaurar la selección guardada si existe
+            if (savedRange) {
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(savedRange);
+            }
+
+            // Aplicar el tamaño de letra
+            document.execCommand('fontSize', false, size.value);
 
             // Sincronizar con el textarea
             textarea.value = editorContent.innerHTML;
+
+            // Ocultar la paleta
+            fontSizePalette.style.display = 'none';
+        });
+
+        sizeGrid.appendChild(sizeOption);
+    });
+
+    // Instrucción
+    const instruction = document.createElement('div');
+    instruction.textContent = 'Haga clic para aplicar tamaño';
+    instruction.style.marginTop = '10px';
+    instruction.style.paddingTop = '8px';
+    instruction.style.borderTop = '1px solid #eee';
+    instruction.style.fontSize = '12px';
+    instruction.style.color = '#666';
+    instruction.style.textAlign = 'center';
+    instruction.style.fontStyle = 'italic';
+    fontSizePalette.appendChild(instruction);
+
+    // Añadir al DOM
+    document.body.appendChild(fontSizePalette);
+
+    // Configurar el botón de tamaño de letra
+    const fontSizeBtn = document.getElementById('fontSizeBtn');
+    if (fontSizeBtn) {
+        fontSizeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Guardar la selección actual
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                savedRange = selection.getRangeAt(0).cloneRange();
+            }
+
+            // Posicionar la paleta cerca del botón
+            const buttonRect = fontSizeBtn.getBoundingClientRect();
+            fontSizePalette.style.top = (buttonRect.bottom + window.scrollY + 5) + 'px';
+            fontSizePalette.style.left = (buttonRect.left + window.scrollX) + 'px';
+
+            // Mostrar la paleta
+            fontSizePalette.style.display = 'block';
         });
     }
+
+    // Cerrar la paleta al hacer clic fuera de ella
+    document.addEventListener('click', function(e) {
+        if (fontSizePalette.style.display === 'block' &&
+            !fontSizePalette.contains(e.target) &&
+            e.target.id !== 'fontSizeBtn' &&
+            !e.target.closest('#fontSizeBtn')) {
+            fontSizePalette.style.display = 'none';
+        }
+    });
+
+    // Asegurarse de que la paleta se cierre cuando se cierra el editor
+    window.addEventListener('beforeunload', function() {
+        fontSizePalette.remove();
+    });
 }
 
 /**

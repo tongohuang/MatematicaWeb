@@ -110,5 +110,54 @@
         "type": "html"
       }
     ]
+  },
+  {
+    "id": 1744260169533,
+    "courseId": 1744260101844,
+    "title": "Adición",
+    "description": "Cómo realizar adiciones de complejos.\n",
+    "icon": "fas fa-book",
+    "sections": [
+      {
+        "id": "1744333058868",
+        "title": "Texto en complejos",
+        "content": "<ul><li><i><u>texto d</u>e re<font color=\"#980000\">l</font><font color=\"#ff00ff\">lenosds</font><font color=\"#00ff00\">ds&nbsp;</font></i></li></ul><font color=\"#00cccc\" style=\"\"><i>Hola </i>texto de prueba.</font>",
+        "topicId": 1744260169533,
+        "order": "0",
+        "type": "text"
+      },
+      {
+        "id": "1744336147483",
+        "title": "prueba 3",
+        "content": "activity_1744336144945",
+        "topicId": 1744260169533,
+        "order": "0",
+        "type": "activity"
+      },
+      {
+        "id": "1744337365034",
+        "title": "texto prueba 3",
+        "content": "<div style=\"text-align: center;\"><ol><li>a<b>aaa</b></li></ol></div>",
+        "topicId": 1744260169533,
+        "order": "0",
+        "type": "text"
+      },
+      {
+        "id": "1744344471755",
+        "title": "prueba imagen",
+        "content": "imagen1.png",
+        "topicId": 1744260169533,
+        "order": "0",
+        "type": "image"
+      },
+      {
+        "id": "1744344497769",
+        "title": "prueba pdf",
+        "content": "numeroscomplejos.pdf",
+        "topicId": 1744260169533,
+        "order": "0",
+        "type": "pdf"
+      }
+    ]
   }
 ]
