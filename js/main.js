@@ -67,6 +67,32 @@ function loadFeaturedCourses() {
         const coursesContainer = document.getElementById('featuredCourses');
         if (!coursesContainer) return;
 
+        // Función para comprobar qué descripciones están truncadas
+        function checkDescriptionHeight() {
+            const descriptions = document.querySelectorAll('.course-description');
+
+            descriptions.forEach(desc => {
+                const container = desc.parentElement;
+
+                // Si la descripción está truncada (el contenido es más alto que el contenedor visible)
+                if (desc.scrollHeight > desc.clientHeight) {
+                    // Añadir clase para indicar que está truncada
+                    container.classList.add('description-truncated');
+                } else {
+                    // Si no está truncada, asegurarse de que no tiene la clase
+                    container.classList.remove('description-truncated');
+                }
+            });
+        }
+
+        // Programar la comprobación de descripciones truncadas
+        setTimeout(checkDescriptionHeight, 500);
+
+        // Volver a comprobar cuando la ventana cambie de tamaño
+        window.addEventListener('resize', function() {
+            setTimeout(checkDescriptionHeight, 200);
+        });
+
         // Obtener los cursos usando DataManager si está disponible, o usar los datos de muestra
         let courses = (typeof DataManager !== 'undefined') ? DataManager.getCourses() : SAMPLE_COURSES;
 
