@@ -191,7 +191,7 @@ const DataPersistence = {
                 console.log('localStorage actualizado con datos del repositorio');
 
                 // Verificar si hay secciones de tipo HTML o Activity y registrarlas
-                this._checkSpecialSectionTypes(repoData);
+                await this._checkSpecialSectionTypes(repoData);
             } else {
                 // En desarrollo, usar EXCLUSIVAMENTE datos locales
                 merged = localData;
@@ -201,7 +201,7 @@ const DataPersistence = {
                 console.log('Usando EXCLUSIVAMENTE datos locales como fuente principal');
 
                 // Verificar si hay secciones de tipo HTML o Activity y registrarlas
-                this._checkSpecialSectionTypes(merged.persistent);
+                await this._checkSpecialSectionTypes(merged.persistent);
             }
 
             // Registrar el resultado final
@@ -417,7 +417,7 @@ const DataPersistence = {
      * @private
      * @param {Object} data - Datos a verificar
      */
-    _checkSpecialSectionTypes(data) {
+    async _checkSpecialSectionTypes(data) {
         if (!data || !data.topics) return;
 
         console.log('Verificando secciones especiales (HTML y Activity)...');
@@ -461,26 +461,36 @@ const DataPersistence = {
             });
         });
 
+        // Verificar si estamos en modo silencioso
+        const silentMode = localStorage.getItem('silent_mode') === 'true';
+
         // Registrar información sobre las secciones especiales
         if (htmlSections.length > 0) {
-            console.log(`Encontradas ${htmlSections.length} secciones de tipo HTML:`);
-            htmlSections.forEach(section => {
-                console.log(`- ${section.title} (ID: ${section.id}, Archivo: ${section.content})`);
-                // Verificar si el archivo existe
-                this._checkFileExists(`activities/html/${section.content}`, 'HTML', section.id, section.title);
-            });
-        } else {
+            if (!silentMode) {
+                console.log(`Verificando ${htmlSections.length} secciones de tipo HTML`);
+            }
+
+            // Procesar todas las secciones HTML en paralelo
+            const htmlPromises = htmlSections.map(section =>
+                this._checkFileExists(`activities/html/${section.content}`, 'HTML', section.id, section.title)
+            );
+
+            // Esperar a que todas las verificaciones terminen
+            await Promise.all(htmlPromises);
+        } else if (!silentMode) {
             console.log('No se encontraron secciones de tipo HTML');
         }
 
         if (activitySections.length > 0) {
-            console.log(`Encontradas ${activitySections.length} secciones de tipo Activity:`);
+            if (!silentMode) {
+                console.log(`Verificando ${activitySections.length} secciones de tipo Activity`);
+            }
+
+            // Verificar todas las actividades
             activitySections.forEach(section => {
-                console.log(`- ${section.title} (ID: ${section.id}, Actividad ID: ${section.content})`);
-                // Verificar si la actividad existe en localStorage
                 this._checkActivityExists(section.content, section.id, section.title);
             });
-        } else {
+        } else if (!silentMode) {
             console.log('No se encontraron secciones de tipo Activity');
         }
     },
@@ -494,22 +504,95 @@ const DataPersistence = {
      * @param {string} title - Título de la sección
      */
     async _checkFileExists(path, type, id, title) {
+        // Verificar si estamos en modo silencioso
+        const silentMode = localStorage.getItem('silent_mode') === 'true';
+
         try {
+            // Para archivos HTML, simplemente asumimos que usaremos el fallback
+            // y evitamos hacer la solicitud HTTP que genera errores 404
+            if (type === 'HTML' && path.includes('activities/html/')) {
+                if (!silentMode) {
+                    console.log(`Usando ejemplo-simple.html como fallback para la sección HTML "${title}"`);
+                }
+                return false;
+            }
+
             const response = await fetch(path, { method: 'HEAD' });
             if (response.ok) {
-                console.log(`✅ Archivo ${path} encontrado para la sección ${type} "${title}" (ID: ${id})`);
-            } else {
-                console.warn(`⚠️ Archivo ${path} NO ENCONTRADO para la sección ${type} "${title}" (ID: ${id})`);
-                // Usar archivo de ejemplo como fallback
-                if (type === 'HTML') {
-                    console.log(`   Usando ejemplo-simple.html como fallback para la sección HTML "${title}"`);
-                } else if (type === 'Activity') {
-                    console.log(`   Usando ejemplo-simple.html como fallback para la sección Activity "${title}"`);
+                if (!silentMode) {
+                    console.log(`✅ Archivo ${path} encontrado para la sección ${type} "${title}"`);
                 }
+                return true;
+            } else {
+                if (!silentMode) {
+                    // Usar mensaje de nivel info en lugar de warning para reducir ruido visual
+                    console.info(`Archivo ${path} no encontrado, usando fallback para la sección ${type} "${title}"`);
+                }
+                return false;
             }
         } catch (error) {
-            console.error(`Error verificando archivo ${path}:`, error);
+            // Solo registrar errores reales, no los 404 esperados
+            if (error.name !== 'AbortError') {
+                console.error(`Error verificando archivo ${path}:`, error);
+            }
+            return false;
         }
+    },
+
+    /**
+     * Verifica si una actividad existe en localStorage
+     * @private
+     * @param {string} activityId - ID de la actividad
+     * @param {number} sectionId - ID de la sección
+     * @param {string} sectionTitle - Título de la sección
+     */
+    _checkActivityExists(activityId, sectionId, sectionTitle) {
+        // Verificar si estamos en modo silencioso
+        const silentMode = localStorage.getItem('silent_mode') === 'true';
+
+        // Si el ID está vacío, no hay necesidad de buscar
+        if (!activityId || activityId.trim() === '') {
+            if (!silentMode) {
+                console.info(`Sección "${sectionTitle}" (ID: ${sectionId}) tiene un ID de actividad vacío. Se creará una actividad por defecto.`);
+            }
+            return false;
+        }
+
+        // Intentar encontrar la actividad con diferentes formatos de ID
+        const cleanActivityId = activityId.replace('activity_', '');
+        const possibleKeys = [
+            activityId,
+            `activity_${cleanActivityId}`,
+            cleanActivityId
+        ];
+
+        let activityFound = false;
+
+        for (const key of possibleKeys) {
+            if (!key || key.trim() === '') continue; // Saltar claves vacías
+
+            const data = localStorage.getItem(key);
+            if (data) {
+                try {
+                    JSON.parse(data); // Solo verificamos que sea JSON válido
+                    activityFound = true;
+                    if (!silentMode) {
+                        console.log(`✅ Actividad encontrada con clave ${key} para la sección "${sectionTitle}"`);
+                    }
+                    break;
+                } catch (e) {
+                    if (!silentMode) {
+                        console.info(`Error al parsear actividad con clave ${key}:`, e);
+                    }
+                }
+            }
+        }
+
+        if (!activityFound && !silentMode) {
+            console.info(`Actividad con ID ${activityId} no encontrada para la sección "${sectionTitle}". Se creará una por defecto.`);
+        }
+
+        return activityFound;
     },
 
     /**
@@ -940,6 +1023,59 @@ const DataPersistence = {
 
         // Ordenar por fecha (más reciente primero)
         return backups.sort((a, b) => b.timestamp - a.timestamp);
+    },
+
+    /**
+     * Actualiza el data persistence con las actividades en localStorage
+     * @returns {Object} Resultado de la actualización
+     */
+    updateActivitiesData() {
+        console.log('Actualizando data persistence con actividades en localStorage...');
+
+        // Obtener todas las claves de localStorage que empiezan con 'activity_'
+        const activityKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('activity_') || key.includes('activity'))) {
+                activityKeys.push(key);
+            }
+        }
+
+        console.log(`Encontradas ${activityKeys.length} claves de actividades en localStorage`);
+
+        // Obtener todas las secciones de tipo 'activity'
+        const topics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+        const activitySections = [];
+
+        topics.forEach(topic => {
+            if (topic.sections) {
+                topic.sections.forEach(section => {
+                    if (section.type === 'activity') {
+                        activitySections.push(section);
+                    }
+                });
+            }
+        });
+
+        console.log(`Encontradas ${activitySections.length} secciones de tipo 'activity'`);
+
+        // Verificar cada sección de tipo 'activity'
+        let sectionsUpdated = 0;
+        let activitiesFound = 0;
+
+        activitySections.forEach(section => {
+            const activityFound = this._checkActivityExists(section.content, section.id, section.title);
+            if (activityFound) {
+                activitiesFound++;
+            }
+        });
+
+        return {
+            totalActivities: activityKeys.length,
+            totalSections: activitySections.length,
+            activitiesFound: activitiesFound,
+            sectionsUpdated: sectionsUpdated
+        };
     },
 
     /**

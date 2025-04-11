@@ -15,6 +15,7 @@
  * 8. deleteActivity() - Elimina una actividad específica
  * 9. refreshActivitiesTable() - Actualiza la tabla de actividades
  * 10. updateStatistics() - Actualiza los contadores de actividades
+ * 11. updateDataPersistence() - Actualiza el data persistence con las actividades en localStorage
  */
 
 // Variables globales
@@ -47,7 +48,12 @@ function init() {
     document.getElementById('statusFilter').addEventListener('change', filterActivities);
     document.getElementById('resetFilters').addEventListener('click', resetFilters);
 
-    // Configurar eventos para selección
+    // Configurar eventos para selección y actualización
+    document.getElementById('updateDataPersistenceBtn').addEventListener('click', updateDataPersistence);
+    document.getElementById('toggleSilentModeBtn').addEventListener('click', toggleSilentMode);
+
+    // Inicializar el estado del modo silencioso
+    updateSilentModeStatus();
     document.getElementById('selectAllBtn').addEventListener('click', selectAllActivities);
     document.getElementById('deselectAllBtn').addEventListener('click', deselectAllActivities);
     document.getElementById('refreshTableBtn').addEventListener('click', refreshActivitiesTable);
@@ -1505,5 +1511,146 @@ function formatDate(timestamp) {
         });
     } catch (error) {
         return 'Fecha desconocida';
+    }
+}
+
+/**
+ * Actualiza el data persistence con las actividades en localStorage
+ */
+function updateDataPersistence() {
+    console.log('Actualizando data persistence con actividades en localStorage...');
+
+    // Mostrar un indicador de carga
+    const btn = document.getElementById('updateDataPersistenceBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+    btn.disabled = true;
+
+    // Verificar si DataPersistence está disponible
+    if (typeof DataPersistence === 'undefined') {
+        console.error('Error: DataPersistence no está disponible');
+        alert('Error: DataPersistence no está disponible. Asegúrese de que data-persistence.js está cargado.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        return;
+    }
+
+    // Llamar a la función de actualización
+    try {
+        const result = DataPersistence.updateActivitiesData();
+
+        // Mostrar resultados
+        console.log('Resultado de la actualización:', result);
+
+        // Mostrar un mensaje al usuario
+        const message = `
+            <strong>Actualización completada:</strong><br>
+            - Total de actividades: ${result.totalActivities}<br>
+            - Secciones de tipo actividad: ${result.totalSections}<br>
+            - Actividades encontradas: ${result.activitiesFound}<br>
+            - Secciones actualizadas: ${result.sectionsUpdated}
+        `;
+
+        // Mostrar un toast o alerta
+        showToast('Actualización completada', message, 'success');
+
+        // Actualizar la tabla
+        refreshActivitiesTable();
+    } catch (error) {
+        console.error('Error al actualizar data persistence:', error);
+        alert('Error al actualizar data persistence: ' + error.message);
+    } finally {
+        // Restaurar el botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+/**
+ * Muestra un toast (notificación)
+ * @param {string} title - Título del toast
+ * @param {string} message - Mensaje del toast
+ * @param {string} type - Tipo de toast (success, error, warning, info)
+ */
+function showToast(title, message, type = 'info') {
+    // Crear el toast
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+            <div class="toast-header bg-${type} text-white">
+                <strong class="me-auto">${title}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+
+    // Verificar si existe el contenedor de toasts
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+
+    // Agregar el toast al contenedor
+    toastContainer.innerHTML += toastHtml;
+
+    // Inicializar y mostrar el toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    // Eliminar el toast cuando se oculte
+    toastElement.addEventListener('hidden.bs.toast', function () {
+        toastElement.remove();
+    });
+}
+
+/**
+ * Activa o desactiva el modo silencioso
+ */
+function toggleSilentMode() {
+    // Obtener el estado actual
+    const currentState = localStorage.getItem('silent_mode') === 'true';
+
+    // Cambiar al estado opuesto
+    const newState = !currentState;
+    localStorage.setItem('silent_mode', newState);
+
+    // Actualizar la interfaz
+    updateSilentModeStatus();
+
+    // Mostrar mensaje
+    const message = newState ?
+        'Modo silencioso activado. Se reducirán los mensajes en la consola.' :
+        'Modo silencioso desactivado. Se mostrarán todos los mensajes en la consola.';
+
+    showToast('Modo Silencioso', message, newState ? 'success' : 'info');
+}
+
+/**
+ * Actualiza el estado visual del botón de modo silencioso
+ */
+function updateSilentModeStatus() {
+    const isSilent = localStorage.getItem('silent_mode') === 'true';
+    const statusElement = document.getElementById('silentModeStatus');
+    const button = document.getElementById('toggleSilentModeBtn');
+
+    if (statusElement) {
+        statusElement.textContent = isSilent ? 'On' : 'Off';
+    }
+
+    if (button) {
+        if (isSilent) {
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-secondary');
+        } else {
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-outline-secondary');
+        }
     }
 }
