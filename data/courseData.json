@@ -3,16 +3,18 @@
     "1744260101843": {
       "id": 1744260101843,
       "title": "Números complejos",
-      "description": "a",
-      "color": "#dc3545",
-      "icon": "fas fa-trophy"
+      "description": "Este curso tiene como objetivo presentar el origen de los números complejos.\nComprender qué es la unidad imaginaría.\nDominar: notación binómica, notación cartesiana, representación gráfica, operatoria, resolución de ecuaciones de segundo grado con soluciones complejas.",
+      "color": "#1E90FF",
+      "icon": "fas fa-square-root-alt",
+      "order": 1
     },
-    "1744260101844": {
-      "id": 1744260101844,
-      "title": "Números complejos - Básico",
-      "description": "prueba",
-      "color": "#FFD700",
-      "icon": "fas fa-pen"
+    "1744260101845": {
+      "id": 1744260101845,
+      "title": "Probabilidad",
+      "description": "Técnicas de conteo, probabilidad clásica, probabilidad condicional y Teorema de Bayes.",
+      "color": "#69F0AE",
+      "icon": "fas fa-dice",
+      "order": 3
     }
   },
   "topics": {
@@ -62,117 +64,34 @@
           "order": "0",
           "type": "text"
         }
-      ]
+      ],
+      "order": 1
     },
     "1744260169531": {
       "id": 1744260169531,
-      "courseId": 1744260101843,
-      "title": "Prueba",
-      "description": "prueba",
-      "icon": "fas fa-book",
-      "sections": []
-    },
-    "1744260169532": {
-      "id": 1744260169532,
-      "courseId": 1744260101843,
-      "title": "Prueba 2",
-      "description": "vacío de secciones",
-      "icon": "fas fa-book",
+      "courseId": 1744260101845,
+      "title": "Conteo",
+      "description": "Técnicas de conteo",
+      "icon": "fas fa-book-open",
       "sections": [
         {
-          "id": "1744305527764",
-          "title": "prueba texto 2",
-          "content": "asdas<b>asdasd<i>asdasd<u>asdasd<font color=\"#ff3333\">asdasd</font>asd asd</u></i></b>",
-          "topicId": 1744260169532,
+          "id": "1744381685901",
+          "title": "Teórico y práctico",
+          "content": "conteo.html",
+          "topicId": 1744260169531,
           "order": "0",
-          "type": "text"
+          "type": "html"
         },
         {
-          "id": "1744306791466",
-          "title": "pppppp",
-          "content": "activity_1744306791465",
-          "topicId": 1744260169532,
+          "id": "1744381701476",
+          "title": "Actividades interactivas",
+          "content": "conteo-actividades.html",
+          "topicId": 1744260169531,
           "order": "0",
-          "type": "activity"
-        },
-        {
-          "id": "1744308416988",
-          "title": "Verdadero o falso",
-          "content": "activity_1744308416987",
-          "topicId": 1744260169532,
-          "order": "0",
-          "type": "activity"
-        },
-        {
-          "id": "1744308506312",
-          "title": "Respuesta corta test",
-          "content": "activity_1744308506311",
-          "topicId": 1744260169532,
-          "order": 0.1,
-          "type": "activity",
-          "groupId": "group_1744327932508",
-          "groupName": "fuego"
-        },
-        {
-          "id": "1744309084365",
-          "title": "test videos youtube",
-          "content": "",
-          "topicId": 1744260169532,
-          "order": 0,
-          "type": "youtube",
-          "groupId": "group_1744327932508",
-          "groupName": "fuego"
+          "type": "html"
         }
-      ]
-    },
-    "1744260169533": {
-      "id": 1744260169533,
-      "courseId": 1744260101844,
-      "title": "Adición",
-      "description": "Cómo realizar adiciones de complejos.\n",
-      "icon": "fas fa-book",
-      "sections": [
-        {
-          "id": "1744333058868",
-          "title": "Texto en complejos",
-          "content": "<ul><li><i><u>texto d</u>e re<font color=\"#980000\">l</font><font color=\"#ff00ff\">lenosds</font><font color=\"#00ff00\">ds&nbsp;</font></i></li></ul><font color=\"#00cccc\" style=\"\"><i>Hola </i>texto de prueba.</font>",
-          "topicId": 1744260169533,
-          "order": "0",
-          "type": "text"
-        },
-        {
-          "id": "1744336147483",
-          "title": "prueba 3",
-          "content": "activity_1744336144945",
-          "topicId": 1744260169533,
-          "order": "0",
-          "type": "activity"
-        },
-        {
-          "id": "1744337365034",
-          "title": "texto prueba 3",
-          "content": "<div style=\"text-align: center;\"><ol><li>a<b>aaa</b></li></ol></div>",
-          "topicId": 1744260169533,
-          "order": "0",
-          "type": "text"
-        },
-        {
-          "id": "1744344471755",
-          "title": "prueba imagen",
-          "content": "imagen1.png",
-          "topicId": 1744260169533,
-          "order": "0",
-          "type": "image"
-        },
-        {
-          "id": "1744344497769",
-          "title": "prueba pdf",
-          "content": "numeroscomplejos.pdf",
-          "topicId": 1744260169533,
-          "order": "0",
-          "type": "pdf"
-        }
-      ]
+      ],
+      "order": 1
     }
   },
   "activities": {

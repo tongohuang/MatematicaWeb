@@ -323,39 +323,66 @@
                             <div class="spinner-border text-primary mb-3" role="status">
                                 <span class="visually-hidden">Eliminando curso...</span>
                             </div>
-                            <p>Eliminando curso y sus contenidos...</p>
+                            <p id="delete-status">Eliminando curso y sus contenidos...</p>
                         </div>
                     </div>
                 `;
                 const loadingElement = document.createElement('div');
                 loadingElement.innerHTML = loadingHtml;
-                document.body.appendChild(loadingElement.firstElementChild);
+                const loadingDiv = loadingElement.firstElementChild;
+                document.body.appendChild(loadingDiv);
 
-                // Método 1: Eliminar directamente del localStorage
-                deleteDirectFromLocalStorage(courseId);
+                // Función para actualizar el estado
+                const updateStatus = (message) => {
+                    const statusElement = document.getElementById('delete-status');
+                    if (statusElement) {
+                        statusElement.textContent = message;
+                    }
+                };
 
-                // Método 2: Usar DataManager como respaldo
-                try {
-                    DataManager.deleteCourse(courseId);
-                    debugLog('DataManager.deleteCourse ejecutado correctamente');
-                } catch (dmError) {
-                    debugLog('Error en DataManager.deleteCourse: ' + dmError.message);
-                }
+                // Proceso de eliminación
+                setTimeout(async () => {
+                    try {
+                        // Paso 1: Eliminar directamente del localStorage
+                        updateStatus('Paso 1/3: Eliminando actividades y secciones...');
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Pequeña pausa para UI
 
-                // Mostrar mensaje de éxito
-                alert('Curso eliminado correctamente. La página se recargará para actualizar los datos.');
+                        const result = deleteDirectFromLocalStorage(courseId);
+                        if (!result) {
+                            throw new Error('No se pudo eliminar el curso del localStorage');
+                        }
 
-                // Recargar la página
-                window.location.reload();
+                        // Paso 2: Usar DataManager como respaldo
+                        updateStatus('Paso 2/3: Actualizando sistema de datos...');
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Pequeña pausa para UI
+
+                        try {
+                            DataManager.deleteCourse(courseId);
+                            debugLog('DataManager.deleteCourse ejecutado correctamente');
+                        } catch (dmError) {
+                            debugLog('Error en DataManager.deleteCourse: ' + dmError.message);
+                            // Continuamos a pesar del error en DataManager
+                        }
+
+                        // Paso 3: Finalizar
+                        updateStatus('Paso 3/3: Finalizando proceso...');
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Pequeña pausa para UI
+
+                        // Mostrar mensaje de éxito
+                        document.body.removeChild(loadingDiv);
+                        alert('Curso eliminado correctamente. La página se recargará para actualizar los datos.');
+
+                        // Recargar la página
+                        window.location.reload();
+                    } catch (error) {
+                        document.body.removeChild(loadingDiv);
+                        console.error('Error durante el proceso de eliminación:', error);
+                        alert(`Error al eliminar el curso: ${error.message}`);
+                    }
+                }, 100);
             } catch (error) {
                 console.error('Error al eliminar el curso:', error);
                 alert('Error al eliminar el curso. Por favor, inténtalo de nuevo.');
-
-                // Eliminar el indicador de carga en caso de error
-                const loadingElement = document.querySelector('.bg-white.bg-opacity-75');
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
             }
         }
 
@@ -374,19 +401,19 @@
                 const allCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
                 debugLog(`Cursos encontrados en localStorage: ${allCourses.length}`);
 
-                // 2. Filtrar para eliminar el curso
-                const newCourses = allCourses.filter(course => String(course.id) !== courseId);
-                debugLog(`Después de filtrar quedan ${newCourses.length} cursos`);
+                // Verificar si el curso existe
+                const courseToDelete = allCourses.find(course => String(course.id) === courseId);
+                if (!courseToDelete) {
+                    debugLog(`No se encontró el curso con ID ${courseId}`);
+                    return false;
+                }
+                debugLog(`Curso encontrado: ${courseToDelete.title}`);
 
-                // 3. Guardar los cursos actualizados
-                localStorage.setItem('matematicaweb_courses', JSON.stringify(newCourses));
-                debugLog('Cursos actualizados guardados en localStorage');
-
-                // 4. Obtener todos los temas
+                // 2. Obtener todos los temas
                 const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
                 debugLog(`Temas encontrados en localStorage: ${allTopics.length}`);
 
-                // 5. Identificar temas asociados al curso
+                // 3. Identificar temas asociados al curso
                 const topicsToKeep = [];
                 const topicsToDelete = [];
 
@@ -401,32 +428,35 @@
                 debugLog(`Temas a eliminar: ${topicsToDelete.length}`);
                 debugLog(`Temas a mantener: ${topicsToKeep.length}`);
 
-                // 6. Guardar los temas actualizados
-                localStorage.setItem('matematicaweb_topics', JSON.stringify(topicsToKeep));
-                debugLog('Temas actualizados guardados en localStorage');
-
-                // 7. Eliminar actividades asociadas a los temas eliminados
+                // 4. Eliminar actividades asociadas a los temas eliminados
                 let activityCount = 0;
+                let activityKeysToDelete = [];
 
                 topicsToDelete.forEach(topic => {
                     if (topic.sections && Array.isArray(topic.sections)) {
                         topic.sections.forEach(section => {
                             if (section.type === 'activity' && section.content) {
-                                // Eliminar datos de actividad
-                                const activityKey = `activity_data_${section.content}`;
-                                if (localStorage.getItem(activityKey)) {
-                                    localStorage.removeItem(activityKey);
-                                    activityCount++;
-                                    debugLog(`Actividad eliminada: ${activityKey}`);
-                                }
+                                // Recopilar claves de actividad para eliminar
+                                activityKeysToDelete.push(`activity_${section.content}`);
+                                activityKeysToDelete.push(`activity_data_${section.content}`);
+                                activityCount++;
+                                debugLog(`Actividad marcada para eliminar: ${section.content}`);
                             }
                         });
                     }
                 });
 
+                // 5. Eliminar las actividades
+                activityKeysToDelete.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        debugLog(`Eliminada actividad: ${key}`);
+                    }
+                });
+
                 debugLog(`Total de actividades eliminadas: ${activityCount}`);
 
-                // 8. Actualizar el registro de actividades si existe
+                // 6. Actualizar el registro de actividades si existe
                 try {
                     const activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
                     const updatedRegistry = activityRegistry.filter(entry => {
@@ -444,9 +474,33 @@
                     debugLog(`Error al actualizar registro de actividades: ${regError.message}`);
                 }
 
-                // Ya no es necesario el sistema antiguo porque estamos trabajando directamente con localStorage
-                debugLog('Eliminación completada con éxito');
+                // 7. Guardar los temas actualizados (sin los temas del curso eliminado)
+                localStorage.setItem('matematicaweb_topics', JSON.stringify(topicsToKeep));
+                debugLog('Temas actualizados guardados en localStorage');
 
+                // 8. Filtrar para eliminar el curso
+                const newCourses = allCourses.filter(course => String(course.id) !== courseId);
+                debugLog(`Después de filtrar quedan ${newCourses.length} cursos`);
+
+                // 9. Guardar los cursos actualizados
+                localStorage.setItem('matematicaweb_courses', JSON.stringify(newCourses));
+                debugLog('Cursos actualizados guardados en localStorage');
+
+                // 10. Limpiar datos en el sistema avanzado si existe
+                try {
+                    const courseData = JSON.parse(localStorage.getItem('courseData') || '{}');
+                    if (courseData.persistent && courseData.persistent.courses) {
+                        if (courseData.persistent.courses[courseId]) {
+                            delete courseData.persistent.courses[courseId];
+                            debugLog(`Curso ${courseId} eliminado del sistema avanzado`);
+                        }
+                    }
+                    localStorage.setItem('courseData', JSON.stringify(courseData));
+                } catch (advError) {
+                    debugLog(`Error al limpiar datos en el sistema avanzado: ${advError.message}`);
+                }
+
+                debugLog('Eliminación completada con éxito');
                 return true;
             } catch (error) {
                 debugLog('Error al eliminar directamente del localStorage: ' + error.message);

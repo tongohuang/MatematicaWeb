@@ -2,15 +2,17 @@
   {
     "id": 1744260101843,
     "title": "Números complejos",
-    "description": "a",
-    "color": "#dc3545",
-    "icon": "fas fa-trophy"
+    "description": "Este curso tiene como objetivo presentar el origen de los números complejos.\nComprender qué es la unidad imaginaría.\nDominar: notación binómica, notación cartesiana, representación gráfica, operatoria, resolución de ecuaciones de segundo grado con soluciones complejas.",
+    "color": "#1E90FF",
+    "icon": "fas fa-square-root-alt",
+    "order": 1
   },
   {
-    "id": 1744260101844,
-    "title": "Números complejos - Básico",
-    "description": "prueba",
-    "color": "#FFD700",
-    "icon": "fas fa-pen"
+    "id": 1744260101845,
+    "title": "Probabilidad",
+    "description": "Técnicas de conteo, probabilidad clásica, probabilidad condicional y Teorema de Bayes.",
+    "color": "#69F0AE",
+    "icon": "fas fa-dice",
+    "order": 3
   }
 ]

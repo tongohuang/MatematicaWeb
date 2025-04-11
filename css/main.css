@@ -75,6 +75,14 @@ main {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
+/* Clase para indicar que la descripción está truncada */
+.description-truncated .course-description:hover + .course-description-tooltip,
+.description-truncated .course-description-tooltip:hover {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0); /* Vuelve a su posición original */
+}
+
 .course-header {
     height: 120px;
     position: relative;
@@ -105,6 +113,34 @@ main {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    position: relative;
+}
+
+.course-description-tooltip {
+    position: absolute;
+    bottom: 100%; /* Posiciona el tooltip por encima de la descripción */
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(5px); /* Mueve hacia abajo para la animación */
+    transition: all 0.3s ease;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 5px; /* Espacio entre el tooltip y la descripción */
+    pointer-events: auto; /* Permite interactuar con el tooltip */
+}
+
+.course-description-tooltip p {
+    color: #333;
+    margin-bottom: 0;
+    line-height: 1.6;
 }
 
 .course-content h3 {
@@ -112,10 +148,39 @@ main {
     color: #333;
 }
 
-.course-content p {
-    color: #666;
+.description-container {
+    position: relative;
     margin-bottom: 15px;
     flex-grow: 1;
+    margin-top: 10px; /* Añade espacio arriba para el tooltip */
+}
+
+.course-description {
+    color: #666;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    max-height: 4.5em; /* 3 líneas x 1.5em */
+    margin-bottom: 0;
+    transition: all 0.3s ease;
+}
+
+/* Estilo para descripciones truncadas */
+.description-truncated .course-description {
+    cursor: help;
+}
+
+/* Indicador visual de que hay más texto */
+.description-truncated .course-description::after {
+    content: '...';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding-left: 20px;
+    background: linear-gradient(to left, white 30%, rgba(255,255,255,0) 100%);
 }
 
 .course-stats {

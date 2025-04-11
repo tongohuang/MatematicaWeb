@@ -11,6 +11,59 @@
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/course-editor.css">
     <link rel="stylesheet" href="../css/selectors.css">
+    <style>
+        .course-header-preview {
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .course-header-preview h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .course-header-preview p {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .topics-preview {
+            margin-top: 20px;
+        }
+
+        .topic-preview {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .topic-preview-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .topic-preview-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .topic-preview-title {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+    </style>
 </head>
 <body>
     <div id="header"></div>
@@ -98,7 +151,16 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="courseImageInput" class="form-label">Imagen (Opcional)</label>
-                                        <input type="file" class="form-control" id="courseImageInput" accept="image/*">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="courseImageInput" placeholder="nombre-imagen.jpg">
+                                            <span class="input-group-text"><i class="fas fa-image"></i></span>
+                                        </div>
+                                        <div class="form-text text-info">
+                                            <i class="fas fa-info-circle"></i> Las imágenes deben estar ubicadas en la carpeta <code>/img/courses/</code> del repositorio.
+                                            <br>Solo ingrese el nombre del archivo (ej: "matematica-1.jpg").
+                                            <br><strong>Tamaño recomendado:</strong> 800x400 píxeles (proporción 2:1) en formato JPG o PNG.
+                                            <br>Las imágenes más grandes se redimensionarán automáticamente, pero podrían perder calidad o recortarse.
+                                        </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                                 </form>

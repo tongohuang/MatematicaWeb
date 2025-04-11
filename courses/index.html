@@ -51,7 +51,33 @@
             }
 
             loadCourses();
+
+            // Comprobar qué descripciones están truncadas
+            setTimeout(checkDescriptionHeight, 500);
+
+            // Volver a comprobar cuando la ventana cambie de tamaño
+            window.addEventListener('resize', function() {
+                setTimeout(checkDescriptionHeight, 200);
+            });
         });
+
+        // Función para comprobar qué descripciones están truncadas
+        function checkDescriptionHeight() {
+            const descriptions = document.querySelectorAll('.course-description');
+
+            descriptions.forEach(desc => {
+                const container = desc.parentElement;
+
+                // Si la descripción está truncada (el contenido es más alto que el contenedor visible)
+                if (desc.scrollHeight > desc.clientHeight) {
+                    // Añadir clase para indicar que está truncada
+                    container.classList.add('description-truncated');
+                } else {
+                    // Si no está truncada, asegurarse de que no tiene la clase
+                    container.classList.remove('description-truncated');
+                }
+            });
+        }
 
         function loadCourses() {
             console.log('Cargando cursos en courses/index.html...');
@@ -117,8 +143,12 @@
                     </div>
                     <div class="course-content">
                         <h3>${course.title}</h3>
-                        <p>${course.description}</p>
-
+                        <div class="description-container">
+                            <p class="course-description">${course.description}</p>
+                            <div class="course-description-tooltip">
+                                <p>${course.description}</p>
+                            </div>
+                        </div>
                         <a href="view.html?id=${course.id}" class="btn btn-primary mt-2">Ver curso</a>
                     </div>
                 </div>

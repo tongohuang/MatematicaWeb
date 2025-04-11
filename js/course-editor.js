@@ -43,6 +43,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 function loadCourse(courseId) {
     console.log(`Cargando curso con ID: ${courseId}`);
 
+    // Establecer el ID del curso actual al inicio
+    currentCourseId = courseId;
+    console.log(`ID del curso actual establecido: ${currentCourseId}`);
+
     // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
     try {
         // 1. Obtener todos los cursos de localStorage
@@ -73,13 +77,12 @@ function loadCourse(courseId) {
         return;
     }
 
-    currentCourseId = courseId;
-
     // Cargar la información del curso en el formulario
     document.getElementById('courseTitleInput').value = currentCourse.title;
     document.getElementById('courseDescriptionInput').value = currentCourse.description;
     document.getElementById('courseColorInput').value = currentCourse.color ? currentCourse.color.replace('#', '') : '';
     document.getElementById('courseIconInput').value = currentCourse.icon || '';
+    document.getElementById('courseImageInput').value = currentCourse.image || '';
 
     // Actualizar el título
     document.getElementById('courseTitle').textContent = currentCourse.title;
@@ -103,6 +106,10 @@ function setupNewCourse() {
         color: '#4CAF50',
         icon: 'fas fa-book'
     };
+
+    // Establecer el ID del curso actual como null para un nuevo curso
+    currentCourseId = null;
+    console.log('ID del curso actual establecido como null para nuevo curso');
 
     // Actualizar el título
     document.getElementById('courseTitle').textContent = 'Nuevo Curso';
@@ -145,14 +152,26 @@ function setupEventListeners() {
     document.getElementById('courseImageInput')?.addEventListener('change', handleImageUpload);
 
     // Evento para agregar un tema
-    document.getElementById('addTopicBtn').addEventListener('click', () => {
-        if (!currentCourseId) {
-            alert('Guarde el curso primero para poder agregar temas.');
-            return;
-        }
+    const addTopicBtn = document.getElementById('addTopicBtn');
+    if (addTopicBtn) {
+        console.log('Configurando evento click para el botón de agregar tema');
+        addTopicBtn.addEventListener('click', () => {
+            console.log('Botón de agregar tema clickeado');
+            console.log('ID del curso actual:', currentCourseId);
 
-        window.location.href = `topic-editor.html?courseId=${currentCourseId}`;
-    });
+            if (!currentCourseId) {
+                alert('Guarde el curso primero para poder agregar temas.');
+                return;
+            }
+
+            // Construir la URL con el ID del curso
+            const url = `topic-editor.html?courseId=${currentCourseId}`;
+            console.log('Redirigiendo a:', url);
+
+            // Redirigir a la página de edición de temas
+            window.location.href = url;
+        });
+    }
 }
 
 function saveCourse(event) {
@@ -251,6 +270,7 @@ function saveCourse(event) {
     if (!currentCourseId) {
         window.history.replaceState(null, '', `?id=${currentCourse.id}`);
         currentCourseId = currentCourse.id;
+        console.log(`ID del curso actual actualizado a: ${currentCourseId}`);
     }
 
     // Actualizar la interfaz
@@ -410,10 +430,27 @@ function updatePreview() {
     const description = document.getElementById('courseDescriptionInput').value || 'Descripción del curso';
     const color = document.getElementById('courseColorInput').value ? `#${document.getElementById('courseColorInput').value}` : '#4CAF50';
     const icon = document.getElementById('courseIconInput').value || 'fas fa-book';
+    const imageName = document.getElementById('courseImageInput').value.trim();
 
     // Actualizar la vista previa
     document.getElementById('previewCourseTitle').textContent = title;
     document.getElementById('previewCourseDescription').textContent = description;
+
+    // Actualizar el estilo de la vista previa con la imagen o el color de fondo
+    const courseHeaderPreview = document.querySelector('.course-header-preview');
+    if (courseHeaderPreview) {
+        if (imageName) {
+            // Si hay una imagen, mostrarla como fondo
+            courseHeaderPreview.style.backgroundImage = `url('../img/courses/${imageName}')`;
+            courseHeaderPreview.style.backgroundSize = 'cover';
+            courseHeaderPreview.style.backgroundPosition = 'center';
+            courseHeaderPreview.style.backgroundColor = 'transparent';
+        } else {
+            // Si no hay imagen, usar el color de fondo
+            courseHeaderPreview.style.backgroundImage = 'none';
+            courseHeaderPreview.style.backgroundColor = color;
+        }
+    }
 
     // Obtener los temas del curso
     let topicsHtml = '';
@@ -460,15 +497,15 @@ function updatePreview() {
 }
 
 function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // En una aplicación real, aquí se subiría la imagen al servidor
-            // Para esta demo, simplemente mostramos la vista previa
-            alert('En una aplicación real, la imagen se subiría al servidor.');
-        };
-        reader.readAsDataURL(file);
+    const imageName = event.target.value.trim();
+
+    // Actualizar el objeto del curso con el nombre de la imagen
+    if (currentCourse) {
+        currentCourse.image = imageName || null;
+        console.log(`Nombre de imagen actualizado: ${imageName}`);
+
+        // Actualizar la vista previa
+        updatePreview();
     }
 }
 

@@ -122,7 +122,12 @@ function loadFeaturedCourses() {
                 </div>
                 <div class="course-content">
                     <h3>${course.title}</h3>
-                    <p>${course.description}</p>
+                    <div class="description-container">
+                        <p class="course-description">${course.description}</p>
+                        <div class="course-description-tooltip">
+                            <p>${course.description}</p>
+                        </div>
+                    </div>
                     <div class="course-stats">
                         <span><i class="fas fa-book"></i> ${topicsCount} temas</span>
                         <span><i class="fas fa-puzzle-piece"></i> ${sectionsCount} secciones</span>
