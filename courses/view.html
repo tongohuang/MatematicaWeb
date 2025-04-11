@@ -9,6 +9,29 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/course.css">
     <link rel="stylesheet" href="../css/components.css">
+    <style>
+        /* Estilos para el panel lateral desplegable */
+        #mainContent.expanded {
+            width: 100%;
+            flex: 0 0 100%;
+            max-width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        #sidebarColumn {
+            transition: all 0.3s ease;
+        }
+
+        #sidebarColumn.hidden {
+            display: none;
+        }
+
+        @media (max-width: 767.98px) {
+            #toggleSidebarBtn {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="header"></div>
@@ -16,12 +39,17 @@
     <main class="container mt-4">
         <div id="courseContent">
             <div class="row">
-                <div class="col-md-8">
+                <div class="col-md-8" id="mainContent">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h1 id="courseTitle">Cargando...</h1>
-                        <a href="../index.html" class="btn btn-outline-primary">
-                            <i class="fas fa-home"></i> Volver al inicio
-                        </a>
+                        <div>
+                            <button id="toggleSidebarBtn" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-bars"></i> <span id="toggleSidebarText">Ocultar panel</span>
+                            </button>
+                            <a href="../index.html" class="btn btn-outline-primary">
+                                <i class="fas fa-home"></i> Volver al inicio
+                            </a>
+                        </div>
                     </div>
                     <div id="courseDescription" class="mb-4"></div>
 
@@ -29,8 +57,8 @@
                         <!-- Las secciones del curso se cargarán aquí -->
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="course-sidebar">
+                <div class="col-md-4" id="sidebarColumn">
+                    <div class="course-sidebar" id="courseSidebar">
                         <div class="course-navigation">
                             <h4>Navegación del Curso</h4>
                             <div class="course-nav-menu" id="courseNavMenu">
@@ -77,8 +105,53 @@
                 await initializeDataSystem();
             }
 
+            // Configurar el botón de mostrar/ocultar panel lateral
+            setupSidebarToggle();
+
             loadCourseContent();
         });
+
+        // Función para configurar el botón de mostrar/ocultar panel lateral
+        function setupSidebarToggle() {
+            const toggleBtn = document.getElementById('toggleSidebarBtn');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarColumn = document.getElementById('sidebarColumn');
+            const toggleText = document.getElementById('toggleSidebarText');
+
+            if (!toggleBtn || !mainContent || !sidebarColumn || !toggleText) {
+                console.error('No se encontraron los elementos necesarios para el toggle del sidebar');
+                return;
+            }
+
+            // Verificar si hay una preferencia guardada
+            const sidebarHidden = localStorage.getItem('course_sidebar_hidden') === 'true';
+
+            // Aplicar estado inicial
+            if (sidebarHidden) {
+                mainContent.classList.add('expanded');
+                sidebarColumn.classList.add('hidden');
+                toggleText.textContent = 'Mostrar panel';
+            }
+
+            toggleBtn.addEventListener('click', function() {
+                // Cambiar estado
+                const isCurrentlyHidden = sidebarColumn.classList.contains('hidden');
+
+                if (isCurrentlyHidden) {
+                    // Mostrar panel
+                    mainContent.classList.remove('expanded');
+                    sidebarColumn.classList.remove('hidden');
+                    toggleText.textContent = 'Ocultar panel';
+                    localStorage.setItem('course_sidebar_hidden', 'false');
+                } else {
+                    // Ocultar panel
+                    mainContent.classList.add('expanded');
+                    sidebarColumn.classList.add('hidden');
+                    toggleText.textContent = 'Mostrar panel';
+                    localStorage.setItem('course_sidebar_hidden', 'true');
+                }
+            });
+        }
 
         function loadCourseContent() {
             console.log('Cargando contenido del curso...');
