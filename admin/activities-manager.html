@@ -108,19 +108,19 @@
                 <div class="alert alert-info mb-4">
                     <div class="row">
                         <div class="col-md-3">
-                            <strong><i class="fas fa-tasks"></i> Total de actividades:</strong> 
+                            <strong><i class="fas fa-tasks"></i> Total de actividades:</strong>
                             <span id="totalActivities">0</span>
                         </div>
                         <div class="col-md-3">
-                            <strong><i class="fas fa-list-ol"></i> Opción múltiple:</strong> 
+                            <strong><i class="fas fa-list-ol"></i> Opción múltiple:</strong>
                             <span id="multipleChoiceCount">0</span>
                         </div>
                         <div class="col-md-3">
-                            <strong><i class="fas fa-check-circle"></i> Verdadero/Falso:</strong> 
+                            <strong><i class="fas fa-check-circle"></i> Verdadero/Falso:</strong>
                             <span id="trueFalseCount">0</span>
                         </div>
                         <div class="col-md-3">
-                            <strong><i class="fas fa-pencil-alt"></i> Respuesta corta:</strong> 
+                            <strong><i class="fas fa-pencil-alt"></i> Respuesta corta:</strong>
                             <span id="shortAnswerCount">0</span>
                         </div>
                     </div>
@@ -131,6 +131,9 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Actividades en localStorage</h5>
                         <div>
+                            <button id="refreshTableBtn" class="btn btn-sm btn-outline-info me-2">
+                                <i class="fas fa-sync-alt"></i> Actualizar tabla
+                            </button>
                             <button id="selectAllBtn" class="btn btn-sm btn-outline-primary me-2">
                                 <i class="fas fa-check-square"></i> Seleccionar todo
                             </button>
@@ -140,7 +143,36 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div id="activitiesList" class="list-group">
+                        <!-- Tabla directa de actividades en localStorage -->
+                        <div class="table-responsive mb-4">
+                            <table class="table table-striped table-hover" id="directActivitiesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40"><input type="checkbox" id="selectAllCheckbox" class="form-check-input"></th>
+                                        <th>Clave en localStorage</th>
+                                        <th>ID de Actividad</th>
+                                        <th>Título</th>
+                                        <th>Tipo</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activitiesTableBody">
+                                    <!-- Las actividades se cargarán aquí dinámicamente -->
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                            <p class="mt-2">Cargando actividades...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Lista original de actividades (como respaldo) -->
+                        <div id="activitiesList" class="list-group d-none">
                             <!-- Las actividades se cargarán aquí dinámicamente -->
                             <div class="text-center py-5">
                                 <div class="spinner-border text-primary" role="status">
@@ -211,5 +243,48 @@
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script src="../js/activities-manager.js"></script>
+    <script>
+        // Asegurarse de que el sistema de persistencia se inicialice antes de cargar las actividades
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM cargado en activities-manager.html');
+
+            // Cargar componentes
+            loadComponent('header', '../components/header.html');
+            loadComponent('footer', '../components/footer.html');
+
+            try {
+                // Inicializar sistema de persistencia
+                if (typeof initializeDataSystem === 'function') {
+                    console.log('Inicializando sistema de persistencia en activities-manager.html...');
+                    await initializeDataSystem();
+                    console.log('Sistema de persistencia inicializado correctamente');
+                } else {
+                    console.error('La función initializeDataSystem no está disponible');
+                }
+
+                // Esperar un momento para asegurar que todo esté cargado
+                setTimeout(() => {
+                    console.log('Inicializando el administrador de actividades después de un breve retraso...');
+                    // Inicializar el administrador de actividades
+                    if (typeof init === 'function') {
+                        init();
+                    } else {
+                        console.error('La función init no está disponible');
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Error durante la inicialización:', error);
+                document.getElementById('activitiesTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="alert alert-danger mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Error al inicializar: ${error.message}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+    </script>
 </body>
 </html>

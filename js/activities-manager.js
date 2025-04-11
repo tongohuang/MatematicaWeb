@@ -21,8 +21,8 @@ let allActivities = [];
 let filteredActivities = [];
 let selectedActivities = new Set();
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', init);
+// La inicialización ahora se maneja en el archivo HTML
+// document.addEventListener('DOMContentLoaded', init);
 
 /**
  * Inicializa la página y configura los eventos
@@ -38,6 +38,7 @@ function init() {
 
     // Cargar actividades
     loadActivities();
+    loadDirectActivitiesTable();
 
     // Configurar eventos para filtros
     document.getElementById('searchInput').addEventListener('input', filterActivities);
@@ -48,6 +49,8 @@ function init() {
     // Configurar eventos para selección
     document.getElementById('selectAllBtn').addEventListener('click', selectAllActivities);
     document.getElementById('deselectAllBtn').addEventListener('click', deselectAllActivities);
+    document.getElementById('refreshTableBtn').addEventListener('click', loadDirectActivitiesTable);
+    document.getElementById('selectAllCheckbox').addEventListener('change', toggleSelectAllTableRows);
 
     // Configurar evento para eliminar
     document.getElementById('deleteSelectedBtn').addEventListener('click', showDeleteConfirmation);
@@ -371,12 +374,20 @@ function toggleActivitySelection(activityId, isSelected) {
  * Actualiza el contador de actividades seleccionadas
  */
 function updateSelectedCount() {
-    const count = selectedActivities.size;
-    document.getElementById('selectedCount').textContent = count;
+    // Contar actividades seleccionadas en la lista original
+    const listCount = selectedActivities.size;
+
+    // Contar actividades seleccionadas en la tabla
+    const tableCheckboxes = document.querySelectorAll('.table-checkbox:checked');
+    const tableCount = tableCheckboxes.length;
+
+    // Actualizar contador total
+    const totalCount = listCount + tableCount;
+    document.getElementById('selectedCount').textContent = totalCount;
 
     // Habilitar/deshabilitar botón de eliminar
     const deleteBtn = document.getElementById('deleteSelectedBtn');
-    deleteBtn.disabled = count === 0;
+    deleteBtn.disabled = totalCount === 0;
 }
 
 /**
@@ -434,12 +445,31 @@ function showDeleteConfirmation() {
  * Elimina las actividades seleccionadas
  */
 function deleteSelectedActivities() {
+    // Obtener actividades seleccionadas de la lista original
     const activitiesToDelete = Array.from(selectedActivities);
+
+    // Obtener actividades seleccionadas de la tabla
+    const tableCheckboxes = document.querySelectorAll('.table-checkbox:checked');
+    const tableKeysToDelete = Array.from(tableCheckboxes).map(checkbox => {
+        return checkbox.closest('tr').dataset.key;
+    });
+
+    const totalToDelete = activitiesToDelete.length + tableKeysToDelete.length;
+
+    if (totalToDelete === 0) {
+        alert('No hay actividades seleccionadas para eliminar.');
+        return;
+    }
+
+    // Actualizar el contador en el modal de confirmación
+    document.getElementById('deleteCount').textContent = totalToDelete;
+
     let deletedCount = 0;
     let errorCount = 0;
 
-    console.log(`Eliminando ${activitiesToDelete.length} actividades...`);
+    console.log(`Eliminando ${totalToDelete} actividades...`);
 
+    // Eliminar actividades de la lista original
     activitiesToDelete.forEach(activityId => {
         try {
             // Eliminar la actividad de localStorage
@@ -451,6 +481,23 @@ function deleteSelectedActivities() {
             deletedCount++;
         } catch (error) {
             console.error(`Error al eliminar actividad ${activityId}:`, error);
+            errorCount++;
+        }
+    });
+
+    // Eliminar actividades de la tabla
+    tableKeysToDelete.forEach(key => {
+        try {
+            // Eliminar la actividad de localStorage
+            localStorage.removeItem(key);
+
+            // También eliminar datos relacionados si existen
+            const activityId = key.replace('activity_', '');
+            localStorage.removeItem(`activity_data_${activityId}`);
+
+            deletedCount++;
+        } catch (error) {
+            console.error(`Error al eliminar actividad ${key}:`, error);
             errorCount++;
         }
     });
@@ -479,7 +526,14 @@ function deleteSelectedActivities() {
 
     // Limpiar selección y recargar actividades
     selectedActivities.clear();
+    document.querySelectorAll('.table-checkbox:checked').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAllCheckbox').checked = false;
+
+    // Recargar datos
     loadActivities();
+    loadDirectActivitiesTable();
 }
 
 /**
@@ -790,6 +844,254 @@ function getActivityTypeLabel(type) {
             return 'Respuesta corta';
         default:
             return 'Desconocido';
+    }
+}
+
+/**
+ * Carga la tabla directa de actividades desde localStorage
+ */
+function loadDirectActivitiesTable() {
+    console.log('Cargando tabla directa de actividades desde localStorage...');
+    const tableBody = document.getElementById('activitiesTableBody');
+
+    // Mostrar mensaje de carga
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando actividades...</p>
+            </td>
+        </tr>
+    `;
+
+    // Recopilar todas las claves de actividades del localStorage
+    const activityKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('activity_') && !key.startsWith('activity_registry')) {
+            activityKeys.push(key);
+        }
+    }
+
+    console.log(`Se encontraron ${activityKeys.length} claves de actividades en localStorage`);
+
+    if (activityKeys.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> No se encontraron actividades en localStorage.
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    // Ordenar las claves por fecha (más reciente primero)
+    activityKeys.sort((a, b) => {
+        const idA = parseInt(a.replace('activity_', ''));
+        const idB = parseInt(b.replace('activity_', ''));
+        return idB - idA; // Orden descendente
+    });
+
+    // Obtener los cursos y temas activos para verificar uso
+    const courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+    const topics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+
+    // Crear un mapa de temas activos (que pertenecen a cursos activos)
+    const activeTopicIds = new Set();
+    courses.forEach(course => {
+        if (course.topicIds && Array.isArray(course.topicIds)) {
+            course.topicIds.forEach(topicId => activeTopicIds.add(String(topicId)));
+        }
+    });
+
+    // Crear un mapa de actividades en uso
+    const usedActivityIds = new Set();
+
+    // Buscar en temas activos primero
+    const activeTopics = topics.filter(topic => activeTopicIds.has(String(topic.id)));
+    activeTopics.forEach(topic => {
+        if (topic.sections) {
+            topic.sections.forEach(section => {
+                if (section.type === 'activity') {
+                    usedActivityIds.add(String(section.content));
+                }
+            });
+        }
+    });
+
+    // Como respaldo, verificar también en temas inactivos
+    topics.forEach(topic => {
+        if (!activeTopicIds.has(String(topic.id)) && topic.sections) {
+            topic.sections.forEach(section => {
+                if (section.type === 'activity') {
+                    usedActivityIds.add(String(section.content));
+                }
+            });
+        }
+    });
+
+    console.log(`Se encontraron ${usedActivityIds.size} actividades en uso`);
+
+    // Generar filas de la tabla
+    let tableRows = '';
+
+    activityKeys.forEach(key => {
+        try {
+            const activityData = JSON.parse(localStorage.getItem(key));
+            const activityId = key.replace('activity_', '');
+            const isInUse = usedActivityIds.has(String(activityId));
+
+            // Determinar el tipo de actividad
+            let typeLabel = 'Desconocido';
+            let typeIcon = 'fas fa-question-circle';
+
+            if (activityData && activityData.type) {
+                switch (activityData.type) {
+                    case 'multiple-choice':
+                        typeLabel = 'Opción múltiple';
+                        typeIcon = 'fas fa-list-ol';
+                        break;
+                    case 'true-false':
+                        typeLabel = 'Verdadero/Falso';
+                        typeIcon = 'fas fa-check-circle';
+                        break;
+                    case 'short-answer':
+                        typeLabel = 'Respuesta corta';
+                        typeIcon = 'fas fa-pencil-alt';
+                        break;
+                }
+            }
+
+            // Determinar el estado
+            const statusBadge = isInUse
+                ? '<span class="badge bg-success">En uso</span>'
+                : '<span class="badge bg-secondary">Sin usar</span>';
+
+            // Generar fila
+            tableRows += `
+                <tr data-key="${key}" data-id="${activityId}" class="${isInUse ? 'table-success' : ''}">
+                    <td>
+                        <input type="checkbox" class="form-check-input table-checkbox"
+                               ${isInUse ? 'disabled title="No se puede eliminar una actividad en uso"' : ''}>
+                    </td>
+                    <td><code>${key}</code></td>
+                    <td>${activityId}</td>
+                    <td>${activityData && activityData.title ? activityData.title : '<em>Sin título</em>'}</td>
+                    <td><i class="${typeIcon} me-1"></i> ${typeLabel}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info view-details-btn" data-id="${activityId}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${!isInUse ? `
+                            <button class="btn btn-sm btn-danger delete-activity-btn" data-key="${key}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `;
+        } catch (error) {
+            console.error(`Error al procesar actividad ${key}:`, error);
+            tableRows += `
+                <tr data-key="${key}" class="table-danger">
+                    <td><input type="checkbox" class="form-check-input table-checkbox"></td>
+                    <td><code>${key}</code></td>
+                    <td colspan="4"><em class="text-danger">Error al cargar datos: ${error.message}</em></td>
+                    <td>
+                        <button class="btn btn-sm btn-danger delete-activity-btn" data-key="${key}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+
+    tableBody.innerHTML = tableRows;
+
+    // Añadir eventos a los botones
+    document.querySelectorAll('.view-details-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const activityId = this.dataset.id;
+            showActivityDetails(activityId);
+        });
+    });
+
+    document.querySelectorAll('.delete-activity-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const key = this.dataset.key;
+            deleteActivityDirectly(key);
+        });
+    });
+
+    document.querySelectorAll('.table-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectedCount();
+        });
+    });
+}
+
+/**
+ * Selecciona o deselecciona todas las filas de la tabla
+ */
+function toggleSelectAllTableRows() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const isChecked = selectAllCheckbox.checked;
+
+    document.querySelectorAll('.table-checkbox:not([disabled])').forEach(checkbox => {
+        checkbox.checked = isChecked;
+    });
+
+    updateSelectedCount();
+}
+
+/**
+ * Elimina una actividad directamente por su clave
+ */
+function deleteActivityDirectly(key) {
+    if (!confirm(`¿Está seguro de que desea eliminar la actividad ${key}?`)) {
+        return;
+    }
+
+    try {
+        // Eliminar la actividad de localStorage
+        localStorage.removeItem(key);
+
+        // También eliminar datos relacionados si existen
+        const activityId = key.replace('activity_', '');
+        localStorage.removeItem(`activity_data_${activityId}`);
+
+        // Mostrar mensaje de éxito
+        const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                Se eliminó correctamente la actividad ${key}.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHtml);
+
+        // Recargar la tabla
+        loadDirectActivitiesTable();
+        loadActivities(); // También actualizar la lista original
+    } catch (error) {
+        console.error(`Error al eliminar actividad ${key}:`, error);
+
+        // Mostrar mensaje de error
+        const alertHtml = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                Error al eliminar la actividad ${key}: ${error.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHtml);
     }
 }
 

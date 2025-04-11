@@ -9,6 +9,63 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
+    <style>
+        /* Estilos para actividades */
+        .activity-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .activity-content {
+            padding: 20px;
+        }
+
+        .activity-header {
+            margin-bottom: 20px;
+        }
+
+        .activity-header h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #0d6efd;
+        }
+
+        .activity-description {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .question-card {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .options-list {
+            margin-top: 10px;
+        }
+
+        .form-check {
+            margin-bottom: 10px;
+        }
+
+        .activity-feedback {
+            margin-top: 20px;
+        }
+
+        .question-feedback .card {
+            margin-bottom: 15px;
+        }
+    </style>
     <script src="../js/netlify-debug.js"></script>
     <script src="../js/content-loader.js"></script>
     <script src="../js/error-handler.js"></script>
@@ -394,90 +451,68 @@
                     break;
 
                 case 'activity':
-                    // Verificar si el archivo existe
-                    // Usar rutas absolutas para Netlify
-                    const isNetlifyEnvActivity = window.location.hostname.includes('netlify.app') ||
-                                               window.location.hostname.includes('netlify.com');
+                    console.log('Renderizando actividad con ID:', currentSection.content);
 
-                    // Construir la ruta base dependiendo del entorno
-                    const basePathActivity = isNetlifyEnvActivity ?
-                        (window.location.origin + '/activities/templates/') :
-                        '../activities/templates/';
+                    // Limpiar el ID de la actividad (quitar prefijo si existe)
+                    const activityId = currentSection.content.replace('activity_', '');
+                    const activityKey = `activity_${activityId}`;
 
-                    const activityPath = basePathActivity + currentSection.content;
-                    const fallbackActivityPath = basePathActivity + 'ejemplo-simple.html';
+                    // Crear un ID único para el contenedor
+                    const containerId = `activity-container-${currentSection.id}`;
 
-                    console.log('Ruta Actividad:', activityPath);
-                    console.log('Ruta fallback Actividad:', fallbackActivityPath);
+                    // Intentar cargar la actividad desde localStorage
+                    let activityData = null;
+                    try {
+                        activityData = JSON.parse(localStorage.getItem(activityKey));
+                        console.log('Actividad cargada desde localStorage:', activityData ? 'Sí' : 'No');
+                    } catch (e) {
+                        console.error('Error al cargar actividad desde localStorage:', e);
+                    }
 
-                    // Detectar si estamos en Netlify
-                    const isNetlifyActivity = window.location.hostname.includes('netlify.app') ||
-                                             window.location.hostname.includes('netlify.com');
-
-                    console.log('Cargando Actividad en ' + (isNetlifyActivity ? 'Netlify' : 'Local') + ': ' + activityPath);
-                    console.log('Tipo de contenido de la sección:', currentSection.type);
-                    console.log('Contenido de la sección:', currentSection.content);
-
-                    // En Netlify, usar iframe como con HTML
-                    if (isNetlifyActivity) {
-                        console.log('Entorno Netlify detectado, cargando Actividad con iframe');
-
-                        // Crear un ID único para el contenedor
-                        const containerId = 'activity-container-section';
-
-                        // Crear el contenedor para el contenido de la actividad
+                    if (activityData) {
+                        // Generar HTML para la actividad
                         contentHtml = `
                             <div class="section-preview-content">
-                                <div class="activity-container">
-                                    <div id="${containerId}" class="activity-content" style="min-height:400px;"></div>
-                                </div>
+                                <table class="activity-container" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                    <tr>
+                                        <td>
+                                            <div id="${containerId}" class="activity-content">
+                                                <div class="activity-header">
+                                                    <h3>${activityData.title || 'Actividad sin título'}</h3>
+                                                    <p class="activity-description">${activityData.description || ''}</p>
+                                                </div>
+                                                <form id="activity-form-${currentSection.id}" class="activity-form">
+                                                    ${renderActivityQuestions(activityData, currentSection.id)}
+                                                    <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
+                                                        <button type="button" class="btn btn-success btn-lg" onclick="checkActivityAnswers('${currentSection.id}', '${activityId}')">
+                                                            <i class="fas fa-paper-plane me-2"></i> Enviar respuestas
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                                <div id="activity-feedback-${currentSection.id}" class="activity-feedback mt-3" style="display:none;"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         `;
-
-                        // Cargar el contenido de la actividad usando AJAX en lugar de iframe
-                        setTimeout(() => {
-                            console.log('Cargando contenido de actividad usando AJAX:', activityPath);
-                            // Pasar true como cuarto parámetro para indicar que es una actividad
-                            loadHTMLContent(activityPath, containerId, fallbackActivityPath, true);
-                        }, 100);
                     } else {
-                        // En local, usar iframe como antes
+                        // Mostrar mensaje de error si no se encuentra la actividad
                         contentHtml = `
                             <div class="section-preview-content">
-                                <div class="activity-container">
-                                    <iframe src="${activityPath}" frameborder="0" style="width:100%; height:600px;"
-                                            id="activity-iframe-section"></iframe>
-                                </div>
+                                <table class="activity-container" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                    <tr>
+                                        <td>
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong>Actividad no encontrada</strong>
+                                                <p>No se pudo cargar la actividad con ID: ${activityId}</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         `;
-
-                        // Verificar si el archivo existe
-                        setTimeout(() => {
-                            const iframe = document.getElementById('activity-iframe-section');
-                            if (iframe) {
-                                try {
-                                    // Usar XMLHttpRequest en lugar de fetch para mejor compatibilidad
-                                    const xhr = new XMLHttpRequest();
-                                    xhr.open('HEAD', activityPath, true);
-                                    xhr.onreadystatechange = function() {
-                                        if (xhr.readyState === 4) {
-                                            if (xhr.status !== 200) {
-                                                console.warn('Archivo ' + activityPath + ' no encontrado, usando fallback');
-                                                iframe.src = fallbackActivityPath;
-                                            }
-                                        }
-                                    };
-                                    xhr.onerror = function() {
-                                        console.error('Error verificando archivo ' + activityPath + ':', xhr.statusText);
-                                        iframe.src = fallbackActivityPath;
-                                    };
-                                    xhr.send();
-                                } catch (error) {
-                                    console.error('Error al verificar archivo de actividad:', error);
-                                    iframe.src = fallbackActivityPath;
-                                }
-                            }
-                        }, 500);
                     }
                     break;
 
@@ -531,6 +566,305 @@
                 default:
                     return 'fas fa-file';
             }
+        }
+
+        /**
+         * Renderiza las preguntas de una actividad
+         */
+        function renderActivityQuestions(activityData, sectionId) {
+            if (!activityData || !activityData.questions || !Array.isArray(activityData.questions)) {
+                return '<div class="alert alert-warning">Esta actividad no tiene preguntas.</div>';
+            }
+
+            let questionsHtml = '';
+
+            activityData.questions.forEach((question, index) => {
+                questionsHtml += `
+                    <div class="question-card mb-3" data-question-index="${index}">
+                        <p class="fw-bold mb-2">${index + 1}. ${question.text || 'Sin texto'}</p>
+                `;
+
+                // Renderizar según el tipo de pregunta
+                if (activityData.type === 'multiple-choice') {
+                    questionsHtml += '<div class="options-list">';
+
+                    if (question.options && Array.isArray(question.options)) {
+                        question.options.forEach((option, optionIndex) => {
+                            questionsHtml += `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="question_${sectionId}_${index}"
+                                           id="option_${sectionId}_${index}_${optionIndex}" value="${optionIndex}">
+                                    <label class="form-check-label" for="option_${sectionId}_${index}_${optionIndex}">
+                                        ${option}
+                                    </label>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    questionsHtml += '</div>';
+                } else if (activityData.type === 'true-false') {
+                    questionsHtml += `
+                        <div class="options-list">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question_${sectionId}_${index}"
+                                       id="option_${sectionId}_${index}_true" value="true">
+                                <label class="form-check-label" for="option_${sectionId}_${index}_true">
+                                    Verdadero
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="question_${sectionId}_${index}"
+                                       id="option_${sectionId}_${index}_false" value="false">
+                                <label class="form-check-label" for="option_${sectionId}_${index}_false">
+                                    Falso
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                } else if (activityData.type === 'short-answer') {
+                    questionsHtml += `
+                        <div class="form-group">
+                            <input type="text" class="form-control" name="question_${sectionId}_${index}"
+                                   placeholder="Tu respuesta" style="max-width: 400px;">
+                        </div>
+                    `;
+                }
+
+                questionsHtml += '</div>';
+            });
+
+            return questionsHtml;
+        }
+
+        /**
+         * Verifica las respuestas de una actividad
+         */
+        function checkActivityAnswers(sectionId, activityId) {
+            console.log(`Verificando respuestas para actividad ${activityId} en sección ${sectionId}`);
+
+            // Obtener los datos de la actividad
+            const activityKey = `activity_${activityId}`;
+            let activityData;
+
+            try {
+                activityData = JSON.parse(localStorage.getItem(activityKey));
+            } catch (e) {
+                console.error('Error al cargar actividad:', e);
+                showActivityFeedback(sectionId, 'error', 'Error al cargar la actividad.');
+                return;
+            }
+
+            if (!activityData || !activityData.questions || !Array.isArray(activityData.questions)) {
+                showActivityFeedback(sectionId, 'error', 'La actividad no tiene preguntas válidas.');
+                return;
+            }
+
+            // Obtener las respuestas del usuario
+            const form = document.getElementById(`activity-form-${sectionId}`);
+            const userAnswers = [];
+            let allAnswered = true;
+
+            activityData.questions.forEach((question, index) => {
+                const inputName = `question_${sectionId}_${index}`;
+                let userAnswer;
+
+                if (activityData.type === 'multiple-choice' || activityData.type === 'true-false') {
+                    const selectedOption = form.querySelector(`input[name="${inputName}"]:checked`);
+                    if (selectedOption) {
+                        userAnswer = selectedOption.value;
+                    } else {
+                        allAnswered = false;
+                    }
+                } else if (activityData.type === 'short-answer') {
+                    const inputField = form.querySelector(`input[name="${inputName}"]`);
+                    if (inputField && inputField.value.trim()) {
+                        userAnswer = inputField.value.trim();
+                    } else {
+                        allAnswered = false;
+                    }
+                }
+
+                userAnswers.push({
+                    questionIndex: index,
+                    answer: userAnswer,
+                    correct: false
+                });
+            });
+
+            if (!allAnswered) {
+                showActivityFeedback(sectionId, 'warning', 'Por favor, responde todas las preguntas.');
+                return;
+            }
+
+            // Verificar las respuestas
+            let correctCount = 0;
+
+            userAnswers.forEach(userAnswer => {
+                const question = activityData.questions[userAnswer.questionIndex];
+
+                if (activityData.type === 'multiple-choice') {
+                    // Para opción múltiple, la respuesta correcta es el índice de la opción correcta
+                    if (question.correctAnswer !== undefined && userAnswer.answer == question.correctAnswer) {
+                        userAnswer.correct = true;
+                        correctCount++;
+                    }
+                } else if (activityData.type === 'true-false') {
+                    // Para verdadero/falso, la respuesta correcta es un booleano
+                    const correctAnswerStr = String(question.correctAnswer).toLowerCase();
+                    const userAnswerStr = String(userAnswer.answer).toLowerCase();
+
+                    if (correctAnswerStr === userAnswerStr) {
+                        userAnswer.correct = true;
+                        correctCount++;
+                    }
+                } else if (activityData.type === 'short-answer') {
+                    // Para respuesta corta, comparamos ignorando mayúsculas/minúsculas
+                    if (question.correctAnswer !== undefined) {
+                        const correctAnswerStr = String(question.correctAnswer).toLowerCase();
+                        const userAnswerStr = String(userAnswer.answer).toLowerCase();
+
+                        if (correctAnswerStr === userAnswerStr) {
+                            userAnswer.correct = true;
+                            correctCount++;
+                        }
+                    }
+                }
+            });
+
+            // Calcular porcentaje de aciertos
+            const totalQuestions = activityData.questions.length;
+            const percentage = Math.round((correctCount / totalQuestions) * 100);
+
+            // Mostrar resultados
+            let feedbackHtml = '';
+
+            if (totalQuestions === 1) {
+                // Si solo hay una pregunta, mostrar mensaje simple
+                if (correctCount === 1) {
+                    feedbackHtml = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>¡Correcto!</strong> Has respondido correctamente.
+                        </div>
+                    `;
+                } else {
+                    feedbackHtml = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>Incorrecto.</strong> La respuesta correcta es: ${getCorrectAnswerText(activityData, 0)}.
+                        </div>
+                    `;
+                }
+            } else {
+                // Si hay múltiples preguntas, mostrar porcentaje y detalles
+                let alertClass = 'alert-info';
+                if (percentage >= 80) alertClass = 'alert-success';
+                else if (percentage >= 50) alertClass = 'alert-warning';
+                else alertClass = 'alert-danger';
+
+                feedbackHtml = `
+                    <div class="alert ${alertClass}">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Resultado:</strong> Has acertado ${correctCount} de ${totalQuestions} preguntas (${percentage}%).
+                    </div>
+                    <div class="question-feedback">
+                `;
+
+                userAnswers.forEach(userAnswer => {
+                    const questionIndex = userAnswer.questionIndex;
+                    const question = activityData.questions[questionIndex];
+
+                    if (!userAnswer.correct) {
+                        feedbackHtml += `
+                            <div class="card mb-2">
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>Pregunta ${questionIndex + 1}:</strong> ${question.text}</p>
+                                    <p class="mb-1"><strong>Tu respuesta:</strong> ${getUserAnswerText(activityData, userAnswer)}</p>
+                                    <p class="mb-0 text-success"><strong>Respuesta correcta:</strong> ${getCorrectAnswerText(activityData, questionIndex)}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                feedbackHtml += '</div>';
+            }
+
+            // Mostrar el feedback
+            const feedbackContainer = document.getElementById(`activity-feedback-${sectionId}`);
+            feedbackContainer.innerHTML = feedbackHtml;
+            feedbackContainer.style.display = 'block';
+
+            // Hacer scroll al feedback
+            feedbackContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        /**
+         * Obtiene el texto de la respuesta correcta
+         */
+        function getCorrectAnswerText(activityData, questionIndex) {
+            const question = activityData.questions[questionIndex];
+
+            if (activityData.type === 'multiple-choice') {
+                if (question.options && Array.isArray(question.options) &&
+                    question.correctAnswer !== undefined &&
+                    question.options[question.correctAnswer]) {
+                    return question.options[question.correctAnswer];
+                }
+                return 'No disponible';
+            } else if (activityData.type === 'true-false') {
+                return question.correctAnswer === true || question.correctAnswer === 'true' ? 'Verdadero' : 'Falso';
+            } else if (activityData.type === 'short-answer') {
+                return question.correctAnswer || 'No disponible';
+            }
+
+            return 'No disponible';
+        }
+
+        /**
+         * Obtiene el texto de la respuesta del usuario
+         */
+        function getUserAnswerText(activityData, userAnswer) {
+            const questionIndex = userAnswer.questionIndex;
+            const question = activityData.questions[questionIndex];
+
+            if (activityData.type === 'multiple-choice') {
+                if (question.options && Array.isArray(question.options) &&
+                    userAnswer.answer !== undefined &&
+                    question.options[userAnswer.answer]) {
+                    return question.options[userAnswer.answer];
+                }
+                return 'No seleccionada';
+            } else if (activityData.type === 'true-false') {
+                return userAnswer.answer === 'true' ? 'Verdadero' : 'Falso';
+            } else if (activityData.type === 'short-answer') {
+                return userAnswer.answer || 'No respondida';
+            }
+
+            return 'No disponible';
+        }
+
+        /**
+         * Muestra feedback para una actividad
+         */
+        function showActivityFeedback(sectionId, type, message) {
+            const feedbackContainer = document.getElementById(`activity-feedback-${sectionId}`);
+
+            let alertClass = 'alert-info';
+            if (type === 'success') alertClass = 'alert-success';
+            else if (type === 'warning') alertClass = 'alert-warning';
+            else if (type === 'error') alertClass = 'alert-danger';
+
+            feedbackContainer.innerHTML = `
+                <div class="alert ${alertClass}">
+                    <i class="fas fa-info-circle me-2"></i>
+                    ${message}
+                </div>
+            `;
+
+            feedbackContainer.style.display = 'block';
+            feedbackContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     </script>
 </body>
