@@ -10,6 +10,41 @@
     <link rel="stylesheet" href="css/components.css">
     <!-- Netlify Identity Widget -->
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
+    <style>
+        /* Estilos para el buscador */
+        .search-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .search-container .form-label {
+            font-weight: 500;
+        }
+        .search-container .form-select,
+        .search-container .form-control {
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .search-container .form-select:focus,
+        .search-container .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        .search-container .input-group .btn {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+        #searchMessage {
+            animation: fadeIn 0.3s ease-in-out;
+            border-left: 4px solid #0dcaf0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
     <div id="header"></div>
@@ -25,7 +60,36 @@
         <div class="row">
             <div class="col-12">
                 <h1 class="text-center mb-4">Bienvenido a MatemáticaWeb</h1>
-                <p class="text-center lead mb-5">Aprende matemáticas de forma interactiva y divertida</p>
+                <p class="text-center lead mb-4">Aprende matemáticas de forma interactiva y divertida</p>
+
+                <!-- Buscador -->
+                <div class="search-container mb-5">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="searchInput" class="form-label">Buscar recursos</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Ingrese términos de búsqueda..." onkeyup="if(event.key === 'Enter') searchResources()">
+                                    <button class="btn btn-primary" type="button" onclick="searchResources()">
+                                        <i class="fas fa-search"></i> Buscar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="searchScope" class="form-label">Buscar en</label>
+                                <select class="form-select" id="searchScope">
+                                    <option value="all" selected>Todo el contenido</option>
+                                    <option value="title">Títulos</option>
+                                    <option value="course">Cursos</option>
+                                    <option value="topic">Temas</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="courses-grid" id="featuredCourses">
                     <!-- Cursos destacados se cargarán aquí -->
                     <div class="text-center w-100">
@@ -72,6 +136,22 @@
             // Cargar cursos
             loadFeaturedCourses();
         });
+
+        /**
+         * Busca recursos en todo el sitio y redirige a la página de resultados
+         */
+        function searchResources() {
+            const searchText = document.getElementById('searchInput').value.trim();
+            const searchScope = document.getElementById('searchScope').value;
+
+            if (!searchText) {
+                alert('Por favor, ingrese un término de búsqueda');
+                return;
+            }
+
+            // Redirigir a la página de secciones con los parámetros de búsqueda
+            window.location.href = `sections/index.html?search=${encodeURIComponent(searchText)}&scope=${searchScope}`;
+        }
     </script>
 </body>
 </html>

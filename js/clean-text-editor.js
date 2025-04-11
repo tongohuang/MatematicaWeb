@@ -143,6 +143,13 @@ function createToolbar() {
                 <i class="fas fa-table"></i>
             </button>
         </div>
+
+        <!-- Expresiones matemáticas -->
+        <div class="toolbar-group">
+            <button type="button" class="editor-btn" id="mathExpressionBtn" title="Insertar expresión matemática">
+                <i class="fas fa-square-root-alt"></i>
+            </button>
+        </div>
     `;
 
     return toolbar;
@@ -190,6 +197,13 @@ function initEditorEvents(editorContent, textarea) {
 
     // Inicializar el botón de tamaño de letra
     initFontSizeButton(editorContent, textarea);
+
+    // Inicializar el botón de expresiones matemáticas
+    if (window.initMathExpressionButton) {
+        window.initMathExpressionButton(editorContent, textarea);
+    } else {
+        console.warn('El editor de expresiones matemáticas no está disponible');
+    }
 
     // Eventos para actualizar el estado de los botones
     editorContent.addEventListener('mouseup', updateButtonStates);
@@ -646,6 +660,13 @@ function initTableButton(editorContent, textarea) {
         tableBtn.addEventListener('click', function(e) {
             e.preventDefault();
 
+            // Guardar la selección actual
+            let savedRange = null;
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                savedRange = selection.getRangeAt(0).cloneRange();
+            }
+
             // Eliminar modal existente si hay
             const existingModal = document.getElementById('tableModal');
             if (existingModal) {
@@ -686,7 +707,7 @@ function initTableButton(editorContent, textarea) {
 
                     <div style="display: flex; justify-content: flex-end; gap: 10px;">
                         <button id="cancelTableBtn" style="padding: 8px 15px; border: 1px solid #ced4da; background-color: #f8f9fa; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                        <button id="insertTableBtn" style="padding: 8px 15px; border: none; background-color: #0d6efd; color: white; border-radius: 4px; cursor: pointer;">Insertar</button>
+                        <button id="confirmTableBtn" style="padding: 8px 15px; border: none; background-color: #0d6efd; color: white; border-radius: 4px; cursor: pointer;">Insertar</button>
                     </div>
                 </div>
             `;
@@ -709,7 +730,7 @@ function initTableButton(editorContent, textarea) {
             });
 
             // Manejar la inserción de la tabla
-            document.getElementById('insertTableBtn').addEventListener('click', function() {
+            document.getElementById('confirmTableBtn').addEventListener('click', function() {
                 // Obtener filas y columnas
                 const rows = parseInt(document.getElementById('tableRows').value) || 3;
                 const cols = parseInt(document.getElementById('tableCols').value) || 3;
@@ -734,6 +755,14 @@ function initTableButton(editorContent, textarea) {
 
                 // Insertar la tabla en el editor
                 editorContent.focus();
+
+                // Restaurar la selección guardada si existe
+                if (savedRange) {
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(savedRange);
+                }
+
                 document.execCommand('insertHTML', false, tableHTML);
 
                 // Sincronizar con el textarea
@@ -914,6 +943,8 @@ function initFontSizeButton(editorContent, textarea) {
     });
 }
 
+
+
 /**
  * Añade estilos CSS para el editor
  */
@@ -977,6 +1008,24 @@ function addEditorStyles() {
 
         .color-palette {
             display: none;
+        }
+
+        /* Estilos para expresiones matemáticas */
+        .math-tex {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 2px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background-color: rgba(0, 0, 0, 0.02);
+            cursor: default;
+            user-select: all;
+            position: relative;
+        }
+
+        .math-tex:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
         }
 
         .color-palette.show {

@@ -846,6 +846,8 @@ function showContentFields() {
                     <div class="form-text">Nombre del archivo de imagen ubicado en /activities/images/</div>
                 </div>
             `;
+            // Cargar lista de recursos de imagen disponibles
+            setTimeout(() => loadResourceOptions('image', 'imageFilename'), 100);
             break;
 
         case 'pdf':
@@ -857,6 +859,8 @@ function showContentFields() {
                     <div class="form-text">Nombre del archivo PDF ubicado en /activities/pdf/</div>
                 </div>
             `;
+            // Cargar lista de recursos PDF disponibles
+            setTimeout(() => loadResourceOptions('pdf', 'pdfFilename'), 100);
             break;
 
         case 'html':
@@ -865,9 +869,11 @@ function showContentFields() {
                 <div class="mb-3">
                     <label for="htmlFilename" class="form-label">Nombre del Archivo HTML</label>
                     <input type="text" class="form-control" id="htmlFilename" placeholder="Ej: mi-archivo.html">
-                    <div class="form-text">Nombre del archivo HTML que desea incluir</div>
+                    <div class="form-text">Nombre del archivo HTML ubicado en /activities/html/</div>
                 </div>
             `;
+            // Cargar lista de recursos HTML disponibles
+            setTimeout(() => loadResourceOptions('html', 'htmlFilename'), 100);
             break;
 
         case 'activity':
@@ -1233,12 +1239,18 @@ function editSection(sectionId) {
             break;
         case 'html':
             document.getElementById('htmlFilename').value = section.content;
+            // Cargar lista de recursos HTML disponibles
+            loadResourceOptions('html', 'htmlFilename');
             break;
         case 'pdf':
             document.getElementById('pdfFilename').value = section.content;
+            // Cargar lista de recursos PDF disponibles
+            loadResourceOptions('pdf', 'pdfFilename');
             break;
         case 'image':
             document.getElementById('imageFilename').value = section.content;
+            // Cargar lista de recursos de imagen disponibles
+            loadResourceOptions('image', 'imageFilename');
             break;
         case 'activity':
             document.getElementById('activityId').value = section.content;
@@ -4107,4 +4119,202 @@ function debugActivities() {
     }
 
     console.log('=== FIN DE DEPURACIÓN ===');
+}
+
+/**
+ * Carga las opciones de recursos disponibles para un tipo específico
+ * @param {string} resourceType - Tipo de recurso (html, pdf, image)
+ * @param {string} inputId - ID del campo de entrada
+ */
+function loadResourceOptions(resourceType, inputId) {
+    console.log(`Cargando opciones de recursos para tipo: ${resourceType}`);
+
+    // Obtener el campo de entrada
+    const input = document.getElementById(inputId);
+    if (!input) {
+        console.error(`No se encontró el campo de entrada con ID: ${inputId}`);
+        return;
+    }
+
+    // Verificar si ya existe un selector
+    let resourceSelector = document.getElementById(`${inputId}_selector`);
+
+    // Si no existe, crear uno nuevo
+    if (!resourceSelector) {
+        resourceSelector = document.createElement('select');
+        resourceSelector.id = `${inputId}_selector`;
+        resourceSelector.className = 'form-select mt-2';
+        resourceSelector.setAttribute('aria-label', 'Seleccionar recurso');
+
+        // Añadir evento para actualizar el campo de entrada
+        resourceSelector.addEventListener('change', function() {
+            input.value = this.value;
+        });
+
+        // Añadir después del campo de entrada
+        input.parentNode.insertBefore(resourceSelector, input.nextSibling);
+
+        // Añadir enlace para administrar recursos
+        const resourceManagerLink = document.createElement('div');
+        resourceManagerLink.className = 'mt-2 text-end';
+        resourceManagerLink.innerHTML = `
+            <a href="../admin/resource-manager.html" target="_blank" class="text-decoration-none">
+                <i class="fas fa-external-link-alt me-1"></i> Administrar recursos
+            </a>
+        `;
+        input.parentNode.insertBefore(resourceManagerLink, resourceSelector.nextSibling);
+    }
+
+    // Limpiar opciones existentes
+    resourceSelector.innerHTML = '';
+
+    // Añadir opción por defecto
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '-- Seleccionar recurso --';
+    resourceSelector.appendChild(defaultOption);
+
+    // Obtener recursos disponibles
+    let resources = [];
+
+    // Obtener recursos SOLO desde ResourceManager para asegurar que solo se muestren
+    // los archivos indexados de las subcarpetas de activities
+    if (window.ResourceManager && typeof ResourceManager.getResourceList === 'function') {
+        try {
+            console.log(`Solicitando recursos de tipo ${resourceType} a ResourceManager...`);
+
+            // Mostrar indicador de carga
+            const loadingOption = document.createElement('option');
+            loadingOption.value = '';
+            loadingOption.textContent = 'Cargando recursos...';
+            loadingOption.disabled = true;
+            resourceSelector.appendChild(loadingOption);
+
+            // Obtener recursos de forma asíncrona
+            ResourceManager.getResourceList(resourceType)
+                .then(resourceList => {
+                    // Limpiar opciones existentes
+                    resourceSelector.innerHTML = '';
+
+                    // Añadir opción por defecto
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- Seleccionar recurso --';
+                    resourceSelector.appendChild(defaultOption);
+
+                    // Actualizar la variable resources
+                    resources = resourceList;
+
+                    console.log(`Recursos obtenidos desde ResourceManager: ${resources.length}`);
+
+                    // Mostrar los recursos obtenidos
+                    if (resources.length > 0) {
+                        console.log(`Recursos de tipo ${resourceType} obtenidos:`, resources.join(', '));
+
+                        // Añadir opciones para cada recurso
+                        resources.forEach(resource => {
+                            const option = document.createElement('option');
+                            option.value = resource;
+                            option.textContent = resource;
+
+                            // Seleccionar la opción si coincide con el valor actual
+                            if (resource === input.value) {
+                                option.selected = true;
+                            }
+
+                            resourceSelector.appendChild(option);
+                        });
+                    } else {
+                        console.warn(`No se obtuvieron recursos de tipo ${resourceType} desde ResourceManager`);
+                        console.log('Verificar que:');
+                        console.log('1. El archivo resource-manager.js esté cargado correctamente');
+                        console.log(`2. Existan archivos en la carpeta activities/${resourceType === 'image' ? 'images' : resourceType}`);
+                        console.log('3. Se haya ejecutado el script tools/generate_indexes.bat');
+                        console.log('4. Se haya actualizado el índice en el administrador de recursos');
+
+                        // Mostrar mensaje de que no hay recursos disponibles
+                        const noResourcesOption = document.createElement('option');
+                        noResourcesOption.value = '';
+                        noResourcesOption.textContent = 'No hay recursos disponibles';
+                        noResourcesOption.disabled = true;
+                        resourceSelector.appendChild(noResourcesOption);
+
+                        // Añadir mensaje informativo
+                        const helpMessage = document.createElement('div');
+                        helpMessage.id = `${inputId}_help_message`; // Añadir ID para poder eliminarlo después
+                        helpMessage.className = 'alert alert-warning mt-2';
+                        helpMessage.innerHTML = `
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small><strong>No se encontraron recursos indexados</strong> de tipo ${resourceType}. Para solucionar esto:</small>
+                            <ol class="mb-0 mt-1 small">
+                                <li>Asegúrese de que existan archivos en la carpeta <code>activities/${resourceType === 'image' ? 'images' : resourceType}</code></li>
+                                <li>Ejecute la herramienta <code>tools/generate_indexes.bat</code> para indexar los archivos</li>
+                                <li>Visite el <a href="../admin/resource-manager.html" target="_blank">Administrador de Recursos</a> para verificar que los archivos aparezcan</li>
+                            </ol>
+                        `;
+                        input.parentNode.insertBefore(helpMessage, resourceSelector.nextSibling);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al obtener recursos desde ResourceManager:', error);
+
+                    // Limpiar opciones existentes
+                    resourceSelector.innerHTML = '';
+
+                    // Añadir opción por defecto
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = '-- Seleccionar recurso --';
+                    resourceSelector.appendChild(defaultOption);
+
+                    // Mostrar mensaje de error
+                    const errorOption = document.createElement('option');
+                    errorOption.value = '';
+                    errorOption.textContent = 'Error al cargar recursos';
+                    errorOption.disabled = true;
+                    resourceSelector.appendChild(errorOption);
+                });
+
+            // Retornar aquí para evitar que se ejecute el código después del bloque try/catch
+            return;
+        } catch (error) {
+            console.error('Error al obtener recursos desde ResourceManager:', error);
+        }
+    } else {
+        console.warn('ResourceManager no disponible. No se pueden cargar recursos.');
+        console.error('Verificar que el archivo resource-manager.js esté incluido en section-editor.html');
+    }
+
+    // Este código solo se ejecutará si ResourceManager no está disponible
+    // o si ocurrió un error al obtener los recursos
+
+    // Eliminar cualquier mensaje de ayuda existente
+    const existingHelpMessage = document.getElementById(`${inputId}_help_message`);
+    if (existingHelpMessage) {
+        existingHelpMessage.remove();
+    }
+
+    // Mostrar mensaje de error
+    const errorOption = document.createElement('option');
+    errorOption.value = '';
+    errorOption.textContent = 'Error al cargar recursos';
+    errorOption.disabled = true;
+    resourceSelector.appendChild(errorOption);
+
+    // Añadir mensaje informativo
+    const helpMessage = document.createElement('div');
+    helpMessage.id = `${inputId}_help_message`; // Añadir ID para poder eliminarlo después
+    helpMessage.className = 'alert alert-danger mt-2';
+    helpMessage.innerHTML = `
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <small><strong>Error al cargar recursos</strong>. Verifique que:</small>
+        <ol class="mb-0 mt-1 small">
+            <li>El archivo <code>resource-manager.js</code> esté incluido en <code>section-editor.html</code></li>
+            <li>Existan archivos en la carpeta <code>activities/${resourceType === 'image' ? 'images' : resourceType}</code></li>
+            <li>Se haya ejecutado la herramienta <code>tools/generate_indexes.bat</code> para indexar los archivos</li>
+        </ol>
+    `;
+    input.parentNode.insertBefore(helpMessage, resourceSelector.nextSibling);
+
+    console.log(`No se pudieron cargar recursos para el tipo: ${resourceType}`);
 }

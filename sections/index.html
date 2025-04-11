@@ -9,6 +9,70 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/section-editor.css">
+
+    <style>
+        .section-card {
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        .section-card:hover {
+            transform: translateY(-5px);
+        }
+        .section-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #f8f9fa;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Colores específicos para cada tipo de sección */
+        .section-icon.text { color: #28a745; background-color: rgba(40, 167, 69, 0.1); }
+        .section-icon.youtube { color: #dc3545; background-color: rgba(220, 53, 69, 0.1); }
+        .section-icon.geogebra { color: #007bff; background-color: rgba(0, 123, 255, 0.1); }
+        .section-icon.image { color: #6f42c1; background-color: rgba(111, 66, 193, 0.1); }
+        .section-icon.pdf { color: #fd7e14; background-color: rgba(253, 126, 20, 0.1); }
+        .section-icon.html { color: #e34c26; background-color: rgba(227, 76, 38, 0.1); }
+        .section-icon.activity { color: #17a2b8; background-color: rgba(23, 162, 184, 0.1); }
+
+        /* Estilos para los filtros */
+        .filter-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .filter-container .form-label {
+            font-weight: 500;
+        }
+        .filter-container .form-select,
+        .filter-container .form-control {
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .filter-container .form-select:focus,
+        .filter-container .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        .filter-container .input-group .btn {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+        #searchMessage {
+            animation: fadeIn 0.3s ease-in-out;
+            border-left: 4px solid #0dcaf0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
     <div id="header"></div>
@@ -20,11 +84,38 @@
                 <p class="text-center lead mb-5">Explora nuestra colección de recursos interactivos</p>
 
                 <div class="filter-container mb-4">
+                    <!-- Buscador -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="searchInput" class="form-label">Buscar recursos</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Ingrese términos de búsqueda..." onkeyup="if(event.key === 'Enter') filterResources()">
+                                    <button class="btn btn-primary" type="button" onclick="filterResources()">
+                                        <i class="fas fa-search"></i> Buscar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="searchScope" class="form-label">Buscar en</label>
+                                <select class="form-select" id="searchScope" onchange="filterResources()">
+                                    <option value="all" selected>Todo el contenido</option>
+                                    <option value="title">Títulos</option>
+                                    <option value="course">Cursos</option>
+                                    <option value="topic">Temas</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="courseFilter" class="form-label">Filtrar por Curso</label>
-                                <select class="form-select" id="courseFilter" onchange="filterResources()">
+                                <select class="form-select" id="courseFilter" onchange="updateTopicFilter(); filterResources()">
                                     <option value="">Todos los cursos</option>
                                     <!-- Las opciones se cargarán dinámicamente -->
                                 </select>
@@ -32,7 +123,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="topicFilter" class="form-label">Filtrar por Tema</label>
+                                <label for="topicFilter" class="form-label">Filtrar por Tema <small class="text-muted">(seleccione un curso primero)</small></label>
                                 <select class="form-select" id="topicFilter" onchange="filterResources()">
                                     <option value="">Todos los temas</option>
                                     <!-- Las opciones se cargarán dinámicamente -->
@@ -49,6 +140,7 @@
                                     <option value="geogebra">GeoGebra</option>
                                     <option value="image">Imagen</option>
                                     <option value="pdf">PDF</option>
+                                    <option value="html">HTML</option>
                                     <option value="activity">Actividad</option>
                                 </select>
                             </div>
@@ -56,9 +148,9 @@
                     </div>
                 </div>
 
-                <div class="resources-grid" id="resourcesList">
+                <div class="row" id="resourcesList">
                     <!-- Los recursos se cargarán dinámicamente -->
-                    <div class="text-center w-100">
+                    <div class="col-12 text-center py-5">
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
@@ -95,7 +187,36 @@
 
             // Cargar datos
             loadData();
+
+            // Procesar parámetros de búsqueda de la URL si existen
+            processSearchParams();
         });
+
+        /**
+         * Procesa los parámetros de búsqueda de la URL
+         */
+        function processSearchParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchText = urlParams.get('search');
+            const searchScope = urlParams.get('scope') || 'all';
+
+            if (searchText) {
+                console.log(`Procesando búsqueda: "${searchText}" en "${searchScope}"`);
+
+                // Establecer valores en los campos de búsqueda
+                document.getElementById('searchInput').value = searchText;
+                document.getElementById('searchScope').value = searchScope;
+
+                // Ejecutar la búsqueda
+                filterResources();
+
+                // Desplazarse a los resultados
+                setTimeout(() => {
+                    const resourcesList = document.getElementById('resourcesList');
+                    resourcesList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+            }
+        }
 
         function loadData() {
             console.log('Cargando datos en sections/index.html...');
@@ -146,26 +267,21 @@
                 courseFilter.appendChild(option);
             });
 
-            // Cargar filtro de temas
-            const topicFilter = document.getElementById('topicFilter');
-            topicFilter.innerHTML = '<option value="">Todos los temas</option>';
-
-            allTopics.forEach(topic => {
-                const option = document.createElement('option');
-                option.value = topic.id;
-                option.textContent = topic.title;
-                topicFilter.appendChild(option);
-            });
+            // Inicializar el filtro de temas
+            updateTopicFilter();
         }
 
         function filterResources() {
             const courseId = document.getElementById('courseFilter').value;
             const topicId = document.getElementById('topicFilter').value;
             const type = document.getElementById('typeFilter').value;
+            const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+            const searchScope = document.getElementById('searchScope').value;
 
             // Filtrar secciones
             let filteredSections = [...allSections];
 
+            // Aplicar filtros de selección
             if (courseId) {
                 filteredSections = filteredSections.filter(section => section.courseId == courseId);
             }
@@ -178,8 +294,59 @@
                 filteredSections = filteredSections.filter(section => section.type === type);
             }
 
+            // Aplicar filtro de búsqueda de texto
+            if (searchText) {
+                filteredSections = filteredSections.filter(section => {
+                    // Determinar dónde buscar según el ámbito seleccionado
+                    switch (searchScope) {
+                        case 'title':
+                            return section.title.toLowerCase().includes(searchText);
+                        case 'course':
+                            return section.courseTitle.toLowerCase().includes(searchText);
+                        case 'topic':
+                            return section.topicTitle.toLowerCase().includes(searchText);
+                        case 'all':
+                        default:
+                            // Buscar en todos los campos relevantes
+                            return section.title.toLowerCase().includes(searchText) ||
+                                   section.courseTitle.toLowerCase().includes(searchText) ||
+                                   section.topicTitle.toLowerCase().includes(searchText) ||
+                                   (section.description && section.description.toLowerCase().includes(searchText));
+                    }
+                });
+
+                // Mostrar mensaje de búsqueda
+                const searchCount = filteredSections.length;
+                const searchMessage = document.getElementById('searchMessage') || document.createElement('div');
+                searchMessage.id = 'searchMessage';
+                searchMessage.className = 'alert alert-info mb-3';
+                searchMessage.innerHTML = `<i class="fas fa-info-circle me-2"></i> Se encontraron <strong>${searchCount}</strong> recursos que coinciden con "<strong>${searchText}</strong>" en <strong>${getSearchScopeName(searchScope)}</strong>`;
+
+                // Insertar mensaje antes de la lista de recursos
+                const resourcesList = document.getElementById('resourcesList');
+                const existingMessage = document.getElementById('searchMessage');
+                if (!existingMessage) {
+                    resourcesList.parentNode.insertBefore(searchMessage, resourcesList);
+                }
+            } else {
+                // Eliminar mensaje de búsqueda si existe
+                const existingMessage = document.getElementById('searchMessage');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+            }
+
             // Mostrar resultados
             displayResources(filteredSections);
+        }
+
+        function getSearchScopeName(scope) {
+            switch (scope) {
+                case 'title': return 'títulos';
+                case 'course': return 'cursos';
+                case 'topic': return 'temas';
+                case 'all': default: return 'todo el contenido';
+            }
         }
 
         function displayResources(sections) {
@@ -187,9 +354,12 @@
 
             if (sections.length === 0) {
                 resourcesList.innerHTML = `
-                    <div class="text-center w-100">
-                        <i class="fas fa-info-circle fa-3x mb-3"></i>
-                        <p>No se encontraron recursos con los filtros seleccionados.</p>
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-info-circle fa-3x mb-3 text-muted"></i>
+                        <p class="lead">No se encontraron recursos con los filtros seleccionados.</p>
+                        <button class="btn btn-outline-primary mt-3" onclick="resetFilters()">
+                            <i class="fas fa-sync-alt me-2"></i> Restablecer filtros
+                        </button>
                     </div>
                 `;
                 return;
@@ -197,26 +367,28 @@
 
             resourcesList.innerHTML = sections.map(section => {
                 return `
-                <div class="resource-card resource-type-${section.type}">
-                    <div class="resource-icon">
-                        <i class="${getSectionIcon(section.type)}"></i>
-                    </div>
-                    <div class="resource-content">
-                        <h3>${section.title}</h3>
-                        <div class="resource-meta">
-                            <span class="resource-course">
-                                <i class="fas fa-book"></i> ${section.courseTitle}
-                            </span>
-                            <span class="resource-topic">
-                                <i class="fas fa-bookmark"></i> ${section.topicTitle}
-                            </span>
-                            <span class="resource-type">
-                                <i class="fas fa-file"></i> ${getTypeName(section.type)}
-                            </span>
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="card section-card">
+                        <div class="card-body text-center">
+                            <div class="section-icon ${section.type}">
+                                <i class="${getSectionIcon(section.type)}"></i>
+                            </div>
+                            <h5 class="card-title">${section.title}</h5>
+                            <div class="card-text mb-3">
+                                <div class="small text-muted mb-1">
+                                    <i class="fas fa-book me-1"></i> ${section.courseTitle}
+                                </div>
+                                <div class="small text-muted mb-1">
+                                    <i class="fas fa-bookmark me-1"></i> ${section.topicTitle}
+                                </div>
+                                <div class="badge bg-light text-dark">
+                                    ${getTypeName(section.type)}
+                                </div>
+                            </div>
+                            <a href="view.html?id=${section.id}&topicId=${section.topicId}" class="btn btn-primary">
+                                Ver recurso
+                            </a>
                         </div>
-                        <a href="view.html?id=${section.id}&topicId=${section.topicId}" class="btn btn-primary mt-3">
-                            Ver recurso
-                        </a>
                     </div>
                 </div>
                 `;
@@ -235,6 +407,8 @@
                     return 'fas fa-image';
                 case 'pdf':
                     return 'fas fa-file-pdf';
+                case 'html':
+                    return 'fab fa-html5';
                 case 'activity':
                     return 'fas fa-tasks';
                 default:
@@ -254,11 +428,80 @@
                     return 'Imagen';
                 case 'pdf':
                     return 'PDF';
+                case 'html':
+                    return 'HTML';
                 case 'activity':
                     return 'Actividad';
                 default:
                     return 'Desconocido';
             }
+        }
+
+        function resetFilters() {
+            // Restablecer todos los filtros a sus valores predeterminados
+            document.getElementById('courseFilter').value = '';
+            document.getElementById('topicFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchScope').value = 'all';
+
+            // Eliminar mensaje de búsqueda si existe
+            const existingMessage = document.getElementById('searchMessage');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            // Actualizar el selector de temas
+            updateTopicFilter();
+
+            // Volver a cargar los recursos
+            filterResources();
+        }
+
+        /**
+         * Actualiza el selector de temas basado en el curso seleccionado
+         */
+        function updateTopicFilter() {
+            const courseId = document.getElementById('courseFilter').value;
+            const topicFilter = document.getElementById('topicFilter');
+
+            // Limpiar el selector de temas
+            topicFilter.innerHTML = '<option value="">Todos los temas</option>';
+
+            // Si no hay curso seleccionado, mostrar todos los temas
+            if (!courseId) {
+                allTopics.forEach(topic => {
+                    const option = document.createElement('option');
+                    option.value = topic.id;
+                    option.textContent = topic.title;
+                    topicFilter.appendChild(option);
+                });
+                return;
+            }
+
+            // Filtrar temas por curso
+            const filteredTopics = allTopics.filter(topic => topic.courseId == courseId);
+
+            // Verificar si hay temas para este curso
+            if (filteredTopics.length === 0) {
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = "No hay temas disponibles para este curso";
+                option.disabled = true;
+                topicFilter.appendChild(option);
+                console.log(`No se encontraron temas para el curso ${courseId}`);
+                return;
+            }
+
+            // Añadir opciones filtradas
+            filteredTopics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic.id;
+                option.textContent = topic.title;
+                topicFilter.appendChild(option);
+            });
+
+            console.log(`Filtro de temas actualizado: ${filteredTopics.length} temas para el curso ${courseId}`);
         }
     </script>
 </body>

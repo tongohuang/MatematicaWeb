@@ -1015,6 +1015,116 @@ const DataManager = {
         } else {
             return { synced: true, pendingChanges: 0, lastChange: null };
         }
+    },
+
+    // Obtener recursos utilizados en secciones
+    getUsedResources() {
+        try {
+            const courses = this.getCourses();
+            const usedResources = [];
+
+            courses.forEach(course => {
+                course.themes.forEach(theme => {
+                    theme.sections.forEach(section => {
+                        // Verificar si la sección es de tipo HTML, PDF o imagen
+                        if (section.type === 'html') {
+                            usedResources.push({
+                                type: 'html',
+                                name: section.content,
+                                usedIn: `${course.name} > ${theme.name} > ${section.title}`
+                            });
+                        } else if (section.type === 'pdf') {
+                            usedResources.push({
+                                type: 'pdf',
+                                name: section.content,
+                                usedIn: `${course.name} > ${theme.name} > ${section.title}`
+                            });
+                        } else if (section.type === 'image') {
+                            usedResources.push({
+                                type: 'image',
+                                name: section.content,
+                                usedIn: `${course.name} > ${theme.name} > ${section.title}`
+                            });
+                        }
+                    });
+                });
+            });
+
+            return usedResources;
+        } catch (error) {
+            console.error('Error al obtener recursos utilizados:', error);
+            return [];
+        }
+    },
+
+    // Obtener lista de recursos disponibles por tipo
+    getResourcesByType(type) {
+        console.log(`DataManager: Obteniendo recursos de tipo ${type}`);
+
+        // Validar que el tipo sea uno de los permitidos
+        if (!['html', 'pdf', 'image'].includes(type)) {
+            console.error(`Tipo de recurso no válido: ${type}`);
+            return [];
+        }
+
+        // Intentar obtener recursos desde localStorage si están disponibles
+        const resourcesKey = `resources_${type}`;
+        const storedResources = localStorage.getItem(resourcesKey);
+
+        if (storedResources) {
+            try {
+                const resources = JSON.parse(storedResources);
+                console.log(`DataManager: Recursos de tipo ${type} obtenidos desde localStorage: ${resources.length}`);
+                return resources;
+            } catch (error) {
+                console.error(`Error al parsear recursos de tipo ${type} desde localStorage:`, error);
+            }
+        }
+
+        // Si no hay recursos en localStorage, devolver una lista de ejemplo
+        console.log(`DataManager: No se encontraron recursos de tipo ${type} en localStorage, devolviendo lista de ejemplo`);
+
+        if (type === 'html') {
+            return [
+                'actividad1.html',
+                'actividad2.html',
+                'ejercicio1.html',
+                'ejercicio2.html'
+            ];
+        } else if (type === 'pdf') {
+            return [
+                'documento1.pdf',
+                'documento2.pdf',
+                'lectura1.pdf'
+            ];
+        } else if (type === 'image') {
+            return [
+                'grafico1.png',
+                'grafico2.jpg',
+                'diagrama1.png',
+                'diagrama2.jpg',
+                'foto1.jpg'
+            ];
+        }
+
+        return [];
+    },
+
+    // Guardar lista de recursos por tipo
+    saveResourcesByType(type, resources) {
+        console.log(`DataManager: Guardando ${resources.length} recursos de tipo ${type}`);
+
+        // Validar que el tipo sea uno de los permitidos
+        if (!['html', 'pdf', 'image'].includes(type)) {
+            console.error(`Tipo de recurso no válido: ${type}`);
+            return false;
+        }
+
+        // Guardar recursos en localStorage
+        const resourcesKey = `resources_${type}`;
+        localStorage.setItem(resourcesKey, JSON.stringify(resources));
+
+        return true;
     }
 };
 
