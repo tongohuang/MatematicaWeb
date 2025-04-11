@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Más Inducción Interactiva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reutilizamos los estilos del ejemplo anterior, ajustando si es necesario */
+        :root {
+            --primary: #4f46e5; /* Indigo */
+            --primary-light: #6366f1;
+            --secondary: #10b981; /* Emerald */
+            --tertiary: #f59e0b; /* Amber */
+            --danger: #ef4444; /* Red */
+            --info: #3b82f6; /* Blue */
+            --dark: #1f2937;
+            --light: #f9fafb;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .gradient-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .card { transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+        .card:hover { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); transform: translateY(-2px); }
+        .step-indicator { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; position: absolute; top: -15px; left: 15px; }
+        .step-indicator-primary { background-color: var(--primary); }
+        .step-indicator-secondary { background-color: var(--secondary); }
+        .step-indicator-tertiary { background-color: var(--tertiary); }
+
+        .drop-zone { min-height: 60px; border: 2px dashed #d1d5db; border-radius: 8px; transition: all 0.3s ease; background-color: #f9fafb; padding: 10px; display: flex; align-items: center; justify-content: center; }
+        .drop-zone.active { border-color: var(--primary); background-color: rgba(79, 70, 229, 0.05); }
+        .drop-placeholder { color: #9ca3af; font-style: italic; text-align: center; width: 100%; }
+
+        .draggable { display: inline-block; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; margin: 5px; cursor: grab; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); transition: all 0.2s ease; user-select: none; touch-action: none; }
+        .draggable:hover { border-color: var(--primary); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .draggable.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 100; }
+
+        .dropped-item { display: inline-block; background-color: white; border: 1px solid var(--primary); border-radius: 6px; padding: 8px 12px; margin: 5px 0; position: relative; }
+        .delete-btn { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background-color: var(--danger); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10; }
+        .dropped-item:hover .delete-btn { opacity: 1; }
+
+        .math-expression { background-color: #f3f4f6; border-left: 4px solid var(--primary); padding: 10px 15px; border-radius: 4px; margin: 10px 0; overflow-x: auto; }
+        .hint-box { background-color: #fffbeb; border-left: 4px solid var(--tertiary); padding: 12px; border-radius: 4px; margin: 15px 0; }
+        .feedback-correct { background-color: #ecfdf5; border-left: 4px solid var(--secondary); padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 0.9em; }
+        .feedback-incorrect { background-color: #fef2f2; border-left: 4px solid var(--danger); padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 0.9em; }
+        .visual-highlight { background-color: #eff6ff; border-left: 4px solid var(--info); padding: 12px; border-radius: 4px; margin: 10px 0; position: relative; padding-top: 20px; } /* Added padding-top */
+        .visual-highlight::before { content: "Aplicando Hipótesis Inductiva"; position: absolute; top: -10px; left: 10px; background-color: white; padding: 0 10px; font-size: 0.75rem; color: var(--info); font-weight: bold; }
+
+        .progress-tracker { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); z-index: 50; }
+        .progress-step { width: 12px; height: 12px; border-radius: 50%; background-color: #e5e7eb; margin: 8px 0; position: relative; cursor: pointer; transition: all 0.3s; }
+        .progress-step.active { background-color: var(--primary); }
+        .progress-step.completed { background-color: var(--secondary); }
+        .progress-step:hover::after { content: attr(data-title); position: absolute; left: 20px; top: 50%; transform: translateY(-50%); white-space: nowrap; background-color: var(--dark); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
+
+        .animate-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { border-color: var(--danger); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { border-color: var(--danger); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Style for sub-step numbering */
+        .sub-step {
+           padding-left: 1.5rem;
+           position: relative;
+           margin-bottom: 1rem;
+           border-left: 2px solid #e5e7eb; /* Light gray border */
+           margin-left: 1rem;
+        }
+         .sub-step::before {
+            content: counter(substep);
+            counter-increment: substep;
+            position: absolute;
+            left: -11px; /* Adjust to center on the border */
+            top: 0;
+            background-color: #d1d5db; /* Gray */
+            color: var(--dark);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+         }
+         .proof-steps {
+             counter-reset: substep;
+             margin-left: 1rem; /* Align with step indicators */
+         }
+         .proof-steps .sub-step:first-child {
+            margin-top: 1rem;
+         }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Progress Tracker -->
+    <div class="progress-tracker hidden md:block">
+        <div class="progress-step active" data-title="Introducción" onclick="scrollToSection('introduction')"></div>
+        <div class="progress-step" data-title="Actividad 1: Suma Geométrica" onclick="scrollToSection('activity-1')"></div>
+        <div class="progress-step" data-title="Actividad 2: Divisibilidad" onclick="scrollToSection('activity-2')"></div>
+        <div class="progress-step" data-title="Actividad 3: Desigualdad Factorial" onclick="scrollToSection('activity-3')"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="gradient-header text-white py-8 shadow-lg">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">Explorando la Inducción Matemática</h1>
+            <p class="text-lg text-center text-indigo-100 max-w-2xl mx-auto">
+                Pon a prueba tus habilidades con nuevos desafíos de inducción interactivos.
+            </p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Introduction Section (Condensed) -->
+        <section id="introduction" class="mb-12 fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-book-open text-indigo-500 mr-3"></i>
+                        Recordatorio: Inducción Matemática
+                    </h2>
+                    <p class="text-gray-700 mb-4">
+                        La inducción es una técnica para probar que una proposición \(P(n)\) es cierta para todos los números naturales \(n\) a partir de un valor inicial \(n_0\). Consta de dos pasos clave:
+                    </p>
+                    <ol class="list-decimal list-inside space-y-2 mb-4 text-gray-700">
+                        <li><strong>Caso Base:</strong> Probar que \(P(n_0)\) es verdadera.</li>
+                        <li><strong>Paso Inductivo:</strong> Asumir que \(P(k)\) es verdadera para un \(k \ge n_0\) arbitrario (Hipótesis Inductiva) y, usando esa suposición, probar que \(P(k+1)\) también es verdadera.</li>
+                    </ol>
+                    <p class="text-sm text-gray-600 italic">¡Vamos a aplicar esto a nuevos problemas!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activity 1: Geometric Sum (Powers of 2) -->
+        <section id="activity-1" class="mb-12 fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
+                <div class="bg-indigo-600 text-white px-6 py-4">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Actividad 1: Suma de Potencias de 2
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <p class="text-gray-700 mb-4">
+                            Demuestra por inducción que para todo entero \(n \ge 1\):
+                        </p>
+                        <div class="math-expression text-center">
+                            \[1 + 2 + 2^2 + \cdots + 2^{n-1} = 2^n - 1\]
+                            <p class="text-sm mt-2 text-gray-600">(Nota: La suma también se puede escribir como \(\sum_{i=0}^{n-1} 2^i\))</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Base Case -->
+                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-primary">1</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Caso Base (\(n=1\))</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Verifica la igualdad para \(n=1\).</p>
+                        <div class="ml-10">
+                            <div class="drop-zone mb-3" id="drop-a1-base" data-placeholder="Arrastra la verificación para n=1">
+                                <span class="drop-placeholder">Arrastra la verificación para n=1</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Para n=1, la suma solo tiene el término 2^(1-1) = 2^0 = 1. El lado derecho es 2^1 - 1 = 1.">
+                                    \(2^{1-1} = 1 \quad \text{y} \quad 2^1 - 1 = 1\). Se cumple \(1 = 1\).
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Recuerda que la suma llega hasta 2^(n-1). Para n=1, el último exponente es 0.">
+                                    \(1 + 2 = 2^1 - 1\)
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El lado derecho de la fórmula es 2^n - 1, no 2^n.">
+                                    \(1 = 2^1\)
+                                </div>
+                            </div>
+                            <div id="feedback-a1-base" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Inductive Hypothesis -->
+                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-primary">2</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Hipótesis Inductiva</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Suponemos que la fórmula es cierta para un entero \(k \ge 1\).</p>
+                        <div class="ml-10">
+                             <div class="drop-zone mb-3" id="drop-a1-hypo" data-placeholder="Arrastra la hipótesis para n=k">
+                                <span class="drop-placeholder">Arrastra la hipótesis para n=k</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Exacto! Esta es la suposición que usaremos.">
+                                    \(1 + 2 + \cdots + 2^{k-1} = 2^k - 1\)
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El último término de la suma debe ser para el índice k-1.">
+                                    \(1 + 2 + \cdots + 2^k = 2^k - 1\)
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La hipótesis se plantea para k, no para k+1.">
+                                    \(1 + 2 + \cdots + 2^k = 2^{k+1} - 1\)
+                                </div>
+                            </div>
+                            <div id="feedback-a1-hypo" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Inductive Step -->
+                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-primary">3</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Paso Inductivo (Probar para \(n=k+1\))</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Queremos demostrar que:</p>
+                        <div class="math-expression ml-10 mb-4">
+                           \[1 + 2 + \cdots + 2^{k-1} + 2^k = 2^{k+1} - 1\]
+                        </div>
+                        <div class="proof-steps ml-10">
+                            <!-- Substep 3.1 -->
+                            <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Comenzamos con el lado izquierdo de la tesis y agrupamos términos para usar la hipótesis:</h4>
+                                <div class="math-expression mb-3">\((1 + 2 + \cdots + 2^{k-1}) + 2^k\)</div>
+                                <div class="visual-highlight mb-4">
+                                    <h4 class="font-medium text-gray-700 mb-2">Aplicamos la Hipótesis Inductiva al grupo entre paréntesis:</h4>
+                                     <div class="drop-zone mb-3" id="drop-a1-apply-hypo" data-placeholder="Arrastra el resultado de aplicar la hipótesis">
+                                        <span class="drop-placeholder">Arrastra el resultado de aplicar la hipótesis</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Bien! Reemplazaste la suma por lo que dice la hipótesis.">
+                                            \((2^k - 1) + 2^k\)
+                                        </div>
+                                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Cuidado, la hipótesis dice que la suma es 2^k - 1, no solo 2^k.">
+                                            \(2^k + 2^k\)
+                                        </div>
+                                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Estás cerca, pero la hipótesis se aplica a la suma *hasta* 2^(k-1).">
+                                            \( (2^{k+1} - 1) \)
+                                        </div>
+                                    </div>
+                                    <div id="feedback-a1-apply-hypo" class="hidden"></div>
+                                </div>
+                            </div>
+                            <!-- Substep 3.2 -->
+                            <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Ahora, simplificamos algebraicamente la expresión obtenida:</h4>
+                                 <div class="drop-zone mb-3" id="drop-a1-simplify" data-placeholder="Arrastra la simplificación final">
+                                    <span class="drop-placeholder">Arrastra la simplificación final</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Perfecto! 2^k + 2^k = 2 * 2^k = 2^(k+1).">
+                                        \(2 \cdot 2^k - 1 = 2^{k+1} - 1\)
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. 2^k + 2^k no es 2^(2k). Recuerda las propiedades de potencias.">
+                                        \(2^{2k} - 1\)
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta el -1 que venía de la hipótesis.">
+                                        \(2^{k+1}\)
+                                    </div>
+                                </div>
+                                <div id="feedback-a1-simplify" class="hidden"></div>
+                            </div>
+                        </div>
+                         <p class="text-gray-700 mt-4 ml-10">Hemos llegado a \(2^{k+1} - 1\), que es el lado derecho de la tesis. ¡Demostración completada!</p>
+                         <div class="hint-box ml-10">
+                            <p class="text-amber-800 font-medium flex items-start">
+                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
+                                <span>Pista: La clave suele ser identificar la expresión de la hipótesis inductiva (\(P(k)\)) dentro de la expresión que quieres probar (\(P(k+1)\)). Aquí, la suma hasta \(2^{k-1}\) es exactamente \(P(k)\). Recuerda también que \(x+x = 2x\).</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6 space-x-4">
+                        <button class="reset-button px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center">
+                            <i class="fas fa-redo mr-2"></i> Reiniciar Actividad 1
+                        </button>
+                        <button class="check-button px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i> Verificar Actividad 1
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activity 2: Divisibility -->
+        <section id="activity-2" class="mb-12 fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
+                <div class="bg-emerald-600 text-white px-6 py-4">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-divide mr-3"></i>
+                        Actividad 2: Divisibilidad por 3
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <p class="text-gray-700 mb-4">
+                            Demuestra por inducción que para todo entero \(n \ge 1\), la expresión \(n^3 + 2n\) es divisible por 3.
+                        </p>
+                        <div class="math-expression text-center">
+                            \[3 \mid (n^3 + 2n) \quad \forall n \ge 1\]
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Base Case -->
+                     <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-secondary">1</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Caso Base (\(n=1\))</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Verifica la divisibilidad para \(n=1\).</p>
+                        <div class="ml-10">
+                            <div class="drop-zone mb-3" id="drop-a2-base" data-placeholder="Arrastra la verificación de divisibilidad para n=1">
+                                <span class="drop-placeholder">Arrastra la verificación de divisibilidad para n=1</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! 1³ + 2(1) = 1 + 2 = 3, y 3 es divisible por 3.">
+                                    \(1^3 + 2(1) = 3\). Como \(3 = 3 \cdot 1\), es divisible por 3.
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Calculaste bien el valor (3), pero la conclusión sobre la divisibilidad es incorrecta.">
+                                     \(1^3 + 2(1) = 3\). No es divisible por 3.
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Error de cálculo. 1³ es 1, no 3.">
+                                    \(1^3 + 2(1) = 3 + 2 = 5\). No es divisible por 3.
+                                </div>
+                            </div>
+                            <div id="feedback-a2-base" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Inductive Hypothesis -->
+                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-secondary">2</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Hipótesis Inductiva</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Suponemos que la propiedad es cierta para un entero \(k \ge 1\). Es decir, asumimos que \(k^3 + 2k\) es divisible por 3.</p>
+                        <div class="ml-10">
+                             <div class="drop-zone mb-3" id="drop-a2-hypo" data-placeholder="Arrastra la forma matemática de la hipótesis">
+                                <span class="drop-placeholder">Arrastra la forma matemática de la hipótesis</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Bien! Esto significa que existe un entero 'm' tal que k³+2k = 3m.">
+                                    \(k^3 + 2k = 3m\), para algún entero \(m\).
+                                </div>
+                                 <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es lo que queremos probar, no la hipótesis.">
+                                    \((k+1)^3 + 2(k+1)\) es divisible por 3.
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La hipótesis es sobre divisibilidad, no una igualdad directa a 3.">
+                                    \(k^3 + 2k = 3\)
+                                </div>
+                            </div>
+                            <div id="feedback-a2-hypo" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Inductive Step -->
+                     <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-secondary">3</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Paso Inductivo (Probar para \(n=k+1\))</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Queremos demostrar que \((k+1)^3 + 2(k+1)\) es divisible por 3.</p>
+                        <div class="proof-steps ml-10">
+                            <!-- Substep 3.1 -->
+                            <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Expandimos la expresión \((k+1)^3 + 2(k+1)\):</h4>
+                                <div class="drop-zone mb-3" id="drop-a2-expand" data-placeholder="Arrastra la expansión correcta">
+                                    <span class="drop-placeholder">Arrastra la expansión correcta</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! (k+1)³ = k³+3k²+3k+1 y 2(k+1) = 2k+2.">
+                                        \( (k^3 + 3k^2 + 3k + 1) + (2k + 2) \)
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Error al expandir (k+1)³. Recuerda el binomio al cubo.">
+                                        \( (k^3 + 1) + (2k + 2) \)
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="No distribuiste el 2 correctamente.">
+                                        \( (k^3 + 3k^2 + 3k + 1) + (2k + 1) \)
+                                    </div>
+                                </div>
+                                <div id="feedback-a2-expand" class="hidden"></div>
+                            </div>
+                             <!-- Substep 3.2 -->
+                            <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Agrupamos términos para usar la hipótesis (\(k^3+2k\)):</h4>
+                                <p class="text-sm text-gray-600 mb-2">Expresión actual: \(k^3 + 3k^2 + 3k + 1 + 2k + 2 = k^3 + 3k^2 + 5k + 3\)</p>
+                                <div class="visual-highlight mb-4">
+                                     <h4 class="font-medium text-gray-700 mb-2">Reorganiza para aislar \(k^3+2k\):</h4>
+                                    <div class="drop-zone mb-3" id="drop-a2-regroup" data-placeholder="Arrastra la forma reagrupada">
+                                        <span class="drop-placeholder">Arrastra la forma reagrupada</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Excelente! Separaste (k³+2k) y agrupaste el resto.">
+                                            \( (k^3 + 2k) + (3k^2 + 3k + 3) \)
+                                        </div>
+                                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Necesitas k³ y 2k juntos. Revisa los términos restantes.">
+                                             \( (k^3 + 2k) + (3k^2 + 5k + 3) \)
+                                        </div>
+                                         <div class="draggable" draggable="true" data-value="incorrect" data-feedback="No has aislado k³+2k. El objetivo es usar la hipótesis.">
+                                            \( k^3 + 3k^2 + 5k + 3 \)
+                                        </div>
+                                    </div>
+                                    <div id="feedback-a2-regroup" class="hidden"></div>
+                                </div>
+                            </div>
+                            <!-- Substep 3.3 -->
+                            <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Analizamos la divisibilidad de cada parte:</h4>
+                                <p class="text-sm text-gray-600 mb-2">Tenemos la suma: \( (k^3 + 2k) + (3k^2 + 3k + 3) \)</p>
+                                 <div class="drop-zone mb-3" id="drop-a2-divisibility" data-placeholder="Arrastra la justificación de divisibilidad">
+                                    <span class="drop-placeholder">Arrastra la justificación de divisibilidad</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Perfecto! La primera parte es divisible por 3 (Hipótesis) y la segunda también (factor común 3). La suma de múltiplos de 3 es múltiplo de 3.">
+                                        \(k^3+2k\) es divisible por 3 (por H.I.).<br> \(3k^2+3k+3 = 3(k^2+k+1)\) es divisible por 3.<br> La suma es divisible por 3.
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La segunda parte es claramente divisible por 3, pero necesitas mencionar la hipótesis para la primera parte.">
+                                         \(3k^2+3k+3\) es divisible por 3, por lo tanto, todo es divisible por 3.
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Solo usar la hipótesis no es suficiente, debes justificar la divisibilidad de la otra parte.">
+                                        \(k^3+2k\) es divisible por 3 (por H.I.), por lo tanto, todo es divisible por 3.
+                                    </div>
+                                </div>
+                                <div id="feedback-a2-divisibility" class="hidden"></div>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mt-4 ml-10">Como \((k^3+2k)\) es divisible por 3 (Hip. Inductiva) y \(3(k^2+k+1)\) es claramente divisible por 3, su suma \((k+1)^3 + 2(k+1)\) también es divisible por 3.</p>
+                         <div class="hint-box ml-10">
+                            <p class="text-amber-800 font-medium flex items-start">
+                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
+                                <span>Pista para Divisibilidad: Después de expandir la expresión para \(k+1\), el truco es manipularla algebraicamente para hacer aparecer la expresión de la hipótesis inductiva (\(k^3+2k\) en este caso). Luego, demuestra que los términos restantes *también* son divisibles por el número en cuestión (aquí, 3). Si tienes la suma de dos cosas divisibles por 3, el resultado es divisible por 3.</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6 space-x-4">
+                        <button class="reset-button px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center">
+                            <i class="fas fa-redo mr-2"></i> Reiniciar Actividad 2
+                        </button>
+                        <button class="check-button px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i> Verificar Actividad 2
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activity 3: Inequality with Factorial -->
+        <section id="activity-3" class="mb-12 fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
+                <div class="bg-amber-600 text-white px-6 py-4">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-exclamation-circle mr-3"></i>
+                        Actividad 3: Desigualdad con Factorial
+                    </h2>
+                </div>
+                 <div class="p-6">
+                    <div class="mb-6">
+                        <p class="text-gray-700 mb-4">
+                            Demuestra por inducción que \(n! > 2^n\) para todo entero \(n \ge 4\).
+                        </p>
+                         <div class="math-expression text-center">
+                            \[n! > 2^n \quad \forall n \ge 4\]
+                            <p class="text-sm mt-2 text-gray-600">(Recuerda: \(n! = n \cdot (n-1) \cdot \ldots \cdot 2 \cdot 1\))</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Base Case -->
+                     <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-tertiary">1</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Caso Base (\(n=4\))</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Verifica la desigualdad para \(n=4\).</p>
+                        <div class="ml-10">
+                            <div class="drop-zone mb-3" id="drop-a3-base" data-placeholder="Arrastra la verificación para n=4">
+                                <span class="drop-placeholder">Arrastra la verificación para n=4</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! 4! = 24 y 2⁴ = 16. Como 24 > 16, la desigualdad se cumple.">
+                                    \(4! = 4 \cdot 3 \cdot 2 \cdot 1 = 24\). \(2^4 = 16\). Se cumple \(24 > 16\).
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Calculaste mal el factorial. 4! no es 4.">
+                                    \(4! = 4\). \(2^4 = 16\). No se cumple \(4 > 16\).
+                                </div>
+                                 <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La desigualdad es estricta (>), no mayor o igual (>=).">
+                                     \(4! = 24\). \(2^4 = 16\). Se cumple \(24 \ge 16\).
+                                </div>
+                            </div>
+                            <div id="feedback-a3-base" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Inductive Hypothesis -->
+                     <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-tertiary">2</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Hipótesis Inductiva</h3>
+                        <p class="text-gray-700 mb-4 ml-10">Suponemos que la desigualdad es cierta para un entero \(k \ge 4\).</p>
+                        <div class="ml-10">
+                             <div class="drop-zone mb-3" id="drop-a3-hypo" data-placeholder="Arrastra la hipótesis para n=k">
+                                <span class="drop-placeholder">Arrastra la hipótesis para n=k</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Asumimos k! > 2^k para k>=4.">
+                                    \(k! > 2^k\), para un \(k \ge 4\).
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La desigualdad debe ser estricta (>).">
+                                     \(k! \ge 2^k\), para un \(k \ge 4\).
+                                </div>
+                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La hipótesis se formula para k, no para k+1.">
+                                    \((k+1)! > 2^{k+1}\)
+                                </div>
+                            </div>
+                            <div id="feedback-a3-hypo" class="hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Inductive Step -->
+                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
+                        <div class="step-indicator step-indicator-tertiary">3</div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Paso Inductivo (Probar para \(n=k+1\))</h3>
+                         <p class="text-gray-700 mb-4 ml-10">Queremos demostrar que \((k+1)! > 2^{k+1}\).</p>
+                         <div class="proof-steps ml-10">
+                             <!-- Substep 3.1 -->
+                            <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Empezamos con \((k+1)!\) y lo relacionamos con \(k!\):</h4>
+                                <div class="drop-zone mb-3" id="drop-a3-rewrite" data-placeholder="Arrastra la reescritura de (k+1)!">
+                                    <span class="drop-placeholder">Arrastra la reescritura de (k+1)!</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Exacto! Por definición de factorial.">
+                                        \((k+1)! = (k+1) \cdot k!\)
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. k! no es k.">
+                                        \((k+1)! = (k+1) \cdot k\)
+                                    </div>
+                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. (k+1)! no es k! + 1.">
+                                        \((k+1)! = k! + 1\)
+                                    </div>
+                                </div>
+                                <div id="feedback-a3-rewrite" class="hidden"></div>
+                            </div>
+                             <!-- Substep 3.2 -->
+                             <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Aplicamos la Hipótesis Inductiva (\(k! > 2^k\)):</h4>
+                                <p class="text-sm text-gray-600 mb-2">Sabemos que \((k+1)! = (k+1) \cdot k!\).</p>
+                                <div class="visual-highlight mb-4">
+                                    <h4 class="font-medium text-gray-700 mb-2">Usa la hipótesis para obtener una desigualdad:</h4>
+                                     <div class="drop-zone mb-3" id="drop-a3-apply-hypo" data-placeholder="Arrastra la desigualdad resultante">
+                                        <span class="drop-placeholder">Arrastra la desigualdad resultante</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-4">
+                                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Bien! Como k! > 2^k y k+1 es positivo, al multiplicar mantenemos la desigualdad.">
+                                             \((k+1)! = (k+1) \cdot k! > (k+1) \cdot 2^k\)
+                                        </div>
+                                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La desigualdad debe mantenerse (>), no convertirse en igualdad.">
+                                            \((k+1)! = (k+1) \cdot k! = (k+1) \cdot 2^k\)
+                                        </div>
+                                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Aplicaste la hipótesis a (k+1)! directamente, lo cual es incorrecto.">
+                                             \((k+1)! > 2^{k+1}\)
+                                        </div>
+                                    </div>
+                                    <div id="feedback-a3-apply-hypo" class="hidden"></div>
+                                </div>
+                            </div>
+                            <!-- Substep 3.3 -->
+                             <div class="sub-step">
+                                <h4 class="font-medium text-gray-700 mb-2">Comparamos con el objetivo (\(2^{k+1}\)):</h4>
+                                <p class="text-sm text-gray-600 mb-2">Tenemos \((k+1)! > (k+1) \cdot 2^k\). Queremos llegar a \((k+1)! > 2^{k+1} = 2 \cdot 2^k\).</p>
+                                <p class="text-sm text-gray-600 mb-2">Basta con demostrar que \((k+1) \cdot 2^k \ge 2 \cdot 2^k\). ¿Por qué es cierto esto?</p>
+                                <div class="drop-zone mb-3" id="drop-a3-compare" data-placeholder="Arrastra la justificación final">
+                                    <span class="drop-placeholder">Arrastra la justificación final</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Como k>=4, entonces k+1 >= 5, que es mayor que 2. Multiplicar por 2^k (positivo) mantiene la desigualdad.">
+                                        Como \(k \ge 4\), tenemos \(k+1 \ge 5\). Ciertamente \(k+1 > 2\).<br>Por lo tanto, \((k+1) \cdot 2^k > 2 \cdot 2^k = 2^{k+1}\).
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. k+1 no siempre es igual a 2.">
+                                        Porque \(k+1 = 2\).
+                                    </div>
+                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Necesitamos k+1 > 2. ¿Es esto cierto para k>=4?">
+                                        Porque \(k+1 < 2\).
+                                    </div>
+                                </div>
+                                <div id="feedback-a3-compare" class="hidden"></div>
+                             </div>
+                        </div>
+                        <p class="text-gray-700 mt-4 ml-10">Combinando los pasos: \((k+1)! = (k+1) k! > (k+1) 2^k > 2 \cdot 2^k = 2^{k+1}\). Hemos demostrado la tesis.</p>
+                         <div class="hint-box ml-10">
+                            <p class="text-amber-800 font-medium flex items-start">
+                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
+                                <span>Pista para Desigualdades: A menudo, después de aplicar la hipótesis inductiva, obtienes una expresión (aquí \((k+1)2^k\)) que no es *exactamente* lo que quieres (\(2^{k+1}\)). Necesitas un paso adicional para demostrar que tu expresión intermedia es mayor (o menor, según el caso) que tu objetivo final. Usa la condición sobre \(k\) (aquí \(k \ge 4\)) para justificar este último paso.</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6 space-x-4">
+                        <button class="reset-button px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center">
+                            <i class="fas fa-redo mr-2"></i> Reiniciar Actividad 3
+                        </button>
+                        <button class="check-button px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i> Verificar Actividad 3
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">Plataforma Interactiva de Inducción Matemática</p>
+            <p class="text-gray-400 text-sm">© 2023 - Explora y Aprende</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- MathJax Configuration (Optional but recommended) ---
+        window.MathJax = {
+          tex: {
+            inlineMath: [['\\(', '\\)']],
+            displayMath: [['\\[', '\\]']],
+            processEscapes: true // Allows using \$ for literal dollar signs
+          },
+          options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'], // Tags MathJax will ignore
+            ignoreHtmlClass: 'tex2jax_ignore', // Ignore elements with this class
+            processHtmlClass: 'tex2jax_process' // Process elements with this class
+          },
+          startup: {
+            ready: () => {
+              console.log('MathJax is ready!');
+              MathJax.startup.defaultReady();
+              // Initial typesetting is usually handled automatically by the async script
+              // but if needed: MathJax.typesetPromise();
+            }
+          }
+        };
+
+        // --- Core Logic (Similar to previous example, adapted) ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // MathJax should typeset automatically on load due to async script.
+            setupScrollSpy();
+            setupDragAndDrop();
+            setupResetButtons();
+            setupCheckButtons();
+            initializePlaceholders(); // Set initial placeholder text
+        });
+
+        function initializePlaceholders() {
+             document.querySelectorAll('.drop-zone').forEach(zone => {
+                if (zone.innerHTML.trim() === '') {
+                     const placeholderText = zone.dataset.placeholder || 'Arrastra aquí';
+                     zone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
+                }
+             });
+        }
+
+
+        function setupScrollSpy() {
+            const sections = document.querySelectorAll('section[id]');
+            const progressSteps = document.querySelectorAll('.progress-step');
+            if (!sections.length || !progressSteps.length) return;
+
+            const observer = new IntersectionObserver(entries => {
+                let lastActiveId = null;
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                       lastActiveId = entry.target.getAttribute('id');
+                    }
+                });
+
+                // Update progress steps based on the *last* intersecting element seen
+                progressSteps.forEach(step => {
+                    step.classList.remove('active');
+                    const targetId = step.getAttribute('onclick')?.match(/scrollToSection\('([^']+)'\)/)?.[1];
+                    if (targetId && targetId === lastActiveId) {
+                        step.classList.add('active');
+                    }
+                });
+
+            }, { rootMargin: "-40% 0px -60% 0px" }); // Adjust margins for center activation
+
+            sections.forEach(section => observer.observe(section));
+        }
+
+
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                const offsetTop = section.offsetTop - 80; // Adjust for fixed header if any
+                window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+            }
+        }
+
+        function setupDragAndDrop() {
+            interact('.draggable').draggable({
+                inertia: true,
+                modifiers: [ interact.modifiers.restrictRect({ restriction: 'body', endOnly: true }) ],
+                autoScroll: true,
+                listeners: {
+                    start(event) {
+                        const target = event.target;
+                        target.classList.add('dragging');
+                        target.style.zIndex = 1000;
+                        target.setAttribute('data-start-x', target.getBoundingClientRect().left);
+                        target.setAttribute('data-start-y', target.getBoundingClientRect().top);
+                    },
+                    move(event) {
+                        const target = event.target;
+                        const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                        const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                        target.style.transform = `translate(${x}px, ${y}px)`;
+                        target.setAttribute('data-x', x);
+                        target.setAttribute('data-y', y);
+                    },
+                    end(event) {
+                        const target = event.target;
+                        target.classList.remove('dragging');
+                        target.style.zIndex = 'auto';
+                        if (!event.dropzone) { // Reset if not dropped in a zone
+                           target.style.transform = 'translate(0px, 0px)';
+                           target.setAttribute('data-x', 0);
+                           target.setAttribute('data-y', 0);
+                        }
+                    }
+                }
+            });
+
+            interact('.drop-zone').dropzone({
+                accept: '.draggable',
+                overlap: 0.5,
+                listeners: {
+                    dragenter: event => event.target.classList.add('active'),
+                    dragleave: event => event.target.classList.remove('active'),
+                    drop(event) {
+                        const draggableElement = event.relatedTarget;
+                        const dropzone = event.target;
+
+                        draggableElement.style.transform = 'translate(0px, 0px)'; // Reset original position
+                        draggableElement.setAttribute('data-x', 0);
+                        draggableElement.setAttribute('data-y', 0);
+
+                        const clone = draggableElement.cloneNode(true);
+                        clone.classList.remove('draggable', 'dragging');
+                        clone.classList.add('dropped-item');
+                        clone.removeAttribute('style'); // Clear InteractJS styles
+                        clone.removeAttribute('data-x');
+                        clone.removeAttribute('data-y');
+                        // Copy data attributes needed for verification/feedback
+                        clone.setAttribute('data-value', draggableElement.getAttribute('data-value'));
+                        clone.setAttribute('data-feedback', draggableElement.getAttribute('data-feedback'));
+
+
+                        const deleteBtn = document.createElement('span');
+                        deleteBtn.classList.add('delete-btn');
+                        deleteBtn.innerHTML = '×';
+                        deleteBtn.title = 'Eliminar';
+                        deleteBtn.addEventListener('click', function() {
+                            const parentZone = clone.closest('.drop-zone');
+                            clone.remove();
+                            checkIfEmpty(parentZone);
+                            hideFeedback(parentZone);
+                        });
+                        clone.appendChild(deleteBtn);
+
+                        dropzone.innerHTML = ''; // Clear previous content/placeholder
+                        dropzone.appendChild(clone);
+                        dropzone.classList.remove('active'); // Deactivate dropzone style
+
+                        // Typeset MathJax in the dropped item
+                        if (window.MathJax) {
+                            MathJax.typesetPromise([clone]).catch(err => console.error('MathJax typesetting error:', err));
+                        }
+
+                        showFeedback(dropzone, draggableElement); // Show feedback based on original draggable's data
+                    }
+                }
+            });
+        }
+
+        function getFeedbackElement(dropzone) {
+            const dropzoneId = dropzone.id;
+            if (!dropzoneId) return null;
+            const baseId = dropzoneId.substring(dropzoneId.indexOf('-') + 1); // e.g., a1-base -> a1-base
+            const feedbackId = `feedback-${baseId}`;
+            return document.getElementById(feedbackId);
+        }
+
+        function checkIfEmpty(dropzone) {
+            if (dropzone && dropzone.querySelectorAll('.dropped-item').length === 0) {
+                const placeholderText = dropzone.dataset.placeholder || 'Arrastra aquí';
+                dropzone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
+                hideFeedback(dropzone); // Hide feedback when zone becomes empty
+            }
+        }
+
+        function showFeedback(dropzone, draggableElement) {
+            const feedbackElement = getFeedbackElement(dropzone);
+            if (feedbackElement) {
+                const feedbackMessage = draggableElement.getAttribute('data-feedback');
+                const isCorrect = draggableElement.getAttribute('data-value') === 'correct';
+                if (feedbackMessage) {
+                    feedbackElement.innerHTML = feedbackMessage;
+                    feedbackElement.className = isCorrect ? 'feedback-correct' : 'feedback-incorrect';
+                    feedbackElement.classList.remove('hidden');
+                } else {
+                    feedbackElement.classList.add('hidden');
+                }
+            }
+        }
+
+         function hideFeedback(dropzone) {
+             const feedbackElement = getFeedbackElement(dropzone);
+             if (feedbackElement) {
+                 feedbackElement.classList.add('hidden');
+                 feedbackElement.innerHTML = '';
+             }
+         }
+
+        function setupResetButtons() {
+            document.body.addEventListener('click', function(event) {
+                if (event.target.closest('.reset-button')) {
+                    const activity = event.target.closest('section');
+                    if (!activity) return;
+
+                    activity.querySelectorAll('.drop-zone').forEach(zone => {
+                        zone.innerHTML = ''; // Clear zone
+                        checkIfEmpty(zone); // Restore placeholder
+                        zone.classList.remove('animate-pulse');
+                    });
+                    activity.querySelectorAll('.draggable').forEach(drag => {
+                         drag.style.transform = 'translate(0px, 0px)';
+                         drag.setAttribute('data-x', 0);
+                         drag.setAttribute('data-y', 0);
+                    });
+                    console.log(`Reiniciando actividad: ${activity.id}`);
+                }
+            });
+        }
+
+        function setupCheckButtons() {
+             document.body.addEventListener('click', function(event) {
+                if (event.target.closest('.check-button')) {
+                    const activity = event.target.closest('section');
+                    if (!activity) return;
+
+                    let allCorrect = true;
+                    let firstErrorZone = null;
+
+                    activity.querySelectorAll('.drop-zone').forEach(zone => {
+                        const droppedItem = zone.querySelector('.dropped-item');
+                        let isZoneCorrect = droppedItem?.getAttribute('data-value') === 'correct';
+
+                        zone.classList.remove('animate-pulse'); // Remove pulse first
+                        hideFeedback(zone); // Hide previous feedback messages on check
+
+                        if (!isZoneCorrect) {
+                            allCorrect = false;
+                            zone.classList.add('animate-pulse');
+                            if (!firstErrorZone) firstErrorZone = zone;
+                            // Show error message if zone is wrong or empty
+                             const feedbackElement = getFeedbackElement(zone);
+                             if (feedbackElement) {
+                                 feedbackElement.innerHTML = droppedItem ? (droppedItem.getAttribute('data-feedback') || "Revisa este paso.") : "Este paso está incompleto.";
+                                 feedbackElement.className = 'feedback-incorrect';
+                                 feedbackElement.classList.remove('hidden');
+                             }
+                        } else {
+                            // Optionally show correct feedback even on check
+                            const feedbackElement = getFeedbackElement(zone);
+                            if (feedbackElement && droppedItem) {
+                                feedbackElement.innerHTML = droppedItem.getAttribute('data-feedback') || "¡Correcto!";
+                                feedbackElement.className = 'feedback-correct';
+                                feedbackElement.classList.remove('hidden');
+                            }
+                        }
+                    });
+
+                    if (allCorrect) {
+                        alert(`¡Felicidades! Has completado correctamente la ${activity.querySelector('h2').textContent.trim()}.`);
+                        const sectionId = activity.getAttribute('id');
+                        const progressStep = document.querySelector(`.progress-step[onclick*="'${sectionId}'"]`);
+                        if (progressStep) progressStep.classList.add('completed');
+
+                    } else {
+                        alert('Hay errores o pasos incompletos. Revisa las zonas marcadas.');
+                        if (firstErrorZone) {
+                            firstErrorZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                     console.log(`Verificando actividad: ${activity.id}, Resultado: ${allCorrect ? 'Correcto' : 'Incorrecto'}`);
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
