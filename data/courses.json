@@ -1,16 +1,16 @@
 [
   {
-    "id": 6,
-    "title": "adad",
-    "description": "sadasd",
-    "color": "#98FB98",
-    "icon": "fas fa-book"
+    "id": 1744260101843,
+    "title": "Números complejos",
+    "description": "a",
+    "color": "#dc3545",
+    "icon": "fas fa-trophy"
   },
   {
-    "id": 9,
-    "title": "Probabilidad",
-    "description": "Introducción a técnicas de conteo, eventos equiprobables, probabilidad clásica, probabilidad condicional.",
-    "color": "#1E90FF",
-    "icon": "fas fa-cube"
+    "id": 1744260101844,
+    "title": "Números complejos - Básico",
+    "description": "prueba",
+    "color": "#FFD700",
+    "icon": "fas fa-pen"
   }
 ]
