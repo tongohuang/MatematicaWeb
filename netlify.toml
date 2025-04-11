@@ -38,3 +38,11 @@
     X-XSS-Protection = "1; mode=block"
     Content-Security-Policy = "frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
+
+# Configuración de caché para archivos JSON
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    cache-control = "no-cache, no-store, must-revalidate"
+    pragma = "no-cache"
+    expires = "0"
