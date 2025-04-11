@@ -33,5 +33,31 @@
       }
     ],
     "order": 1
+  },
+  {
+    "id": 1744260169532,
+    "courseId": 1744260101846,
+    "title": "Inducción completa",
+    "description": "Teórico y actividades interactivas.",
+    "icon": "fas fa-book",
+    "sections": [
+      {
+        "id": "1744390904535",
+        "title": "Actividades interactivas",
+        "content": "induccioncompleta-actividades.html",
+        "topicId": 1744260169532,
+        "order": "0",
+        "type": "html"
+      },
+      {
+        "id": "1744391006983",
+        "title": "Actividades interactivas 2",
+        "content": "induccioncompleta-actividades2.html",
+        "topicId": 1744260169532,
+        "order": "0",
+        "type": "html"
+      }
+    ],
+    "order": 1
   }
 ]

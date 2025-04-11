@@ -14,5 +14,12 @@
     "color": "#69F0AE",
     "icon": "fas fa-dice",
     "order": 3
+  },
+  {
+    "id": 1744260101846,
+    "title": "Número natural",
+    "description": "Propiedades, demostraciones, sumatoria, inducción completa.",
+    "color": "#FF9100",
+    "icon": "fas fa-plus"
   }
 ]
