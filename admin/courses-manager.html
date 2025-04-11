@@ -20,6 +20,14 @@
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
         }
+        .btn-xs {
+            padding: 0.1rem 0.25rem;
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+        .btn-group-vertical .btn-xs {
+            margin-bottom: 2px;
+        }
         .debug-panel {
             position: fixed;
             bottom: 0;
@@ -101,13 +109,14 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 50px" class="text-center">#</th>
+                                <th style="width: 60px" class="text-center">Orden</th>
                                 <th style="width: 60px" class="text-center">Color</th>
                                 <th style="width: 60px" class="text-center">Icono</th>
                                 <th>Título</th>
                                 <th>Descripción</th>
                                 <th style="width: 80px" class="text-center">Temas</th>
                                 <th style="width: 80px" class="text-center">Secciones</th>
-                                <th style="width: 150px" class="text-center">Acciones</th>
+                                <th style="width: 200px" class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="coursesList">
@@ -139,6 +148,7 @@
     <script>
         // Variables globales
         let debugMode = false;
+        let courses = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
             // Cargar componentes
@@ -170,7 +180,7 @@
             const coursesList = document.getElementById('coursesList');
 
             // CARGAR DIRECTAMENTE DESDE LOCALSTORAGE - ENFOQUE SIMPLIFICADO
-            let courses = [];
+            courses = []; // Usar la variable global
             try {
                 console.log('Cargando cursos directamente desde localStorage...');
 
@@ -189,7 +199,7 @@
             if (courses.length === 0) {
                 coursesList.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center py-4">
+                        <td colspan="9" class="text-center py-4">
                             <i class="fas fa-book fa-3x mb-3 text-muted"></i>
                             <p class="text-muted">No hay cursos disponibles. ¡Crea el primero!</p>
                         </td>
@@ -198,8 +208,25 @@
                 return;
             }
 
-            // Ordenar cursos por ID (los más recientes primero)
-            courses.sort((a, b) => b.id - a.id);
+            // Asegurarse de que todos los cursos tengan un campo 'order'
+            courses.forEach((course, index) => {
+                if (!course.hasOwnProperty('order') || course.order === undefined || course.order === null) {
+                    course.order = index + 1;
+                }
+            });
+
+            // Ordenar cursos por el campo 'order'
+            courses.sort((a, b) => a.order - b.order);
+
+            // Guardar los cursos ordenados
+            try {
+                localStorage.setItem('matematicaweb_courses', JSON.stringify(courses));
+                if (typeof DataManager !== 'undefined') {
+                    DataManager.saveCourses(courses);
+                }
+            } catch (error) {
+                console.error('Error al guardar el orden de los cursos:', error);
+            }
 
             // Generar HTML para cada curso
             coursesList.innerHTML = courses.map(course => {
@@ -236,8 +263,19 @@
                     : course.description;
 
                 return `
-                    <tr>
+                    <tr data-course-id="${course.id}" data-order="${course.order || 0}">
                         <td class="text-center">${course.id}</td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">${course.order || 0}</span>
+                            <div class="btn-group-vertical mt-1">
+                                <button type="button" class="btn btn-xs btn-outline-secondary" onclick="moveCourse(${course.id}, 'up')" title="Mover arriba">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary" onclick="moveCourse(${course.id}, 'down')" title="Mover abajo">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                        </td>
                         <td class="text-center">
                             <div class="color-preview" style="background-color: ${course.color || '#4CAF50'};"></div>
                         </td>
@@ -504,6 +542,102 @@
                 debugContent.scrollTop = debugContent.scrollHeight;
             }
         }
+
+        // Función para mover un curso arriba o abajo en el orden
+        function moveCourse(courseId, direction) {
+            try {
+                // Usar la variable global courses
+                if (!courses || courses.length === 0) {
+                    // Si no hay cursos cargados, cargarlos
+                    courses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
+                }
+
+                // Asegurarse de que todos los cursos tengan un campo 'order'
+                courses.forEach((course, index) => {
+                    if (!course.hasOwnProperty('order') || course.order === undefined || course.order === null) {
+                        course.order = index + 1;
+                    }
+                });
+
+                // Ordenar cursos por el campo 'order'
+                courses.sort((a, b) => a.order - b.order);
+
+                // Encontrar el curso a mover
+                const courseIndex = courses.findIndex(c => c.id == courseId);
+                if (courseIndex === -1) {
+                    alert('Curso no encontrado');
+                    return;
+                }
+
+                // Determinar el índice del curso con el que intercambiar
+                let swapIndex;
+                if (direction === 'up') {
+                    // Mover hacia arriba (menor orden)
+                    swapIndex = courseIndex - 1;
+                    if (swapIndex < 0) {
+                        // Ya está en la primera posición
+                        return;
+                    }
+                } else if (direction === 'down') {
+                    // Mover hacia abajo (mayor orden)
+                    swapIndex = courseIndex + 1;
+                    if (swapIndex >= courses.length) {
+                        // Ya está en la última posición
+                        return;
+                    }
+                } else {
+                    alert('Dirección no válida');
+                    return;
+                }
+
+                // Intercambiar los valores de 'order'
+                const tempOrder = courses[courseIndex].order;
+                courses[courseIndex].order = courses[swapIndex].order;
+                courses[swapIndex].order = tempOrder;
+
+                // Guardar los cambios
+                localStorage.setItem('matematicaweb_courses', JSON.stringify(courses));
+
+                // Actualizar DataManager si está disponible
+                if (typeof DataManager !== 'undefined') {
+                    DataManager.saveCourses(courses);
+                }
+
+                // Recargar la lista de cursos
+                loadCoursesList();
+
+                // Mostrar mensaje de éxito
+                const message = direction === 'up' ? 'Curso movido hacia arriba' : 'Curso movido hacia abajo';
+                const toast = document.createElement('div');
+                toast.className = 'toast show position-fixed bottom-0 end-0 m-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                toast.innerHTML = `
+                    <div class="toast-header bg-success text-white">
+                        <strong class="me-auto">Orden actualizado</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                `;
+                document.body.appendChild(toast);
+
+                // Eliminar el toast después de 3 segundos
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Error al mover el curso:', error);
+                alert('Error al mover el curso. Por favor, inténtalo de nuevo.');
+            }
+        }
+
+        // Inicializar la página
+        loadCourses();
+        setupEventListeners();
     </script>
 </body>
 </html>

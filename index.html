@@ -60,9 +60,9 @@
         <div class="row">
             <div class="col-12">
                 <h1 class="text-center mb-4">Bienvenido a MatemáticaWeb</h1>
-                <p class="text-center lead mb-4">Aprende matemáticas de forma interactiva y divertida</p>
+                <p class="text-center lead mb-5">Aprende matemáticas de forma interactiva y divertida</p>
 
-                <!-- Buscador -->
+                <!-- Buscador (Comentado/Oculto)
                 <div class="search-container mb-5">
                     <div class="row">
                         <div class="col-md-8">
@@ -89,6 +89,7 @@
                         </div>
                     </div>
                 </div>
+                -->
 
                 <div class="courses-grid" id="featuredCourses">
                     <!-- Cursos destacados se cargarán aquí -->
@@ -140,7 +141,9 @@
 
         /**
          * Busca recursos en todo el sitio y redirige a la página de resultados
+         * (Función comentada/oculta)
          */
+        /*
         function searchResources() {
             const searchText = document.getElementById('searchInput').value.trim();
             const searchScope = document.getElementById('searchScope').value;
@@ -153,6 +156,7 @@
             // Redirigir a la página de secciones con los parámetros de búsqueda
             window.location.href = `sections/index.html?search=${encodeURIComponent(searchText)}&scope=${searchScope}`;
         }
+        */
     </script>
 </body>
 </html>

@@ -10,6 +10,22 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/selectors.css">
+    <style>
+        .order-controls {
+            display: flex;
+            align-items: center;
+        }
+        .topic-header {
+            padding: 15px;
+        }
+        .btn-group-vertical .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .toast {
+            z-index: 9999;
+        }
+    </style>
 </head>
 <body>
     <div id="header"></div>
@@ -116,6 +132,14 @@
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script src="../js/selectors.js"></script>
+    <script>
+        // Verificar que todos los scripts se carguen correctamente
+        console.log('Scripts cargados en topic-editor.html');
+        console.log('DataManager disponible:', typeof DataManager !== 'undefined');
+        console.log('DataPersistence disponible:', typeof DataPersistence !== 'undefined');
+        console.log('auth disponible:', typeof auth !== 'undefined');
+        console.log('initializeDataSystem disponible:', typeof initializeDataSystem !== 'undefined');
+    </script>
     <script src="../js/topic-editor.js"></script>
 </body>
 </html>

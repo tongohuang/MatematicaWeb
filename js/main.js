@@ -68,7 +68,17 @@ function loadFeaturedCourses() {
         if (!coursesContainer) return;
 
         // Obtener los cursos usando DataManager si está disponible, o usar los datos de muestra
-        const courses = (typeof DataManager !== 'undefined') ? DataManager.getCourses() : SAMPLE_COURSES;
+        let courses = (typeof DataManager !== 'undefined') ? DataManager.getCourses() : SAMPLE_COURSES;
+
+        // Asegurarse de que todos los cursos tengan un campo 'order'
+        courses.forEach((course, index) => {
+            if (!course.hasOwnProperty('order') || course.order === undefined || course.order === null) {
+                course.order = index + 1;
+            }
+        });
+
+        // Ordenar cursos por el campo 'order'
+        courses.sort((a, b) => a.order - b.order);
 
         if (courses.length === 0) {
             coursesContainer.innerHTML = '<p class="text-center">No hay cursos disponibles</p>';

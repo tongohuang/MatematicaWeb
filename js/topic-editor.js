@@ -10,30 +10,57 @@
 // Los datos de muestra ahora se cargan desde sample-data.js
 
 document.addEventListener('DOMContentLoaded', async () => {
-    loadComponent('header', '../components/header.html');
-    loadComponent('footer', '../components/footer.html');
+    console.log('DOMContentLoaded en topic-editor.js');
+
+    // Cargar componentes
+    await Promise.all([
+        loadComponent('header', '../components/header.html'),
+        loadComponent('footer', '../components/footer.html')
+    ]);
+    console.log('Componentes cargados');
 
     // Verificar si el usuario está autenticado y es administrador
     if (!auth.isAdmin()) {
+        console.log('Usuario no autenticado o no es administrador');
         window.location.href = '../login.html';
         return;
     }
 
     // Inicializar sistema de persistencia antes de cargar los datos
-    if (typeof initializeDataSystem === 'function') {
-        console.log('Inicializando sistema de persistencia en topic-editor.js...');
-        await initializeDataSystem();
+    try {
+        if (typeof initializeDataSystem === 'function') {
+            console.log('Inicializando sistema de persistencia en topic-editor.js...');
+            await initializeDataSystem();
+            console.log('Sistema de persistencia inicializado');
+        } else {
+            console.warn('La función initializeDataSystem no está disponible');
+        }
+    } catch (error) {
+        console.error('Error al inicializar el sistema de persistencia:', error);
     }
 
     // Cargar cursos en el selector
+    console.log('Llamando a loadCourses()');
     loadCourses();
 
     // Verificar si hay un curso seleccionado en la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const courseId = urlParams.get('courseId');
-    if (courseId) {
-        document.getElementById('courseSelector').value = courseId;
-        loadTopics();
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('courseId');
+        console.log('courseId en URL:', courseId);
+
+        if (courseId) {
+            const courseSelector = document.getElementById('courseSelector');
+            if (courseSelector) {
+                courseSelector.value = courseId;
+                console.log('Valor del selector establecido a:', courseId);
+                loadTopics();
+            } else {
+                console.error('No se encontró el selector de cursos al establecer el valor');
+            }
+        }
+    } catch (error) {
+        console.error('Error al procesar parámetros de URL:', error);
     }
 });
 
@@ -47,29 +74,65 @@ function loadCourses() {
 
     courseSelector.innerHTML = '<option value="">Seleccione un curso...</option>';
 
-    // Usar DataManager para obtener los cursos
-    const courses = DataManager.getCourses();
-    console.log('Cursos obtenidos:', courses);
-
-    if (courses.length === 0) {
-        console.warn('No hay cursos disponibles');
-        courseSelector.innerHTML += '<option value="" disabled>No hay cursos disponibles</option>';
+    // Verificar si DataManager está disponible
+    if (typeof DataManager === 'undefined') {
+        console.error('DataManager no está definido');
+        courseSelector.innerHTML += '<option value="" disabled>Error: DataManager no disponible</option>';
         return;
     }
 
-    courses.forEach(course => {
-        console.log('Agregando curso:', course.title);
-        const option = document.createElement('option');
-        option.value = course.id;
-        option.textContent = course.title;
-        courseSelector.appendChild(option);
-    });
+    try {
+        // Usar DataManager para obtener los cursos
+        const courses = DataManager.getCourses();
+        console.log('Cursos obtenidos:', courses);
+
+        // Verificar si courses es un array
+        if (!Array.isArray(courses)) {
+            console.error('Los cursos obtenidos no son un array:', courses);
+            courseSelector.innerHTML += '<option value="" disabled>Error: Formato de cursos incorrecto</option>';
+            return;
+        }
+
+        if (courses.length === 0) {
+            console.warn('No hay cursos disponibles');
+            courseSelector.innerHTML += '<option value="" disabled>No hay cursos disponibles</option>';
+            return;
+        }
+
+        // Ordenar cursos por el campo 'order' si existe
+        if (courses.some(course => course.hasOwnProperty('order'))) {
+            courses.sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+
+        courses.forEach(course => {
+            console.log('Agregando curso:', course.title);
+            const option = document.createElement('option');
+            option.value = course.id;
+            option.textContent = course.title;
+            courseSelector.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar cursos:', error);
+        courseSelector.innerHTML += '<option value="" disabled>Error al cargar cursos</option>';
+    }
 }
 
 function loadTopics() {
     console.log('Cargando temas...');
-    const courseId = parseInt(document.getElementById('courseSelector').value);
+    const courseSelector = document.getElementById('courseSelector');
+    if (!courseSelector) {
+        console.error('No se encontró el selector de cursos');
+        return;
+    }
+
+    const courseId = parseInt(courseSelector.value);
+    console.log('ID del curso seleccionado:', courseId);
+
     const topicsList = document.getElementById('topicsList');
+    if (!topicsList) {
+        console.error('No se encontró el contenedor de temas');
+        return;
+    }
 
     if (!courseId) {
         topicsList.innerHTML = `
@@ -93,12 +156,32 @@ function loadTopics() {
         // 2. Filtrar los temas por curso
         topics = allTopics.filter(topic => topic.courseId == courseId);
         console.log(`Temas filtrados para el curso ${courseId}: ${topics.length}`);
+
+        // 3. Asegurarse de que todos los temas tengan un campo 'order'
+        topics.forEach((topic, index) => {
+            if (!topic.hasOwnProperty('order') || topic.order === undefined || topic.order === null) {
+                topic.order = index + 1;
+            }
+        });
+
+        // 4. Ordenar temas por el campo 'order'
+        topics.sort((a, b) => a.order - b.order);
     } catch (error) {
         console.error('Error al cargar temas desde localStorage:', error);
         // Intentar con DataManager como fallback
         if (typeof DataManager !== 'undefined') {
             console.log('Intentando cargar temas con DataManager...');
             topics = DataManager.getTopicsByCourse(courseId);
+
+            // Asegurarse de que todos los temas tengan un campo 'order'
+            topics.forEach((topic, index) => {
+                if (!topic.hasOwnProperty('order') || topic.order === undefined || topic.order === null) {
+                    topic.order = index + 1;
+                }
+            });
+
+            // Ordenar temas por el campo 'order'
+            topics.sort((a, b) => a.order - b.order);
         }
     }
 
@@ -113,12 +196,25 @@ function loadTopics() {
     }
 
     topicsList.innerHTML = topics.map(topic => `
-        <div class="topic-card">
+        <div class="topic-card" data-topic-id="${topic.id}" data-order="${topic.order || 0}">
             <div class="topic-header">
                 <div class="topic-icon">
                     <i class="${topic.icon || 'fas fa-book'}"></i>
                 </div>
-                <h4 class="topic-title">${topic.title}</h4>
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <h4 class="topic-title mb-0">${topic.title}</h4>
+                    <div class="order-controls">
+                        <span class="badge bg-secondary me-2">Orden: ${topic.order || 0}</span>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveTopic(${topic.id}, 'up')" title="Mover arriba">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveTopic(${topic.id}, 'down')" title="Mover abajo">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="topic-content">
                 <p class="topic-description">${topic.description}</p>
@@ -262,13 +358,26 @@ function saveTopic() {
         const newId = topics.length > 0 ? Math.max(...topics.map(t => parseInt(t.id) || 0)) + 1 : 101;
         console.log(`Nuevo ID generado: ${newId}`);
 
+        // Obtener el orden máximo actual para los temas de este curso
+        let maxOrder = 0;
+        try {
+            const allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+            const courseTopics = allTopics.filter(t => t.courseId == courseId);
+            if (courseTopics.length > 0) {
+                maxOrder = Math.max(...courseTopics.map(t => t.order || 0));
+            }
+        } catch (error) {
+            console.error('Error al obtener el orden máximo:', error);
+        }
+
         topic = {
             id: newId,
             courseId: courseId,
             title: title,
             description: description,
             icon: icon || 'fas fa-book',
-            sections: []
+            sections: [],
+            order: maxOrder + 1 // Asignar el siguiente orden
         };
     }
 
@@ -403,4 +512,113 @@ function deleteTopic(topicId) {
 function manageSections(topicId) {
     // Redirigir a la página de gestión de secciones
     window.location.href = `section-editor.html?topicId=${topicId}`;
+}
+
+// Función para mover un tema arriba o abajo en el orden
+function moveTopic(topicId, direction) {
+    try {
+        const courseId = parseInt(document.getElementById('courseSelector').value);
+        if (!courseId) {
+            alert('Por favor, seleccione un curso primero');
+            return;
+        }
+
+        // Obtener todos los temas
+        let allTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
+
+        // Filtrar los temas por curso
+        let courseTopics = allTopics.filter(topic => topic.courseId == courseId);
+
+        // Asegurarse de que todos los temas tengan un campo 'order'
+        courseTopics.forEach((topic, index) => {
+            if (!topic.hasOwnProperty('order') || topic.order === undefined || topic.order === null) {
+                topic.order = index + 1;
+            }
+        });
+
+        // Ordenar temas por el campo 'order'
+        courseTopics.sort((a, b) => a.order - b.order);
+
+        // Encontrar el tema a mover
+        const topicIndex = courseTopics.findIndex(t => t.id == topicId);
+        if (topicIndex === -1) {
+            alert('Tema no encontrado');
+            return;
+        }
+
+        // Determinar el índice del tema con el que intercambiar
+        let swapIndex;
+        if (direction === 'up') {
+            // Mover hacia arriba (menor orden)
+            swapIndex = topicIndex - 1;
+            if (swapIndex < 0) {
+                // Ya está en la primera posición
+                return;
+            }
+        } else if (direction === 'down') {
+            // Mover hacia abajo (mayor orden)
+            swapIndex = topicIndex + 1;
+            if (swapIndex >= courseTopics.length) {
+                // Ya está en la última posición
+                return;
+            }
+        } else {
+            alert('Dirección no válida');
+            return;
+        }
+
+        // Intercambiar los valores de 'order'
+        const tempOrder = courseTopics[topicIndex].order;
+        courseTopics[topicIndex].order = courseTopics[swapIndex].order;
+        courseTopics[swapIndex].order = tempOrder;
+
+        // Actualizar los temas en el array completo
+        for (let i = 0; i < allTopics.length; i++) {
+            const topic = allTopics[i];
+            if (topic.courseId == courseId) {
+                const updatedTopic = courseTopics.find(t => t.id == topic.id);
+                if (updatedTopic) {
+                    allTopics[i] = updatedTopic;
+                }
+            }
+        }
+
+        // Guardar los cambios
+        localStorage.setItem('matematicaweb_topics', JSON.stringify(allTopics));
+
+        // Actualizar DataManager si está disponible
+        if (typeof DataManager !== 'undefined') {
+            DataManager.saveTopics(allTopics);
+        }
+
+        // Recargar la lista de temas
+        loadTopics();
+
+        // Mostrar mensaje de éxito
+        const message = direction === 'up' ? 'Tema movido hacia arriba' : 'Tema movido hacia abajo';
+        const toast = document.createElement('div');
+        toast.className = 'toast show position-fixed bottom-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.innerHTML = `
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Orden actualizado</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Eliminar el toast después de 3 segundos
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+
+    } catch (error) {
+        console.error('Error al mover el tema:', error);
+        alert('Error al mover el tema. Por favor, inténtalo de nuevo.');
+    }
 }

@@ -50,12 +50,13 @@ const DataPersistence = {
 
         try {
             // Determinar si estamos en producción (Netlify)
-            const isProduction = window.location.hostname.includes('netlify.app') ||
-                               window.location.hostname.includes('netlify.com') ||
-                               window.location.hostname !== 'localhost';
+            const isNetlify = window.location.hostname.includes('netlify.app') ||
+                            window.location.hostname.includes('netlify.com');
+            const isProduction = isNetlify || window.location.hostname !== 'localhost';
 
-            // En producción, siempre forzar la carga desde el repositorio
-            const shouldForceRepoData = isProduction || forceRepoData;
+            // En Netlify, siempre intentar cargar desde el repositorio primero
+            // para asegurar que los datos estén actualizados
+            const shouldForceRepoData = isNetlify || isProduction || forceRepoData;
 
             if (shouldForceRepoData) {
                 console.log('Forzando carga de datos desde el repositorio...');
@@ -98,7 +99,14 @@ const DataPersistence = {
             if (isProduction || forceRepoData) {
                 try {
                     // Usar cache: 'no-store' para evitar problemas de caché en producción
-                    const fetchOptions = { cache: 'no-store' };
+                    const fetchOptions = {
+                        cache: 'no-store',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    };
 
                     // Intentar cargar desde archivos separados primero
                     console.log('Intentando cargar datos desde archivos separados...');

@@ -227,6 +227,16 @@
                 // Cargar el menú de navegación
                 loadNavigationMenu(topics);
 
+                // Asegurarse de que todos los temas tengan un campo 'order'
+                topics.forEach((topic, index) => {
+                    if (!topic.hasOwnProperty('order') || topic.order === undefined || topic.order === null) {
+                        topic.order = index + 1;
+                    }
+                });
+
+                // Ordenar temas por el campo 'order'
+                topics.sort((a, b) => a.order - b.order);
+
                 // Cargar temas y secciones del curso
                 const topicsHtml = topics.map(topic => {
                     // Verificar si el tema tiene secciones
@@ -332,6 +342,16 @@
                     console.log('Usando temas de localStorage en lugar de los actuales');
                     topics = localStorageTopics;
                 }
+
+                // 4. Asegurarse de que todos los temas tengan un campo 'order'
+                topics.forEach((topic, index) => {
+                    if (!topic.hasOwnProperty('order') || topic.order === undefined || topic.order === null) {
+                        topic.order = index + 1;
+                    }
+                });
+
+                // 5. Ordenar temas por el campo 'order'
+                topics.sort((a, b) => a.order - b.order);
             } catch (error) {
                 console.error('Error al verificar temas en localStorage:', error);
             }
