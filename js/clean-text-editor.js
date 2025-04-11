@@ -241,10 +241,10 @@ function initColorPicker(editorContent, textarea) {
     colorPalette.style.backgroundColor = '#fff';
     colorPalette.style.border = '1px solid #ced4da';
     colorPalette.style.borderRadius = '4px';
-    colorPalette.style.padding = '10px';
+    colorPalette.style.padding = '12px';
     colorPalette.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
     colorPalette.style.display = 'none';
-    colorPalette.style.width = '160px';
+    colorPalette.style.width = '220px';
 
     // Título
     const title = document.createElement('div');
@@ -261,18 +261,45 @@ function initColorPicker(editorContent, textarea) {
     // Contenedor de colores
     const colorGrid = document.createElement('div');
     colorGrid.style.display = 'grid';
-    colorGrid.style.gridTemplateColumns = 'repeat(5, 1fr)';
-    colorGrid.style.gap = '5px';
+    colorGrid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+    colorGrid.style.gap = '6px';
     colorPalette.appendChild(colorGrid);
 
     // Colores
     const colors = [
-        '#000000', '#434343', '#666666', '#999999', '#b7b7b7',
-        '#cccccc', '#d9d9d9', '#efefef', '#f3f3f3', '#ffffff',
-        '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00',
-        '#00ffff', '#4a86e8', '#0000ff', '#9900ff', '#ff00ff',
-        '#e6b8af', '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3',
-        '#d0e0e3', '#c9daf8', '#cfe2f3', '#d9d2e9', '#ead1dc'
+        // Negros y grises
+        '#000000', '#333333', '#666666', '#999999', '#CCCCCC',
+        '#FFFFFF',
+
+        // Rojos
+        '#FF0000', '#FF3333', '#CC0000', '#990000', '#FFCCCC',
+        '#800000',
+
+        // Naranjas
+        '#FF8000', '#FF9933', '#CC6600', '#FFCC99',
+
+        // Amarillos
+        '#FFFF00', '#FFFF66', '#CCCC00', '#FFFFCC', '#808000',
+
+        // Verdes
+        '#00FF00', '#33FF33', '#00CC00', '#009900', '#CCFFCC',
+        '#008000',
+
+        // Turquesas
+        '#00FFCC', '#33FFCC', '#00CCCC', '#CCFFFF', '#008080',
+
+        // Azules
+        '#0000FF', '#3333FF', '#0000CC', '#000099', '#CCCCFF',
+        '#000080', '#00FFFF',
+
+        // Morados
+        '#8000FF', '#9933FF', '#6600CC', '#CC99FF', '#800080',
+
+        // Rosas
+        '#FF00FF', '#FF33FF', '#CC00CC', '#FFCCFF',
+
+        // Marrones
+        '#996633', '#CC9966', '#663300', '#FFCC99'
     ];
 
     // Variable para almacenar la selección
@@ -280,16 +307,43 @@ function initColorPicker(editorContent, textarea) {
 
     colors.forEach(color => {
         const colorOption = document.createElement('div');
-        colorOption.style.width = '22px';
-        colorOption.style.height = '22px';
+        colorOption.style.width = '24px';
+        colorOption.style.height = '24px';
         colorOption.style.backgroundColor = color;
         colorOption.style.cursor = 'pointer';
         colorOption.style.border = '1px solid #dee2e6';
         colorOption.style.borderRadius = '3px';
-        colorOption.title = color;
+        // Añadir tooltip con el nombre del color
+        const colorNames = {
+            '#000000': 'Negro', '#333333': 'Gris oscuro', '#666666': 'Gris medio',
+            '#999999': 'Gris claro', '#CCCCCC': 'Gris muy claro', '#FFFFFF': 'Blanco',
+            '#FF0000': 'Rojo', '#FF3333': 'Rojo claro', '#CC0000': 'Rojo oscuro',
+            '#990000': 'Rojo muy oscuro', '#FFCCCC': 'Rojo pastel', '#800000': 'Granate',
+            '#FF8000': 'Naranja', '#FF9933': 'Naranja claro', '#CC6600': 'Naranja oscuro',
+            '#FFCC99': 'Naranja pastel',
+            '#FFFF00': 'Amarillo', '#FFFF66': 'Amarillo claro', '#CCCC00': 'Amarillo oscuro',
+            '#FFFFCC': 'Amarillo pastel', '#808000': 'Oliva',
+            '#00FF00': 'Verde', '#33FF33': 'Verde claro', '#00CC00': 'Verde oscuro',
+            '#009900': 'Verde muy oscuro', '#CCFFCC': 'Verde pastel', '#008000': 'Verde bosque',
+            '#00FFCC': 'Turquesa', '#33FFCC': 'Turquesa claro', '#00CCCC': 'Turquesa oscuro',
+            '#CCFFFF': 'Turquesa pastel', '#008080': 'Verde azulado',
+            '#0000FF': 'Azul', '#3333FF': 'Azul claro', '#0000CC': 'Azul oscuro',
+            '#000099': 'Azul muy oscuro', '#CCCCFF': 'Azul pastel', '#000080': 'Azul marino',
+            '#00FFFF': 'Cian',
+            '#8000FF': 'Morado', '#9933FF': 'Morado claro', '#6600CC': 'Morado oscuro',
+            '#CC99FF': 'Morado pastel', '#800080': 'Púrpura',
+            '#FF00FF': 'Magenta', '#FF33FF': 'Rosa claro', '#CC00CC': 'Rosa oscuro',
+            '#FFCCFF': 'Rosa pastel',
+            '#996633': 'Marrón', '#CC9966': 'Marrón claro', '#663300': 'Marrón oscuro',
+            '#FFCC99': 'Marrón pastel'
+        };
+
+        colorOption.title = colorNames[color.toUpperCase()] || color;
 
         // Borde para colores claros
-        if (color.toLowerCase() === '#ffffff' || color.toLowerCase() === '#f3f3f3' || color.toLowerCase() === '#efefef') {
+        if (color.toLowerCase() === '#ffffff' || color.toLowerCase() === '#ffffcc' || color.toLowerCase() === '#ffcccc' ||
+            color.toLowerCase() === '#ccffcc' || color.toLowerCase() === '#ccffff' || color.toLowerCase() === '#ccccff' ||
+            color.toLowerCase() === '#ffccff') {
             colorOption.style.border = '1px solid #ccc';
         }
 
@@ -321,12 +375,13 @@ function initColorPicker(editorContent, textarea) {
     // Instrucción
     const instruction = document.createElement('div');
     instruction.textContent = 'Haga clic para aplicar color';
-    instruction.style.marginTop = '8px';
+    instruction.style.marginTop = '10px';
     instruction.style.paddingTop = '8px';
     instruction.style.borderTop = '1px solid #eee';
     instruction.style.fontSize = '12px';
     instruction.style.color = '#666';
     instruction.style.textAlign = 'center';
+    instruction.style.fontStyle = 'italic';
     colorPalette.appendChild(instruction);
 
     // Añadir al DOM

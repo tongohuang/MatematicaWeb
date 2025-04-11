@@ -105,21 +105,77 @@ class TextEditor {
                     </button>
                     <div class="color-picker-dropdown" id="colorPickerDropdown">
                         <div class="color-picker-grid">
-                            <div class="color-picker-item" style="background-color: #000000;" data-color="#000000"></div>
-                            <div class="color-picker-item" style="background-color: #FF0000;" data-color="#FF0000"></div>
-                            <div class="color-picker-item" style="background-color: #00FF00;" data-color="#00FF00"></div>
-                            <div class="color-picker-item" style="background-color: #0000FF;" data-color="#0000FF"></div>
-                            <div class="color-picker-item" style="background-color: #FFFF00;" data-color="#FFFF00"></div>
-                            <div class="color-picker-item" style="background-color: #FF00FF;" data-color="#FF00FF"></div>
-                            <div class="color-picker-item" style="background-color: #00FFFF;" data-color="#00FFFF"></div>
-                            <div class="color-picker-item" style="background-color: #C0C0C0;" data-color="#C0C0C0"></div>
-                            <div class="color-picker-item" style="background-color: #808080;" data-color="#808080"></div>
-                            <div class="color-picker-item" style="background-color: #800000;" data-color="#800000"></div>
-                            <div class="color-picker-item" style="background-color: #808000;" data-color="#808000"></div>
-                            <div class="color-picker-item" style="background-color: #008000;" data-color="#008000"></div>
-                            <div class="color-picker-item" style="background-color: #800080;" data-color="#800080"></div>
-                            <div class="color-picker-item" style="background-color: #008080;" data-color="#008080"></div>
-                            <div class="color-picker-item" style="background-color: #000080;" data-color="#000080"></div>
+                            <!-- Negros y grises -->
+                            <div class="color-picker-item" style="background-color: #000000;" data-color="#000000" title="Negro"></div>
+                            <div class="color-picker-item" style="background-color: #333333;" data-color="#333333" title="Gris oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #666666;" data-color="#666666" title="Gris medio"></div>
+                            <div class="color-picker-item" style="background-color: #999999;" data-color="#999999" title="Gris claro"></div>
+                            <div class="color-picker-item" style="background-color: #CCCCCC;" data-color="#CCCCCC" title="Gris muy claro"></div>
+                            <div class="color-picker-item" style="background-color: #FFFFFF;" data-color="#FFFFFF" title="Blanco" style="border: 1px solid #ccc;"></div>
+
+                            <!-- Rojos -->
+                            <div class="color-picker-item" style="background-color: #FF0000;" data-color="#FF0000" title="Rojo"></div>
+                            <div class="color-picker-item" style="background-color: #FF3333;" data-color="#FF3333" title="Rojo claro"></div>
+                            <div class="color-picker-item" style="background-color: #CC0000;" data-color="#CC0000" title="Rojo oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #990000;" data-color="#990000" title="Rojo muy oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #FFCCCC;" data-color="#FFCCCC" title="Rojo pastel"></div>
+                            <div class="color-picker-item" style="background-color: #800000;" data-color="#800000" title="Granate"></div>
+
+                            <!-- Naranjas -->
+                            <div class="color-picker-item" style="background-color: #FF8000;" data-color="#FF8000" title="Naranja"></div>
+                            <div class="color-picker-item" style="background-color: #FF9933;" data-color="#FF9933" title="Naranja claro"></div>
+                            <div class="color-picker-item" style="background-color: #CC6600;" data-color="#CC6600" title="Naranja oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #FFCC99;" data-color="#FFCC99" title="Naranja pastel"></div>
+
+                            <!-- Amarillos -->
+                            <div class="color-picker-item" style="background-color: #FFFF00;" data-color="#FFFF00" title="Amarillo"></div>
+                            <div class="color-picker-item" style="background-color: #FFFF66;" data-color="#FFFF66" title="Amarillo claro"></div>
+                            <div class="color-picker-item" style="background-color: #CCCC00;" data-color="#CCCC00" title="Amarillo oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #FFFFCC;" data-color="#FFFFCC" title="Amarillo pastel"></div>
+                            <div class="color-picker-item" style="background-color: #808000;" data-color="#808000" title="Oliva"></div>
+
+                            <!-- Verdes -->
+                            <div class="color-picker-item" style="background-color: #00FF00;" data-color="#00FF00" title="Verde"></div>
+                            <div class="color-picker-item" style="background-color: #33FF33;" data-color="#33FF33" title="Verde claro"></div>
+                            <div class="color-picker-item" style="background-color: #00CC00;" data-color="#00CC00" title="Verde oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #009900;" data-color="#009900" title="Verde muy oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #CCFFCC;" data-color="#CCFFCC" title="Verde pastel"></div>
+                            <div class="color-picker-item" style="background-color: #008000;" data-color="#008000" title="Verde bosque"></div>
+
+                            <!-- Turquesas -->
+                            <div class="color-picker-item" style="background-color: #00FFCC;" data-color="#00FFCC" title="Turquesa"></div>
+                            <div class="color-picker-item" style="background-color: #33FFCC;" data-color="#33FFCC" title="Turquesa claro"></div>
+                            <div class="color-picker-item" style="background-color: #00CCCC;" data-color="#00CCCC" title="Turquesa oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #CCFFFF;" data-color="#CCFFFF" title="Turquesa pastel"></div>
+                            <div class="color-picker-item" style="background-color: #008080;" data-color="#008080" title="Verde azulado"></div>
+
+                            <!-- Azules -->
+                            <div class="color-picker-item" style="background-color: #0000FF;" data-color="#0000FF" title="Azul"></div>
+                            <div class="color-picker-item" style="background-color: #3333FF;" data-color="#3333FF" title="Azul claro"></div>
+                            <div class="color-picker-item" style="background-color: #0000CC;" data-color="#0000CC" title="Azul oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #000099;" data-color="#000099" title="Azul muy oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #CCCCFF;" data-color="#CCCCFF" title="Azul pastel"></div>
+                            <div class="color-picker-item" style="background-color: #000080;" data-color="#000080" title="Azul marino"></div>
+                            <div class="color-picker-item" style="background-color: #00FFFF;" data-color="#00FFFF" title="Cian"></div>
+
+                            <!-- Morados -->
+                            <div class="color-picker-item" style="background-color: #8000FF;" data-color="#8000FF" title="Morado"></div>
+                            <div class="color-picker-item" style="background-color: #9933FF;" data-color="#9933FF" title="Morado claro"></div>
+                            <div class="color-picker-item" style="background-color: #6600CC;" data-color="#6600CC" title="Morado oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #CC99FF;" data-color="#CC99FF" title="Morado pastel"></div>
+                            <div class="color-picker-item" style="background-color: #800080;" data-color="#800080" title="Púrpura"></div>
+
+                            <!-- Rosas -->
+                            <div class="color-picker-item" style="background-color: #FF00FF;" data-color="#FF00FF" title="Magenta"></div>
+                            <div class="color-picker-item" style="background-color: #FF33FF;" data-color="#FF33FF" title="Rosa claro"></div>
+                            <div class="color-picker-item" style="background-color: #CC00CC;" data-color="#CC00CC" title="Rosa oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #FFCCFF;" data-color="#FFCCFF" title="Rosa pastel"></div>
+
+                            <!-- Marrones -->
+                            <div class="color-picker-item" style="background-color: #996633;" data-color="#996633" title="Marrón"></div>
+                            <div class="color-picker-item" style="background-color: #CC9966;" data-color="#CC9966" title="Marrón claro"></div>
+                            <div class="color-picker-item" style="background-color: #663300;" data-color="#663300" title="Marrón oscuro"></div>
+                            <div class="color-picker-item" style="background-color: #FFCC99;" data-color="#FFCC99" title="Marrón pastel"></div>
                         </div>
                     </div>
                 </div>
