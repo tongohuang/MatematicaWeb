@@ -39,9 +39,30 @@
     Content-Security-Policy = "frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
 
-# Configuración de caché para archivos JSON
+# Configuración de caché para archivos JSON y HTML
 [[headers]]
   for = "/data/*"
+  [headers.values]
+    cache-control = "no-cache, no-store, must-revalidate"
+    pragma = "no-cache"
+    expires = "0"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    cache-control = "no-cache, no-store, must-revalidate"
+    pragma = "no-cache"
+    expires = "0"
+
+[[headers]]
+  for = "/js/*.js"
+  [headers.values]
+    cache-control = "no-cache, no-store, must-revalidate"
+    pragma = "no-cache"
+    expires = "0"
+
+[[headers]]
+  for = "/css/*.css"
   [headers.values]
     cache-control = "no-cache, no-store, must-revalidate"
     pragma = "no-cache"

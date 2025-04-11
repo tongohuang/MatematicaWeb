@@ -98,7 +98,8 @@ const DataPersistence = {
             // En desarrollo, usar exclusivamente localStorage
             if (isProduction || forceRepoData) {
                 try {
-                    // Usar cache: 'no-store' para evitar problemas de caché en producción
+                    // Usar cache: 'no-store' y añadir un parámetro de tiempo para evitar problemas de caché en producción
+                    const timestamp = Date.now();
                     const fetchOptions = {
                         cache: 'no-store',
                         headers: {
@@ -108,11 +109,17 @@ const DataPersistence = {
                         }
                     };
 
+                    // Función para añadir timestamp a las URLs
+                    const addTimestamp = (url) => {
+                        const separator = url.includes('?') ? '&' : '?';
+                        return `${url}${separator}t=${timestamp}`;
+                    };
+
                     // Intentar cargar desde archivos separados primero
                     console.log('Intentando cargar datos desde archivos separados...');
                     try {
-                        const coursesPromise = fetch(this.JSON_FILES.courses, fetchOptions);
-                        const topicsPromise = fetch(this.JSON_FILES.topics, fetchOptions);
+                        const coursesPromise = fetch(addTimestamp(this.JSON_FILES.courses), fetchOptions);
+                        const topicsPromise = fetch(addTimestamp(this.JSON_FILES.topics), fetchOptions);
 
                         const [coursesResponse, topicsResponse] = await Promise.all([coursesPromise, topicsPromise]);
 
@@ -156,7 +163,7 @@ const DataPersistence = {
                     // Si no se pudieron cargar los archivos separados, intentar con el archivo combinado
                     if (!repoDataLoaded) {
                         console.log('Intentando cargar datos desde archivo combinado:', this.JSON_FILE_PATH);
-                        const repoResponse = await fetch(this.JSON_FILE_PATH, fetchOptions);
+                        const repoResponse = await fetch(addTimestamp(this.JSON_FILE_PATH), fetchOptions);
 
                         if (repoResponse.ok) {
                             repoData = await repoResponse.json();
@@ -899,6 +906,18 @@ const DataPersistence = {
             if (settingsJsonData) localStorage.setItem('jsonData_settings', settingsJsonData);
             if (activitiesJsonData) localStorage.setItem('jsonData_activities', activitiesJsonData);
             console.log('Datos JSON guardados en localStorage para su posterior sincronización');
+
+            // Generar nueva versión del sitio si estamos descargando los archivos
+            if (download && window.CacheControl) {
+                const newVersion = window.CacheControl.updateVersion();
+                console.log('Nueva versión del sitio generada:', newVersion);
+
+                // Crear archivo version.json para subir al repositorio
+                const versionJsonData = JSON.stringify(newVersion, null, 2);
+                this.downloadJsonFile(versionJsonData, 'version.json', 'version-data');
+
+                console.log('IMPORTANTE: Suba el archivo version.json junto con los demás archivos JSON al repositorio');
+            }
 
             // Si se solicita la descarga, descargar los archivos
             if (download) {

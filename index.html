@@ -11,6 +11,9 @@
     <!-- Netlify Identity Widget -->
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
+    <!-- Control de caché -->
+    <script src="js/cache-control.js"></script>
+
     <style>
         /* Estilos para el buscador */
         .search-container {
@@ -50,9 +53,16 @@
     <div id="header"></div>
 
     <!-- Botón de acceso para administradores -->
-    <div class="admin-access-button">
+    <div class="admin-access-button d-none d-lg-block">
         <a href="login.html" class="btn btn-sm btn-outline-primary">
             <i class="fas fa-user-shield"></i> Acceso Administrador
+        </a>
+    </div>
+
+    <!-- Botón flotante para dispositivos móviles -->
+    <div class="admin-access-button d-lg-none">
+        <a href="login.html" class="btn btn-primary rounded-circle">
+            <i class="fas fa-user-shield"></i>
         </a>
     </div>
 
@@ -128,15 +138,15 @@
         }
     </script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', 'components/header.html');
             loadComponent('footer', 'components/footer.html');
 
             // Inicializar sistema de persistencia
-            await initializeDataSystem();
-
-            // Cargar cursos
-            loadFeaturedCourses();
+            initializeDataSystem().then(() => {
+                // Cargar cursos
+                loadFeaturedCourses();
+            });
         });
 
         /**

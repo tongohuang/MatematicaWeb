@@ -60,3 +60,213 @@
     color: #007bff;
     margin-right: 10px;
 }
+
+/* Estilos para la cabecera del curso */
+.course-header {
+    background-color: #4CAF50; /* Color por defecto, se sobrescribirá con JavaScript */
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.course-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+.course-header h1 {
+    margin: 0;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-size: 2.2rem;
+    text-align: left;
+}
+
+/* Estilos para las tarjetas de temas */
+.course-topic-card {
+    margin-bottom: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.topic-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: rgba(76, 175, 80, 0.15); /* Color por defecto, se sobrescribirá con JavaScript */
+    color: #333;
+    border-radius: 8px 8px 0 0;
+    border-left: 4px solid #4CAF50; /* Color por defecto, se sobrescribirá con JavaScript */
+    transition: background-color 0.3s ease;
+}
+
+.topic-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #4CAF50; /* Color por defecto, se sobrescribirá con JavaScript */
+    color: white;
+    border-radius: 50%;
+    margin-right: 1rem;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.topic-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.topic-content {
+    padding: 1rem;
+    background-color: white;
+}
+
+.topic-description {
+    margin-bottom: 1rem;
+    color: #666;
+}
+
+/* Estilos para el panel de navegación */
+.course-sidebar {
+    position: sticky;
+    top: 20px;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(76, 175, 80, 0.15); /* Color por defecto, se sobrescribirá con JavaScript */
+}
+
+.course-navigation h4,
+.course-info h4 {
+    padding: 1rem;
+    margin: 0;
+    background-color: #4CAF50; /* Color por defecto, se sobrescribirá con JavaScript */
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.course-nav-menu {
+    margin: 0;
+    padding: 0.5rem 0;
+}
+
+.course-info {
+    padding: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.course-info ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.course-info ul li:last-child {
+    border-bottom: none;
+}
+
+.course-info i {
+    color: var(--course-color);
+    width: 20px;
+    text-align: center;
+    margin-right: 0.5rem;
+}
+
+:root {
+    --course-color: #4CAF50;
+    --course-color-light: rgba(76, 175, 80, 0.1);
+    --course-color-focus: rgba(76, 175, 80, 0.25);
+}
+
+.accordion-button {
+    background-color: var(--course-color-light); /* Fondo claro para todos los botones del acordeón */
+    transition: all 0.3s ease;
+    color: var(--course-color); /* Color del texto igual al color del curso */
+    border-left: 3px solid var(--course-color); /* Borde izquierdo del color del curso */
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--course-color-light);
+    color: var(--course-color);
+    font-weight: 600;
+    box-shadow: none; /* Eliminar sombra por defecto de Bootstrap */
+}
+
+.accordion-button:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem var(--course-color-focus);
+}
+
+.accordion-button::after {
+    color: var(--course-color); /* Color del icono de flecha */
+    opacity: 0.8;
+}
+
+.accordion-button i {
+    color: var(--course-color);
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+    margin-right: 8px;
+    opacity: 0.9;
+}
+
+.accordion-body {
+    padding: 0.5rem 1rem;
+    background-color: var(--course-color-light); /* Fondo claro para el cuerpo del acordeón */
+}
+
+.accordion-item {
+    border: none;
+    margin-bottom: 1px;
+    background-color: var(--course-color-light); /* Fondo claro para todo el elemento del acordeón */
+}
+
+/* Estilos para los elementos del menú de navegación */
+.nav-link {
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 0;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    background-color: rgba(255, 255, 255, 0.5); /* Fondo semi-transparente */
+    margin-bottom: 2px;
+}
+
+.nav-link:hover, .nav-link.active {
+    background-color: white;
+    color: var(--course-color);
+    border-left-color: var(--course-color);
+}
+
+.nav-link i {
+    color: var(--course-color);
+    width: 20px;
+    text-align: center;
+}
+
+/* Estilos para los elementos de información del curso */
+.course-info ul li i {
+    color: var(--course-color);
+}

@@ -184,15 +184,9 @@
         let currentCourseId = null;
         let currentCourse = null;
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
-
-            // Inicializar sistema de persistencia antes de cargar los datos
-            if (typeof initializeDataSystem === 'function') {
-                console.log('Inicializando sistema de persistencia en topics/view.html...');
-                await initializeDataSystem();
-            }
 
             // Configurar el botón de mostrar/ocultar panel lateral
             setupSidebarToggle();
@@ -207,8 +201,17 @@
                 return;
             }
 
-            // Cargar los datos
-            loadData();
+            // Inicializar sistema de persistencia antes de cargar los datos
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia en topics/view.html...');
+                initializeDataSystem().then(() => {
+                    // Cargar los datos una vez que el sistema de persistencia esté inicializado
+                    loadData();
+                });
+            } else {
+                // Si no hay sistema de persistencia, cargar datos directamente
+                loadData();
+            }
         });
 
         function loadData() {

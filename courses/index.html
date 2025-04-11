@@ -40,20 +40,27 @@
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
 
             // Inicializar sistema de persistencia antes de cargar los datos
             if (typeof initializeDataSystem === 'function') {
                 console.log('Inicializando sistema de persistencia en courses/index.html...');
-                await initializeDataSystem();
+                initializeDataSystem().then(() => {
+                    // Cargar cursos una vez que el sistema de persistencia esté inicializado
+                    loadCourses();
+
+                    // Comprobar qué descripciones están truncadas
+                    setTimeout(checkDescriptionHeight, 500);
+                });
+            } else {
+                // Si no hay sistema de persistencia, cargar cursos directamente
+                loadCourses();
+
+                // Comprobar qué descripciones están truncadas
+                setTimeout(checkDescriptionHeight, 500);
             }
-
-            loadCourses();
-
-            // Comprobar qué descripciones están truncadas
-            setTimeout(checkDescriptionHeight, 500);
 
             // Volver a comprobar cuando la ventana cambie de tamaño
             window.addEventListener('resize', function() {

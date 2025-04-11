@@ -176,21 +176,27 @@
         let allTopics = [];
         let allSections = [];
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
 
             // Inicializar sistema de persistencia antes de cargar los datos
             if (typeof initializeDataSystem === 'function') {
                 console.log('Inicializando sistema de persistencia en sections/index.html...');
-                await initializeDataSystem();
+                initializeDataSystem().then(() => {
+                    // Cargar datos una vez que el sistema de persistencia esté inicializado
+                    loadData();
+
+                    // Procesar parámetros de búsqueda de la URL si existen
+                    processSearchParams();
+                });
+            } else {
+                // Si no hay sistema de persistencia, cargar datos directamente
+                loadData();
+
+                // Procesar parámetros de búsqueda de la URL si existen
+                processSearchParams();
             }
-
-            // Cargar datos
-            loadData();
-
-            // Procesar parámetros de búsqueda de la URL si existen
-            processSearchParams();
         });
 
         /**

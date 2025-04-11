@@ -41,7 +41,6 @@
             <div class="row">
                 <div class="col-md-8" id="mainContent">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h1 id="courseTitle">Cargando...</h1>
                         <div>
                             <button id="toggleSidebarBtn" class="btn btn-outline-secondary me-2">
                                 <i class="fas fa-bars"></i> <span id="toggleSidebarText">Ocultar panel</span>
@@ -51,7 +50,10 @@
                             </a>
                         </div>
                     </div>
-                    <div id="courseDescription" class="mb-4"></div>
+
+                    <div class="course-header mb-4" id="courseHeader">
+                        <h1 id="courseTitle" class="text-white">Cargando...</h1>
+                    </div>
 
                     <div class="course-sections" id="courseSections">
                         <!-- Las secciones del curso se cargarán aquí -->
@@ -95,20 +97,24 @@
     <script src="../js/data-manager.js"></script>
     <script src="../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html');
             loadComponent('footer', '../components/footer.html');
-
-            // Inicializar sistema de persistencia antes de cargar los datos
-            if (typeof initializeDataSystem === 'function') {
-                console.log('Inicializando sistema de persistencia en courses/view.html...');
-                await initializeDataSystem();
-            }
 
             // Configurar el botón de mostrar/ocultar panel lateral
             setupSidebarToggle();
 
-            loadCourseContent();
+            // Inicializar sistema de persistencia antes de cargar los datos
+            if (typeof initializeDataSystem === 'function') {
+                console.log('Inicializando sistema de persistencia en courses/view.html...');
+                initializeDataSystem().then(() => {
+                    // Cargar contenido del curso una vez que el sistema de persistencia esté inicializado
+                    loadCourseContent();
+                });
+            } else {
+                // Si no hay sistema de persistencia, cargar contenido directamente
+                loadCourseContent();
+            }
         });
 
         // Función para configurar el botón de mostrar/ocultar panel lateral
@@ -209,7 +215,110 @@
 
                 document.title = `${course.title} - MatemáticaWeb`;
                 document.getElementById('courseTitle').textContent = course.title;
-                document.getElementById('courseDescription').innerHTML = course.description;
+
+                console.log('Aplicando estilos al curso:', course);
+
+                // Aplicar el color del curso a los elementos de la página
+                const courseColor = course.color || '#4CAF50';
+                console.log('Color del curso:', courseColor);
+
+                const rgb = hexToRgb(courseColor);
+                console.log('RGB del color:', rgb);
+
+                // Crear versiones claras del color para los temas y el panel de navegación
+                let lightCourseColor = '';
+                if (rgb) {
+                    // Crear un tono más claro (20% de opacidad para el fondo del panel)
+                    lightCourseColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`;
+                } else {
+                    lightCourseColor = 'rgba(76, 175, 80, 0.2)';
+                }
+                console.log('Color claro generado:', lightCourseColor);
+
+                // Actualizar variables globales para que estén disponibles en otras funciones
+                globalCourseColor = courseColor;
+                globalLightCourseColor = lightCourseColor;
+
+                let textColor = 'black'; // Por defecto, texto oscuro para fondos claros
+                let textClass = 'text-dark';
+                let darkTextClass = 'text-white';
+
+                // Calcular el brillo para determinar si usar texto oscuro o claro
+                if (rgb) {
+                    // Fórmula para calcular el brillo (luminosidad percibida)
+                    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+
+                    // Si el color de fondo es claro, usar texto oscuro
+                    if (brightness > 155) {
+                        textColor = '#333';
+                        textClass = 'text-dark';
+                        darkTextClass = 'text-white';
+                    }
+                }
+
+                // 1. Aplicar color a la cabecera del curso
+                const courseHeader = document.getElementById('courseHeader');
+                if (courseHeader) {
+                    courseHeader.style.backgroundColor = courseColor;
+                    courseHeader.style.color = textColor;
+
+                    // Cambiar el color del título
+                    const courseTitle = document.getElementById('courseTitle');
+                    if (courseTitle) {
+                        courseTitle.classList.remove('text-white', 'text-dark');
+                        courseTitle.classList.add(textClass);
+                    }
+                }
+
+                // 2. Aplicar color a los encabezados de los temas (se hará después de generar el HTML)
+
+                // 3. Aplicar color al panel de navegación
+                console.log('Aplicando color al panel de navegación');
+                const navigationHeader = document.querySelector('.course-navigation h4');
+                const infoHeader = document.querySelector('.course-info h4');
+                const courseSidebar = document.querySelector('.course-sidebar');
+
+                console.log('Elementos encontrados:', { navigationHeader, infoHeader, courseSidebar });
+
+                // Aplicar color a los encabezados del panel
+                if (navigationHeader) {
+                    navigationHeader.style.backgroundColor = courseColor;
+                    navigationHeader.style.color = 'white'; // Texto blanco para el encabezado
+                    console.log('Color aplicado al encabezado de navegación');
+                }
+
+                if (infoHeader) {
+                    infoHeader.style.backgroundColor = courseColor;
+                    infoHeader.style.color = 'white'; // Texto blanco para el encabezado
+                    console.log('Color aplicado al encabezado de información');
+                }
+
+                // Aplicar color claro a todo el panel de navegación
+                if (courseSidebar) {
+                    courseSidebar.style.backgroundColor = lightCourseColor;
+                    console.log('Color claro aplicado al panel de navegación');
+                }
+
+                // 4. Aplicar color a los botones del acordeón
+                document.documentElement.style.setProperty('--course-color', courseColor);
+                document.documentElement.style.setProperty('--course-color-light', lightCourseColor);
+                document.documentElement.style.setProperty('--course-color-focus', `rgba(${rgb?.r || 76}, ${rgb?.g || 175}, ${rgb?.b || 80}, 0.25)`);
+
+                // Aplicar imagen de fondo si existe
+                if (course.image && courseHeader) {
+                    courseHeader.style.backgroundImage = `url('../img/courses/${course.image}')`;
+                    courseHeader.style.backgroundSize = 'cover';
+                    courseHeader.style.backgroundPosition = 'center';
+
+                    // Añadir un overlay para mejorar la legibilidad del texto
+                    courseHeader.style.position = 'relative';
+                    courseHeader.style.zIndex = '1';
+
+                    // Crear un overlay con el color del curso pero con transparencia
+                    if (rgb) {
+                        courseHeader.style.backgroundImage = `linear-gradient(rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.85), rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.85)), url('../img/courses/${course.image}')`;
+                    }
+                }
 
                 console.log('Temas encontrados:', topics);
 
@@ -267,10 +376,33 @@
                 `}).join('');
 
                 document.getElementById('courseSections').innerHTML = topicsHtml || '<p class="text-center">Este curso aún no tiene temas.</p>';
+
+                // Aplicar el color del curso a los encabezados de los temas
+                console.log('Aplicando color a los encabezados de los temas');
+                const topicHeaders = document.querySelectorAll('.topic-header');
+                console.log('Encabezados de temas encontrados:', topicHeaders.length);
+
+                topicHeaders.forEach(header => {
+                    // Usar el color claro para los encabezados de los temas
+                    header.style.backgroundColor = lightCourseColor;
+                    header.style.color = 'black'; // Texto oscuro para fondos claros
+
+                    // Aplicar un borde del color del curso
+                    header.style.borderLeft = `4px solid ${courseColor}`;
+                    console.log('Color claro aplicado a un encabezado de tema');
+
+                    // Hacer que el icono use el color del curso
+                    const iconContainer = header.querySelector('.topic-icon');
+                    if (iconContainer) {
+                        iconContainer.style.backgroundColor = courseColor;
+                        iconContainer.style.color = 'white';
+                    }
+                });
             } catch (error) {
                 console.error('Error al cargar el contenido del curso:', error);
+                console.error('Stack trace:', error.stack);
                 document.getElementById('courseTitle').textContent = 'Error al cargar el curso';
-                document.getElementById('courseDescription').innerHTML = 'No se pudo cargar la información del curso.';
+                alert('Error al cargar el curso: ' + error.message);
             }
         }
 
@@ -293,6 +425,49 @@
             }
         }
 
+        // Función para convertir color hexadecimal a RGB
+        function hexToRgb(hex) {
+            console.log('Convirtiendo color hexadecimal a RGB:', hex);
+
+            if (!hex || typeof hex !== 'string') {
+                console.error('Color hexadecimal inválido:', hex);
+                return { r: 76, g: 175, b: 80 }; // Valores por defecto (verde)
+            }
+
+            try {
+                // Eliminar el # si está presente
+                hex = hex.replace(/^#/, '');
+
+                // Parsear los componentes
+                let bigint = parseInt(hex, 16);
+
+                if (isNaN(bigint)) {
+                    console.error('Color hexadecimal no válido:', hex);
+                    return { r: 76, g: 175, b: 80 }; // Valores por defecto (verde)
+                }
+
+                // Si es un formato corto (por ejemplo, #FFF), expandirlo
+                if (hex.length === 3) {
+                    const r = ((bigint >> 8) & 15) * 17;
+                    const g = ((bigint >> 4) & 15) * 17;
+                    const b = (bigint & 15) * 17;
+                    console.log('RGB calculado (formato corto):', { r, g, b });
+                    return { r, g, b };
+                }
+
+                // Formato normal (por ejemplo, #FFFFFF)
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+
+                console.log('RGB calculado (formato normal):', { r, g, b });
+                return { r, g, b };
+            } catch (error) {
+                console.error('Error al convertir color hexadecimal a RGB:', error);
+                return { r: 76, g: 175, b: 80 }; // Valores por defecto (verde)
+            }
+        }
+
         function getTypeName(type) {
             switch (type) {
                 case 'text':
@@ -311,6 +486,10 @@
                     return 'Recurso';
             }
         }
+
+        // Variables globales para los colores
+        let globalCourseColor = '#4CAF50';
+        let globalLightCourseColor = 'rgba(76, 175, 80, 0.15)';
 
         function loadNavigationMenu(topics) {
             const navMenu = document.getElementById('courseNavMenu');
@@ -454,6 +633,99 @@
 
             html += '</div>';
             navMenu.innerHTML = html;
+
+            // Aplicar colores a los elementos del acordeón
+            const accordionButtons = document.querySelectorAll('.accordion-button');
+            console.log('Botones de acordeón encontrados:', accordionButtons.length);
+
+            accordionButtons.forEach(button => {
+                button.style.backgroundColor = globalLightCourseColor;
+                button.style.color = globalCourseColor;
+                button.style.borderLeftColor = globalCourseColor;
+
+                // Colorear los iconos dentro de los botones del acordeón
+                const icon = button.querySelector('i');
+                if (icon) {
+                    icon.style.color = globalCourseColor;
+                }
+            });
+
+            // Aplicar colores a los elementos del acordeón
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            accordionItems.forEach(item => {
+                item.style.backgroundColor = globalLightCourseColor;
+            });
+
+            const accordionBodies = document.querySelectorAll('.accordion-body');
+            accordionBodies.forEach(body => {
+                body.style.backgroundColor = globalLightCourseColor;
+            });
+
+            // Aplicar colores a los elementos del menú de navegación
+            const navLinks = document.querySelectorAll('.nav-link');
+            console.log('Enlaces de navegación encontrados:', navLinks.length);
+
+            // Obtener la sección actual si estamos en la página de sección
+            const currentSectionId = new URLSearchParams(window.location.search).get('id');
+            console.log('ID de la sección actual:', currentSectionId);
+
+            navLinks.forEach(link => {
+                // Verificar si este enlace corresponde a la sección actual
+                const href = link.getAttribute('href');
+                const linkSectionId = new URLSearchParams(href.split('?')[1]).get('id');
+
+                if (linkSectionId === currentSectionId) {
+                    // Marcar como activo
+                    link.classList.add('active');
+                    link.style.backgroundColor = 'white';
+                    link.style.borderLeftColor = globalCourseColor;
+                    link.style.color = globalCourseColor;
+                    link.style.fontWeight = '600';
+
+                    // Asegurarse de que el acordeón padre esté abierto
+                    const accordionItem = link.closest('.accordion-item');
+                    if (accordionItem) {
+                        const accordionButton = accordionItem.querySelector('.accordion-button');
+                        const accordionCollapse = accordionItem.querySelector('.accordion-collapse');
+
+                        if (accordionButton && accordionCollapse) {
+                            accordionButton.classList.remove('collapsed');
+                            accordionButton.setAttribute('aria-expanded', 'true');
+                            accordionCollapse.classList.add('show');
+                        }
+                    }
+                }
+
+                // Aplicar estilo base
+                link.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+
+                // Aplicar efecto hover mediante clases
+                link.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'white';
+                    this.style.borderLeftColor = globalCourseColor;
+                    this.style.color = globalCourseColor;
+                });
+
+                link.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('active')) {
+                        this.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+                        this.style.borderLeftColor = 'transparent';
+                        this.style.color = '#333';
+                    }
+                });
+
+                // Colorear los iconos
+                const icon = link.querySelector('i');
+                if (icon) {
+                    icon.style.color = globalCourseColor;
+                }
+            });
+
+            // Aplicar colores a los elementos de información del curso
+            const infoIcons = document.querySelectorAll('.course-info i');
+            infoIcons.forEach(icon => {
+                icon.style.color = globalCourseColor;
+            });
         }
     </script>
 </body>

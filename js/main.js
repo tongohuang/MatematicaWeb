@@ -18,46 +18,38 @@ async function initializeDataSystem() {
         // Inicializar sistema de sincronización con Netlify CMS si está disponible
         if (typeof NetlifyCMSSync !== 'undefined') {
             console.log('Inicializando sincronización con Netlify CMS...');
-            await NetlifyCMSSync.init();
+            return NetlifyCMSSync.init();
         }
 
         if (isProduction) {
             console.log('Entorno de producción detectado, forzando carga desde el repositorio...');
             // En producción, forzar la carga desde el repositorio
             try {
-                await DataPersistence.init(true);
-                console.log('Datos cargados correctamente desde el repositorio');
+                return DataPersistence.init(true).then(() => {
+                    console.log('Datos cargados correctamente desde el repositorio');
+                });
             } catch (error) {
                 console.error('Error al cargar datos desde el repositorio:', error);
+                return Promise.resolve();
             }
         } else {
             // En desarrollo, usar exclusivamente localStorage
             console.log('Entorno de desarrollo detectado, usando exclusivamente localStorage...');
             try {
-                await DataPersistence.init(false);
-                console.log('Datos inicializados correctamente desde localStorage');
+                return DataPersistence.init(false).then(() => {
+                    console.log('Datos inicializados correctamente desde localStorage');
+                });
             } catch (error) {
                 console.error('Error al inicializar datos:', error);
+                return Promise.resolve();
             }
         }
 
-        // Verificar que se hayan cargado los datos correctamente
-        if (typeof DataManager !== 'undefined') {
-            const courses = DataManager.getCourses();
-            const topics = DataManager.getTopics();
-            console.log(`Datos cargados: ${courses.length} cursos, ${topics.length} temas`);
-
-            // Verificar si hay datos en el sistema antiguo
-            try {
-                const oldCourses = JSON.parse(localStorage.getItem('matematicaweb_courses') || '[]');
-                const oldTopics = JSON.parse(localStorage.getItem('matematicaweb_topics') || '[]');
-                console.log(`Datos en sistema antiguo: ${oldCourses.length} cursos, ${oldTopics.length} temas`);
-            } catch (error) {
-                console.warn('Error al verificar datos del sistema antiguo:', error);
-            }
-        }
+        // Devolver una promesa resuelta para mantener la cadena de promesas
+        return Promise.resolve();
     } else {
         console.warn('Sistema de persistencia no disponible');
+        return Promise.resolve();
     }
 }
 
