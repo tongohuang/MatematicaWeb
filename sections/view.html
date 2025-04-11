@@ -115,9 +115,6 @@
                             <button id="toggleSidebarBtn" class="btn btn-outline-secondary me-2">
                                 <i class="fas fa-bars"></i> <span id="toggleSidebarText">Ocultar panel</span>
                             </button>
-                            <a href="#" id="backToCourseBtn" class="btn btn-outline-primary me-2">
-                                <i class="fas fa-arrow-left"></i> Volver al curso
-                            </a>
                             <a href="../index.html" class="btn btn-outline-secondary">
                                 <i class="fas fa-home"></i> Inicio
                             </a>
@@ -322,9 +319,7 @@
                 courseLink.textContent = course.title;
                 courseLink.href = `../courses/view.html?id=${course.id}`;
 
-                // Configurar el botón para volver al curso
-                const backToCourseBtn = document.getElementById('backToCourseBtn');
-                backToCourseBtn.href = `../courses/view.html?id=${course.id}`;
+                // El botón para volver al curso ha sido eliminado de la interfaz
 
                 // Mostrar información del tema
                 document.getElementById('topicInfo').innerHTML = `
@@ -424,8 +419,8 @@
                 case 'image':
                     contentHtml = `
                         <div class="section-preview-content">
-                            <div class="image-container">
-                                <img src="${currentSection.content}" alt="${currentSection.title}">
+                            <div class="image-container text-center">
+                                <img src="../activities/images/${currentSection.content}" alt="${currentSection.title}" style="max-width: 100%; max-height: 600px;">
                             </div>
                         </div>
                     `;
@@ -434,9 +429,9 @@
                 case 'pdf':
                     contentHtml = `
                         <div class="section-preview-content">
-                            <div class="pdf-container">
-                                <a href="${currentSection.content}" target="_blank" download>
-                                    <i class="fas fa-file-pdf"></i> Descargar PDF
+                            <div class="pdf-container text-center">
+                                <a href="../activities/pdf/${currentSection.content}" target="_blank" download class="btn btn-primary">
+                                    <i class="fas fa-file-pdf me-2"></i> Descargar PDF
                                 </a>
                             </div>
                         </div>

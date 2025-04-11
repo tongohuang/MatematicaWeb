@@ -838,21 +838,23 @@ function showContentFields() {
             break;
 
         case 'image':
-            // Campo para subir imagen
+            // Campo para el nombre del archivo de imagen
             contentFields.innerHTML = `
                 <div class="mb-3">
-                    <label for="imageUpload" class="form-label">Subir Imagen</label>
-                    <input class="form-control" type="file" id="imageUpload" accept="image/*">
+                    <label for="imageFilename" class="form-label">Nombre del Archivo de Imagen</label>
+                    <input type="text" class="form-control" id="imageFilename" placeholder="Ej: mi-imagen.jpg">
+                    <div class="form-text">Nombre del archivo de imagen ubicado en /activities/images/</div>
                 </div>
             `;
             break;
 
         case 'pdf':
-            // Campo para subir PDF
+            // Campo para el nombre del archivo PDF
             contentFields.innerHTML = `
                 <div class="mb-3">
-                    <label for="pdfUpload" class="form-label">Subir PDF</label>
-                    <input class="form-control" type="file" id="pdfUpload" accept="application/pdf">
+                    <label for="pdfFilename" class="form-label">Nombre del Archivo PDF</label>
+                    <input type="text" class="form-control" id="pdfFilename" placeholder="Ej: mi-documento.pdf">
+                    <div class="form-text">Nombre del archivo PDF ubicado en /activities/pdf/</div>
                 </div>
             `;
             break;
@@ -1233,10 +1235,10 @@ function editSection(sectionId) {
             document.getElementById('htmlFilename').value = section.content;
             break;
         case 'pdf':
-            // No podemos establecer el valor de un input file, solo mostrar el nombre
+            document.getElementById('pdfFilename').value = section.content;
             break;
         case 'image':
-            // No podemos establecer el valor de un input file, solo mostrar el nombre
+            document.getElementById('imageFilename').value = section.content;
             break;
         case 'activity':
             document.getElementById('activityId').value = section.content;
@@ -1590,6 +1592,26 @@ function previewSection(sectionId) {
                 <div class="section-preview-content">
                     <div class="ratio ratio-16x9">
                         <iframe src="https://www.youtube.com/embed/${section.content}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'image':
+            previewContent = `
+                <div class="section-preview-content">
+                    <div class="image-container text-center">
+                        <img src="../activities/images/${section.content}" alt="${section.title}" style="max-width: 100%; max-height: 500px;">
+                    </div>
+                </div>
+            `;
+            break;
+        case 'pdf':
+            previewContent = `
+                <div class="section-preview-content">
+                    <div class="pdf-container text-center">
+                        <a href="../activities/pdf/${section.content}" target="_blank" download class="btn btn-primary">
+                            <i class="fas fa-file-pdf me-2"></i> Descargar PDF
+                        </a>
                     </div>
                 </div>
             `;
@@ -3334,6 +3356,16 @@ function saveSection() {
             const htmlFilename = document.getElementById('htmlFilename');
             if (htmlFilename) {
                 sectionData.content = htmlFilename.value;
+            }
+        } else if (sectionData.type === 'image') {
+            const imageFilename = document.getElementById('imageFilename');
+            if (imageFilename) {
+                sectionData.content = imageFilename.value;
+            }
+        } else if (sectionData.type === 'pdf') {
+            const pdfFilename = document.getElementById('pdfFilename');
+            if (pdfFilename) {
+                sectionData.content = pdfFilename.value;
             }
         } else if (sectionData.type === 'activity') {
             // Para actividades, obtenemos el ID de la actividad
