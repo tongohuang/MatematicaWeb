@@ -219,6 +219,9 @@ const DataPersistence = {
                 };
                 console.log('Usando datos del repositorio como fuente principal');
 
+                // Extraer y procesar las secciones de los temas
+                this._extractSectionsFromTopics(repoData);
+
                 // Actualizar localStorage con los datos del repositorio
                 localStorage.setItem('courseData', JSON.stringify(merged));
                 console.log('localStorage actualizado con datos del repositorio');
@@ -446,12 +449,61 @@ const DataPersistence = {
     },
 
     /**
+     * Extrae las secciones de los temas y las guarda en la estructura de datos
+     * @private
+     * @param {Object} data - Datos a procesar
+     */
+    _extractSectionsFromTopics(data) {
+        if (!data || (!data.topics && !data.persistent?.topics)) {
+            console.warn('No hay temas para extraer secciones');
+            return;
+        }
+
+        // Inicializar la estructura de secciones si no existe
+        if (!data.sections) {
+            data.sections = {};
+        }
+
+        // Usar los temas de data o data.persistent
+        const topics = data.topics || data.persistent.topics;
+
+        console.log(`Extrayendo secciones de ${Object.keys(topics).length} temas...`);
+
+        // Recorrer todos los temas
+        Object.values(topics).forEach(topic => {
+            if (!topic.sections || !Array.isArray(topic.sections)) return;
+
+            console.log(`Procesando ${topic.sections.length} secciones del tema "${topic.title}" (ID: ${topic.id})`);
+
+            // Procesar cada sección
+            topic.sections.forEach(section => {
+                // Guardar la sección en la estructura de datos
+                data.sections[section.id] = section;
+
+                // Si es una sección de tipo activity, verificar que exista la actividad
+                if (section.type === 'activity') {
+                    const activityId = section.content;
+                    const activityData = localStorage.getItem(`activity_data_${activityId}`);
+
+                    if (activityData) {
+                        console.log(`Actividad encontrada para la sección ${section.id}: ${activityId}`);
+                    } else {
+                        console.warn(`Actividad no encontrada para la sección ${section.id}: ${activityId}`);
+                    }
+                }
+            });
+        });
+
+        console.log(`Total de secciones extraídas: ${Object.keys(data.sections).length}`);
+    },
+
+    /**
      * Verifica si hay secciones de tipo HTML o Activity y registra información sobre ellas
      * @private
      * @param {Object} data - Datos a verificar
      */
     async _checkSpecialSectionTypes(data) {
-        if (!data || !data.topics) return;
+        if (!data) return;
 
         console.log('Verificando secciones especiales (HTML y Activity)...');
 
@@ -464,13 +516,24 @@ const DataPersistence = {
             data.persistent.activities = {};
         }
 
+        // Verificar si hay temas
+        if (!data.topics && !data.persistent.topics) {
+            console.warn('No se encontraron temas para verificar secciones especiales');
+            return;
+        }
+
+        // Usar los temas de data o data.persistent
+        const topics = data.topics || data.persistent.topics;
+
         // Recopilar todas las secciones de tipo HTML y Activity
         const htmlSections = [];
         const activitySections = [];
 
         // Recorrer todos los temas
-        Object.values(data.topics).forEach(topic => {
+        Object.values(topics).forEach(topic => {
             if (!topic.sections || !Array.isArray(topic.sections)) return;
+
+            console.log(`Procesando tema: ${topic.title} (ID: ${topic.id}) con ${topic.sections.length} secciones`);
 
             // Buscar secciones de tipo HTML y Activity
             topic.sections.forEach(section => {

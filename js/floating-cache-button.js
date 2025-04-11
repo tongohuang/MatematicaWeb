@@ -6,15 +6,32 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Solo crear el botón si estamos en producción (Netlify)
+    // Solo crear el botón si estamos en producción (Netlify) y en la página principal
     const isNetlify = window.location.hostname.includes('netlify.app');
 
-    if (isNetlify) {
+    // Verificar si estamos en la página de inicio principal (solo raíz o /index.html)
+    // Usamos una lógica más estricta para evitar que aparezca en otras páginas
+    const path = window.location.pathname;
+    const isHomePage = path === '/' ||
+                      path === '/index.html' ||
+                      path === 'index.html';
+
+    // Verificar explícitamente que NO estamos en ninguna subpágina
+    const isSubpage = path.includes('/courses/') ||
+                     path.includes('/sections/') ||
+                     path.includes('/admin/') ||
+                     path.includes('/activities/') ||
+                     path.includes('/topics/');
+
+    // Solo mostrar en la página principal y no en subpáginas
+    const isMainPageOnly = isHomePage && !isSubpage;
+
+    if (isNetlify && isMainPageOnly) {
         // Crear el botón flotante
         const floatingButton = document.createElement('button');
         floatingButton.id = 'floatingCacheButton';
         floatingButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
-        floatingButton.title = 'Actualizar sitio (limpiar caché)';
+        floatingButton.title = 'Actualizar';
 
         // Añadir estilos al botón
         floatingButton.style.position = 'fixed';
@@ -23,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         floatingButton.style.width = '50px';
         floatingButton.style.height = '50px';
         floatingButton.style.borderRadius = '50%';
-        floatingButton.style.backgroundColor = '#dc3545';
+        floatingButton.style.backgroundColor = '#0d6efd';
         floatingButton.style.color = 'white';
         floatingButton.style.border = 'none';
         floatingButton.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
@@ -34,90 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
         floatingButton.style.alignItems = 'center';
         floatingButton.style.justifyContent = 'center';
         floatingButton.style.transition = 'all 0.3s ease';
-
-        // Crear menú flotante para opciones adicionales
-        const floatingMenu = document.createElement('div');
-        floatingMenu.id = 'floatingCacheMenu';
-        floatingMenu.style.position = 'fixed';
-        floatingMenu.style.bottom = '80px';
-        floatingMenu.style.right = '20px';
-        floatingMenu.style.backgroundColor = 'white';
-        floatingMenu.style.borderRadius = '8px';
-        floatingMenu.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
-        floatingMenu.style.padding = '10px';
-        floatingMenu.style.display = 'none';
-        floatingMenu.style.zIndex = '9998';
-        floatingMenu.style.transition = 'all 0.3s ease';
-        floatingMenu.style.transform = 'translateY(10px)';
-        floatingMenu.style.opacity = '0';
-
-        // Añadir opciones al menú
-        floatingMenu.innerHTML = `
-            <div class="p-2">
-                <button id="normalCleanBtn" class="btn btn-sm btn-danger w-100 mb-2">
-                    <i class="fas fa-sync-alt me-2"></i> Actualizar sitio
-                </button>
-                <button id="hardResetBtn" class="btn btn-sm btn-outline-danger w-100">
-                    <i class="fas fa-trash-alt me-2"></i> Restablecer completamente
-                </button>
-                <div class="mt-2 small text-muted">
-                    <i class="fas fa-info-circle me-1"></i> El restablecimiento completo borra todos los datos locales
-                </div>
-            </div>
-        `;
-
-        // Añadir el menú al body
-        document.body.appendChild(floatingMenu);
-
-        // Configurar eventos para los botones del menú
-        document.getElementById('normalCleanBtn').addEventListener('click', function() {
-            hideMenu();
-            if (window.CacheControl) {
-                floatingButton.style.animation = 'spin 1s linear';
-                window.CacheControl.clearCache(true, true);
-                setTimeout(() => { floatingButton.style.animation = ''; }, 1000);
-            } else {
-                alert('No se pudo limpiar la caché. Por favor, recarga la página manualmente.');
-                window.location.reload(true);
-            }
-        });
-
-        document.getElementById('hardResetBtn').addEventListener('click', function() {
-            hideMenu();
-            if (window.CacheControl) {
-                floatingButton.style.animation = 'spin 1s linear';
-                window.CacheControl.clearCache(true, true, true);
-                setTimeout(() => { floatingButton.style.animation = ''; }, 1000);
-            } else {
-                if (confirm('ATENCIÓN: Estás a punto de realizar un restablecimiento completo que borrará TODOS los datos almacenados localmente. Esta acción no se puede deshacer.\n\n¿Deseas continuar?')) {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    window.location.reload(true);
-                }
-            }
-        });
-
-        // Función para mostrar el menú
-        function showMenu() {
-            floatingMenu.style.display = 'block';
-            // Pequeño retraso para permitir que la transición funcione
-            setTimeout(() => {
-                floatingMenu.style.transform = 'translateY(0)';
-                floatingMenu.style.opacity = '1';
-            }, 10);
-        }
-
-        // Función para ocultar el menú
-        function hideMenu() {
-            floatingMenu.style.transform = 'translateY(10px)';
-            floatingMenu.style.opacity = '0';
-            setTimeout(() => {
-                floatingMenu.style.display = 'none';
-            }, 300);
-        }
-
-        // Variable para controlar si el menú está visible
-        let menuVisible = false;
 
         // Añadir efectos hover
         floatingButton.onmouseover = function() {
@@ -130,33 +63,27 @@ document.addEventListener('DOMContentLoaded', () => {
             this.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
         };
 
-        // Añadir evento de clic para mostrar/ocultar el menú
+        // Añadir evento de clic para actualizar
         floatingButton.onclick = function() {
-            // Alternar visibilidad del menú
-            if (menuVisible) {
-                hideMenu();
-                menuVisible = false;
-            } else {
-                showMenu();
-                menuVisible = true;
-            }
-
             // Añadir animación de rotación
             this.style.animation = 'spin 1s linear';
+
+            // Ejecutar la función de restablecer completamente
+            if (window.CacheControl) {
+                window.CacheControl.clearCache(true, true, true);
+            } else {
+                if (confirm('Para garantizar que veas la última versión del sitio, se realizará una actualización completa que recargará todos los datos.\n\n¿Deseas continuar?')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.reload(true);
+                }
+            }
 
             // Eliminar animación después de completarse
             setTimeout(() => {
                 this.style.animation = '';
             }, 1000);
         };
-
-        // Cerrar el menú al hacer clic fuera de él
-        document.addEventListener('click', function(event) {
-            if (menuVisible && event.target !== floatingButton && !floatingMenu.contains(event.target)) {
-                hideMenu();
-                menuVisible = false;
-            }
-        });
 
         // Añadir estilos de animación
         const style = document.createElement('style');

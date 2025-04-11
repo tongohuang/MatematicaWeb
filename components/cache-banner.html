@@ -1,22 +1,19 @@
 <!-- Banner de actualización de caché -->
 <div class="container mt-3" id="cacheUpdateBanner">
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
         <div class="d-flex flex-column flex-md-row">
             <div class="d-flex align-items-center flex-grow-1">
                 <div class="me-3">
-                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    <i class="fas fa-info-circle fa-lg"></i>
                 </div>
                 <div>
-                    <h5 class="alert-heading mb-1">IMPORTANTE: ¿No ves el contenido más reciente?</h5>
-                    <p class="mb-0">Si acabas de acceder al sitio o no ves los últimos cambios, es necesario limpiar la caché. Haz clic en el botón para cargar la última versión.</p>
+                    <h5 class="alert-heading mb-1">Bienvenido a MatemáticaWeb</h5>
+                    <p class="mb-0">Para garantizar que veas la última versión del contenido, nuestro sistema requiere actualizar la caché. Haz clic en el botón para ver la versión más reciente.</p>
                 </div>
             </div>
-            <div class="ms-md-auto mt-3 mt-md-0 d-flex">
-                <button type="button" class="btn btn-danger me-2" onclick="window.CacheControl.clearCache(true, true)">
-                    <i class="fas fa-sync-alt me-2"></i>Forzar actualización
-                </button>
-                <button type="button" class="btn btn-outline-danger" onclick="window.CacheControl.clearCache(true, true, true)" title="Borra todos los datos almacenados localmente y recarga completamente la página">
-                    <i class="fas fa-trash-alt me-2"></i>Restablecer completamente
+            <div class="ms-md-auto mt-3 mt-md-0">
+                <button type="button" class="btn btn-primary" onclick="window.CacheControl.clearCache(true, true, true)">
+                    <i class="fas fa-sync-alt me-2"></i>Actualizar
                 </button>
             </div>
         </div>
@@ -27,36 +24,40 @@
 <style>
     /* Estilos para el banner de caché */
     #cacheUpdateBanner .alert {
-        border-left: 4px solid #ffc107;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        animation: pulse 2s infinite;
+        border-left: 4px solid #0dcaf0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        animation: gentle-pulse 3s infinite;
     }
-    #cacheUpdateBanner .btn-danger {
+    #cacheUpdateBanner .btn-primary {
         transition: all 0.2s;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-weight: 500;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    #cacheUpdateBanner .btn-danger:hover {
+    #cacheUpdateBanner .btn-primary:hover {
         transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
-    #cacheUpdateBanner .fa-exclamation-triangle {
-        color: #dc3545;
+    #cacheUpdateBanner .btn-outline-primary:hover {
+        transform: scale(1.05);
+    }
+    #cacheUpdateBanner .fa-info-circle {
+        color: #0d6efd;
+        font-size: 1.5rem;
     }
     #cacheUpdateBanner .alert-heading {
-        font-weight: bold;
-        color: #dc3545;
+        font-weight: 600;
+        color: #0d6efd;
     }
 
-    @keyframes pulse {
+    @keyframes gentle-pulse {
         0% {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         50% {
-            box-shadow: 0 4px 20px rgba(220,53,69,0.3);
+            box-shadow: 0 4px 20px rgba(13,110,253,0.2);
         }
         100% {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
     }
 </style>
@@ -73,10 +74,27 @@
         // Guardar la fecha de la última visita
         localStorage.setItem('lastVisit', now.toString());
 
-        // Mostrar el banner si:
+        // Verificar si estamos en la página de inicio principal (solo raíz o /index.html)
+        // Usamos una lógica más estricta para evitar que aparezca en otras páginas
+        const path = window.location.pathname;
+        const isHomePage = path === '/' ||
+                          path === '/index.html' ||
+                          path === 'index.html';
+
+        // Verificar explícitamente que NO estamos en ninguna subpágina
+        const isSubpage = path.includes('/courses/') ||
+                         path.includes('/sections/') ||
+                         path.includes('/admin/') ||
+                         path.includes('/activities/') ||
+                         path.includes('/topics/');
+
+        // Solo mostrar en la página principal y no en subpáginas
+        const isMainPageOnly = isHomePage && !isSubpage;
+
+        // Mostrar el banner solo en la página de inicio principal y si:
         // 1. El usuario no lo ha ocultado explícitamente, o
         // 2. Ha pasado más de un día desde la última visita
-        const shouldShow = !hideCacheBanner || !lastVisit || parseInt(lastVisit) < oneDayAgo;
+        const shouldShow = isMainPageOnly && (!hideCacheBanner || !lastVisit || parseInt(lastVisit) < oneDayAgo);
 
         if (cacheUpdateBanner) {
             cacheUpdateBanner.style.display = shouldShow ? 'block' : 'none';
@@ -89,13 +107,14 @@
 
         // Verificar si estamos en Netlify y forzar la limpieza de caché automáticamente
         // si es la primera visita o ha pasado más de un día
+        // SOLO en la página principal (no en subpáginas)
         const isNetlify = window.location.hostname.includes('netlify.app');
-        if (isNetlify && (!lastVisit || parseInt(lastVisit) < oneDayAgo)) {
-            console.log('Primera visita o visita después de un día, limpiando caché automáticamente...');
+        if (isNetlify && isMainPageOnly && (!lastVisit || parseInt(lastVisit) < oneDayAgo)) {
+            console.log('Primera visita o visita después de un día en la página principal, limpiando caché automáticamente...');
             // Esperar un momento para que la página se cargue completamente
             setTimeout(() => {
                 if (window.CacheControl) {
-                    window.CacheControl.clearCache(false, true);
+                    window.CacheControl.clearCache(false, true, true);
                 }
             }, 3000);
         }

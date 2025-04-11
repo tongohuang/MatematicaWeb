@@ -155,14 +155,35 @@ async function autoCleanNetlifyCache() {
 // Inicializar sistema de caché en entorno Netlify
 document.addEventListener('DOMContentLoaded', async () => {
     if (window.location.hostname.includes('netlify.app')) {
-        // Para usuarios normales: limpieza automática
+        // Verificar si estamos en la página de inicio principal (solo raíz o /index.html)
+        // Usamos una lógica más estricta para evitar que aparezca en otras páginas
+        const path = window.location.pathname;
+        const isHomePage = path === '/' ||
+                          path === '/index.html' ||
+                          path === 'index.html';
+
+        // Verificar explícitamente que NO estamos en ninguna subpágina
+        const isSubpage = path.includes('/courses/') ||
+                         path.includes('/sections/') ||
+                         path.includes('/admin/') ||
+                         path.includes('/activities/') ||
+                         path.includes('/topics/');
+
+        // Solo mostrar en la página principal y no en subpáginas
+        const isMainPageOnly = isHomePage && !isSubpage;
+
+        // Para usuarios normales: limpieza automática (solo en página principal para no molestar)
         if (!isAdmin()) {
-            // Ejecutar limpieza automática
-            await autoCleanNetlifyCache();
+            if (isMainPageOnly) {
+                // Ejecutar limpieza automática solo en la página principal
+                await autoCleanNetlifyCache();
+            } else {
+                console.log('No estamos en la página principal, omitiendo limpieza automática de caché');
+            }
         }
-        // Para administradores: botón manual
-        else {
-            // Crear botón flotante
+        // Para administradores: botón manual (solo en página principal)
+        else if (isMainPageOnly) {
+            // Crear botón flotante solo en la página principal
             const cleanButton = document.createElement('button');
             cleanButton.textContent = 'Limpiar Caché';
             cleanButton.style.position = 'fixed';

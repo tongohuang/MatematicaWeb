@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprendizaje Interactivo de Probabilidad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .probability-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        .coin {
+            transition: transform 1s ease-out;
+        }
+        .dice-face {
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #333;
+            position: absolute;
+        }
+        .card {
+            perspective: 1000px;
+        }
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 0.5s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-blue-50 to-purple-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-purple-800 mb-2">Aprendizaje Interactivo de Probabilidad</h1>
+            <p class="text-lg text-gray-600">Explora cómo medir la incertidumbre en eventos aleatorios</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Sección de teoría -->
+            <div class="bg-white rounded-xl shadow-lg p-6 lg:col-span-2">
+                <h2 class="text-2xl font-semibold text-blue-700 mb-4 flex items-center">
+                    <i class="fas fa-book-open mr-3"></i> Conceptos Básicos
+                </h2>
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium text-purple-700 mb-2">¿Qué es la probabilidad?</h3>
+                    <p class="text-gray-700 mb-4">
+                        La probabilidad es una medida numérica de la posibilidad de que ocurra un evento. Se expresa como un número entre 0 (imposible) y 1 (seguro), o como un porcentaje entre 0% y 100%.
+                    </p>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <p class="font-medium text-gray-800">Fórmula básica:</p>
+                        <p class="text-center text-xl my-2">
+                            P(A) = <span class="text-purple-700">Número de resultados favorables</span> / <span class="text-blue-700">Número total de resultados posibles</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium text-purple-700 mb-2">Experimentos Aleatorios</h3>
+                    <p class="text-gray-700 mb-4">
+                        Un experimento aleatorio es aquel cuyo resultado no se puede predecir con certeza antes de realizarlo. Ejemplos:
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-purple-100 p-3 rounded-lg text-center">
+                            <i class="fas fa-coins text-3xl text-purple-600 mb-2"></i>
+                            <p>Lanzar una moneda</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-lg text-center">
+                            <i class="fas fa-dice text-3xl text-blue-600 mb-2"></i>
+                            <p>Tirar un dado</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg text-center">
+                            <i class="fas fa-cards text-3xl text-green-600 mb-2"></i>
+                            <p>Sacar una carta</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium text-purple-700 mb-2">Espacio Muestral</h3>
+                    <p class="text-gray-700 mb-4">
+                        El conjunto de todos los resultados posibles de un experimento aleatorio se llama espacio muestral (S).
+                    </p>
+                    <div class="bg-yellow-100 p-4 rounded-lg">
+                        <p class="font-medium mb-2">Ejemplos:</p>
+                        <ul class="list-disc pl-5">
+                            <li class="mb-1">Moneda: S = {Cara, Cruz}</li>
+                            <li class="mb-1">Dado de 6 caras: S = {1, 2, 3, 4, 5, 6}</li>
+                            <li>Baraja de cartas: S = {52 cartas diferentes}</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-medium text-purple-700 mb-2">Eventos o Sucesos</h3>
+                    <p class="text-gray-700 mb-4">
+                        Un evento es un subconjunto del espacio muestral. Puede ser:
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-red-100 p-3 rounded-lg">
+                            <p class="font-medium text-red-700">Simple</p>
+                            <p class="text-sm">Un solo resultado (ej: sacar un 3 en un dado)</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <p class="font-medium text-green-700">Compuesto</p>
+                            <p class="text-sm">Múltiples resultados (ej: sacar un número par)</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <p class="font-medium text-blue-700">Seguro/Imposible</p>
+                            <p class="text-sm">Ocurre siempre/nunca (ej: sacar ≤6 en un dado)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de simulación -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-blue-700 mb-4 flex items-center">
+                    <i class="fas fa-flask mr-3"></i> Simulaciones
+                </h2>
+                
+                <!-- Simulador de moneda -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Lanzamiento de Moneda</h3>
+                    <div class="flex flex-col items-center mb-4">
+                        <div id="coin" class="coin w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center text-4xl font-bold shadow-md mb-4">
+                            ?
+                        </div>
+                        <button id="flip-coin" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-full transition">
+                            <i class="fas fa-sync-alt mr-2"></i> Lanzar Moneda
+                        </button>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-lg">
+                        <p class="font-medium mb-1">Resultados:</p>
+                        <div class="flex justify-between mb-2">
+                            <span>Caras: <span id="heads-count" class="font-bold">0</span></span>
+                            <span>Cruces: <span id="tails-count" class="font-bold">0</span></span>
+                        </div>
+                        <div class="flex h-6 bg-gray-300 rounded-full overflow-hidden">
+                            <div id="heads-bar" class="probability-bar bg-purple-600 h-full" style="width: 0%"></div>
+                            <div id="tails-bar" class="probability-bar bg-blue-600 h-full" style="width: 0%"></div>
+                        </div>
+                        <p class="text-sm mt-2">Probabilidad empírica: <span id="coin-probability">0% cara / 0% cruz</span></p>
+                    </div>
+                </div>
+                
+                <!-- Simulador de dado -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Lanzamiento de Dado</h3>
+                    <div class="flex flex-col items-center mb-4">
+                        <div id="dice" class="dice-face w-20 h-20 bg-white rounded-lg relative p-2 shadow-md mb-4">
+                            <!-- Los puntos se generarán dinámicamente -->
+                        </div>
+                        <button id="roll-dice" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-full transition">
+                            <i class="fas fa-dice mr-2"></i> Tirar Dado
+                        </button>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-lg">
+                        <p class="font-medium mb-1">Historial:</p>
+                        <div id="dice-history" class="flex flex-wrap gap-2 mb-2 min-h-8">
+                            <span class="text-sm text-gray-500">(No hay lanzamientos)</span>
+                        </div>
+                        <div class="grid grid-cols-6 gap-1 mb-2">
+                            <div class="text-center">
+                                <div class="h-2 bg-gray-300 rounded-full">
+                                    <div id="d1-bar" class="probability-bar h-full bg-purple-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span class="text-xs">1</span>
+                            </div>
+                            <!-- Las otras barras se generan igual -->
+                            <div class="text-center">
+                                <div class="h-2 bg-gray-300 rounded-full">
+                                    <div id="d2-bar" class="probability-bar h-full bg-purple-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span class="text-xs">2</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="h-2 bg-gray-300 rounded-full">
+                                    <div id="d3-bar" class="probability-bar h-full bg-purple-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span class="text-xs">3</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="h-2 bg-gray-300 rounded-full">
+                                    <div id="d4-bar" class="probability-bar h-full bg-purple-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span class="text-xs">4</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="h-2 bg-gray-300 rounded-full">
+                                    <div id="d5-bar" class="probability-bar h-full bg-purple-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span class="text-xs">5</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="h-2 bg-gray-300 rounded-full">
+                                    <div id="d6-bar" class="probability-bar h-full bg-purple-600 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span class="text-xs">6</span>
+                            </div>
+                        </div>
+                        <p class="text-sm">Probabilidad teórica: 16.67% para cada número</p>
+                    </div>
+                </div>
+                
+                <!-- Simulador de cartas -->
+                <div>
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Sacar una Carta</h3>
+                    <div class="flex flex-col items-center mb-4">
+                        <div class="card w-32 h-48 mx-auto mb-4">
+                            <div id="card-inner" class="card-inner relative w-full h-full">
+                                <div class="card-front absolute w-full h-full bg-red-600 rounded-lg flex items-center justify-center text-white text-4xl border-4 border-white shadow-lg">
+                                    <i class="fas fa-question"></i>
+                                </div>
+                                <div id="card-back" class="card-back absolute w-full h-full bg-white rounded-lg flex flex-col items-center justify-center border-4 border-white shadow-lg">
+                                    <div id="card-value" class="text-3xl font-bold text-black">A</div>
+                                    <div id="card-suit" class="text-3xl text-red-600">♥</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="draw-card" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-full transition">
+                            <i class="fas fa-hand-paper mr-2"></i> Sacar Carta
+                        </button>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded-lg">
+                        <p class="font-medium mb-1">Probabilidades:</p>
+                        <ul class="text-sm space-y-1">
+                            <li>Color rojo: <span class="font-bold">50%</span></li>
+                            <li>As: <span class="font-bold">7.69%</span> (4/52)</li>
+                            <li>Figura (J,Q,K): <span class="font-bold">23.08%</span> (12/52)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección de ejercicios -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-8">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4 flex items-center">
+                <i class="fas fa-pencil-alt mr-3"></i> Ejercicios Prácticos
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Ejercicio 1 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Ejercicio 1: Probabilidad Simple</h3>
+                    <p class="text-gray-700 mb-4">En una bolsa hay 3 bolas rojas, 2 verdes y 5 azules. ¿Cuál es la probabilidad de sacar una bola verde?</p>
+                    
+                    <div class="flex items-center space-x-2 mb-3">
+                        <input type="radio" id="ex1-option1" name="ex1" class="hidden peer" value="20">
+                        <label for="ex1-option1" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer">20%</label>
+                        
+                        <input type="radio" id="ex1-option2" name="ex1" class="hidden peer" value="30">
+                        <label for="ex1-option2" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer">30%</label>
+                        
+                        <input type="radio" id="ex1-option3" name="ex1" class="hidden peer" value="10">
+                        <label for="ex1-option3" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer">10%</label>
+                    </div>
+                    
+                    <button onclick="checkExercise(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        Verificar
+                    </button>
+                    <div id="ex1-feedback" class="mt-2 hidden"></div>
+                </div>
+                
+                <!-- Ejercicio 2 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Ejercicio 2: Eventos Compuestos</h3>
+                    <p class="text-gray-700 mb-4">Al lanzar dos monedas, ¿cuál es la probabilidad de obtener al menos una cara?</p>
+                    
+                    <div class="flex flex-col space-y-2 mb-3">
+                        <div class="flex items-center">
+                            <input type="radio" id="ex2-option1" name="ex2" class="hidden peer" value="25">
+                            <label for="ex2-option1" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer w-full">25%</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="ex2-option2" name="ex2" class="hidden peer" value="50">
+                            <label for="ex2-option2" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer w-full">50%</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="ex2-option3" name="ex2" class="hidden peer" value="75">
+                            <label for="ex2-option3" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer w-full">75%</label>
+                        </div>
+                    </div>
+                    
+                    <button onclick="checkExercise(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        Verificar
+                    </button>
+                    <div id="ex2-feedback" class="mt-2 hidden"></div>
+                </div>
+                
+                <!-- Ejercicio 3 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Ejercicio 3: Probabilidad Condicional</h3>
+                    <p class="text-gray-700 mb-4">En un dado de 6 caras, si sabemos que salió un número mayor que 3, ¿cuál es la probabilidad de que sea par?</p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <input type="radio" id="ex3-option1" name="ex3" class="hidden peer" value="33">
+                        <label for="ex3-option1" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer">33.3%</label>
+                        
+                        <input type="radio" id="ex3-option2" name="ex3" class="hidden peer" value="50">
+                        <label for="ex3-option2" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer">50%</label>
+                        
+                        <input type="radio" id="ex3-option3" name="ex3" class="hidden peer" value="66">
+                        <label for="ex3-option3" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer">66.6%</label>
+                    </div>
+                    
+                    <button onclick="checkExercise(3)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        Verificar
+                    </button>
+                    <div id="ex3-feedback" class="mt-2 hidden"></div>
+                </div>
+                
+                <!-- Ejercicio 4 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium text-purple-700 mb-3">Ejercicio 4: Probabilidad en la Vida Real</h3>
+                    <p class="text-gray-700 mb-4">Si la probabilidad de lluvia es 30% hoy y 40% mañana, ¿cuál es la probabilidad de que NO llueva ni hoy ni mañana (asumiendo independencia)?</p>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                            <input type="radio" id="ex4-option1" name="ex4" class="hidden peer" value="42">
+                            <label for="ex4-option1" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer block text-center">42%</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="ex4-option2" name="ex4" class="hidden peer" value="58">
+                            <label for="ex4-option2" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer block text-center">58%</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="ex4-option3" name="ex4" class="hidden peer" value="70">
+                            <label for="ex4-option3" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer block text-center">70%</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="ex4-option4" name="ex4" class="hidden peer" value="12">
+                            <label for="ex4-option4" class="px-4 py-2 bg-gray-100 rounded-lg peer-checked:bg-purple-100 peer-checked:border-purple-500 peer-checked:border-2 cursor-pointer block text-center">12%</label>
+                        </div>
+                    </div>
+                    
+                    <button onclick="checkExercise(4)" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        Verificar
+                    </button>
+                    <div id="ex4-feedback" class="mt-2 hidden"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resumen y conclusión -->
+        <div class="bg-purple-100 rounded-xl shadow-lg p-6 mt-8">
+            <h2 class="text-2xl font-semibold text-purple-800 mb-4 flex items-center">
+                <i class="fas fa-lightbulb mr-3"></i> Resumen y Conclusión
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium text-purple-700 mb-2">Puntos Clave</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-700">
+                        <li>La probabilidad mide la incertidumbre de eventos aleatorios</li>
+                        <li>Varía entre 0 (imposible) y 1 (seguro)</li>
+                        <li>Se calcula como resultados favorables / resultados posibles</li>
+                        <li>La probabilidad empírica se aproxima a la teórica con muchas repeticiones</li>
+                        <li>Los eventos pueden ser simples o compuestos</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-purple-700 mb-2">Aplicaciones</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-700">
+                        <li>Predicción del tiempo</li>
+                        <li>Juegos de azar y apuestas</li>
+                        <li>Control de calidad en producción</li>
+                        <li>Análisis de riesgos en finanzas</li>
+                        <li>Investigación médica y ensayos clínicos</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 bg-white p-4 rounded-lg">
+                <p class="font-medium text-purple-700 mb-2">Reflexión Final:</p>
+                <p class="text-gray-700">La probabilidad nos ayuda a tomar decisiones informadas en situaciones de incertidumbre. Aunque no puede predecir resultados individuales, nos da una medida cuantitativa de lo que podemos esperar a largo plazo.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables para llevar el conteo de simulaciones
+        let coinStats = { heads: 0, tails: 0, total: 0 };
+        let diceStats = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, total:0 };
+        
+        // Configuración inicial del dado
+        function setupDice() {
+            const dice = document.getElementById('dice');
+            dice.innerHTML = '';
+            dice.style.display = 'flex';
+            dice.style.justifyContent = 'center';
+            dice.style.alignItems = 'center';
+            dice.innerHTML = '?';
+        }
+        
+        // Lanzamiento de moneda
+        document.getElementById('flip-coin').addEventListener('click', function() {
+            const coin = document.getElementById('coin');
+            const button = this;
+            
+            // Deshabilitar botón durante la animación
+            button.disabled = true;
+            coin.classList.add('spinning');
+            
+            // Resultado aleatorio después de 1 segundo
+            setTimeout(() => {
+                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                coinStats[result]++;
+                coinStats.total++;
+                
+                // Mostrar resultado
+                coin.classList.remove('spinning');
+                if (result === 'heads') {
+                    coin.textContent = '😊';
+                    coin.style.backgroundColor = '#fbbf24'; // Amarillo
+                } else {
+                    coin.textContent = '🦅';
+                    coin.style.backgroundColor = '#d1d5db'; // Gris
+                }
+                
+                // Actualizar estadísticas
+                updateCoinStats();
+                
+                // Rehabilitar botón
+                button.disabled = false;
+            }, 1000);
+        });
+        
+        // Actualizar estadísticas de moneda
+        function updateCoinStats() {
+            document.getElementById('heads-count').textContent = coinStats.heads;
+            document.getElementById('tails-count').textContent = coinStats.tails;
+            
+            const headsPercent = coinStats.total > 0 ? (coinStats.heads / coinStats.total * 100) : 0;
+            const tailsPercent = coinStats.total > 0 ? (coinStats.tails / coinStats.total * 100) : 0;
+            
+            document.getElementById('heads-bar').style.width = `${headsPercent}%`;
+            document.getElementById('tails-bar').style.width = `${tailsPercent}%`;
+            
+            document.getElementById('coin-probability').textContent = 
+                `${headsPercent.toFixed(1)}% cara / ${tailsPercent.toFixed(1)}% cruz`;
+        }
+        
+        // Lanzamiento de dado
+        document.getElementById('roll-dice').addEventListener('click', function() {
+            const dice = document.getElementById('dice');
+            const button = this;
+            
+            // Deshabilitar botón durante la animación
+            button.disabled = true;
+            dice.textContent = '';
+            dice.classList.add('spinning');
+            
+            // Resultado aleatorio después de 1 segundo
+            setTimeout(() => {
+                const result = Math.floor(Math.random() * 6) + 1;
+                diceStats[result]++;
+                diceStats.total++;
+                
+                // Mostrar resultado
+                dice.classList.remove('spinning');
+                drawDiceFace(result);
+                
+                // Actualizar estadísticas
+                updateDiceStats(result);
+                
+                // Rehabilitar botón
+                button.disabled = false;
+            }, 1000);
+        });
+        
+        // Dibujar cara del dado
+        function drawDiceFace(number) {
+            const dice = document.getElementById('dice');
+            dice.innerHTML = '';
+            
+            // Configuración de puntos para cada cara
+            const dotPositions = {
+                1: [[50, 50]],
+                2: [[20, 20], [80, 80]],
+                3: [[20, 20], [50, 50], [80, 80]],
+                4: [[20, 20], [20, 80], [80, 20], [80, 80]],
+                5: [[20, 20], [20, 80], [50, 50], [80, 20], [80, 80]],
+                6: [[20, 20], [20, 50], [20, 80], [80, 20], [80, 50], [80, 80]]
+            };
+            
+            // Crear puntos
+            dotPositions[number].forEach(pos => {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                dot.style.left = `${pos[0]}%`;
+                dot.style.top = `${pos[1]}%`;
+                dot.style.transform = 'translate(-50%, -50%)';
+                dice.appendChild(dot);
+            });
+        }
+        
+        // Actualizar estadísticas de dado
+        function updateDiceStats(result) {
+            const history = document.getElementById('dice-history');
+            
+            // Limpiar si es el primer lanzamiento
+            if (diceStats.total === 1) {
+                history.innerHTML = '';
+            }
+            
+            // Agregar nuevo resultado al historial
+            const newResult = document.createElement('span');
+            newResult.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm';
+            newResult.textContent = result;
+            history.appendChild(newResult);
+            
+            // Actualizar barras de probabilidad
+            for (let i = 1; i <= 6; i++) {
+                const percent = diceStats.total > 0 ? (diceStats[i] / diceStats.total * 100) : 0;
+                document.getElementById(`d${i}-bar`).style.width = `${percent}%`;
+            }
+        }
+        
+        // Sacar carta
+        document.getElementById('draw-card').addEventListener('click', function() {
+            const card = document.querySelector('.card');
+            const cardInner = document.getElementById('card-inner');
+            const button = this;
+            
+            // Deshabilitar botón durante la animación
+            button.disabled = true;
+            
+            // Voltear la carta
+            card.classList.add('flipped');
+            
+            // Generar carta aleatoria después de 0.6s (duración de la animación)
+            setTimeout(() => {
+                const suits = ['♥', '♦', '♣', '♠'];
+                const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+                
+                const randomSuit = suits[Math.floor(Math.random() * suits.length)];
+                const randomValue = values[Math.floor(Math.random() * values.length)];
+                
+                // Mostrar carta
+                document.getElementById('card-value').textContent = randomValue;
+                document.getElementById('card-suit').textContent = randomSuit;
+                
+                // Color según el palo
+                const suitElement = document.getElementById('card-suit');
+                if (randomSuit === '♥' || randomSuit === '♦') {
+                    suitElement.className = 'text-3xl text-red-600';
+                } else {
+                    suitElement.className = 'text-3xl text-black';
+                }
+                
+                // Rehabilitar botón después de mostrar la carta
+                setTimeout(() => {
+                    button.disabled = false;
+                }, 500);
+            }, 300);
+            
+            // Volver a girar la carta después de 3 segundos
+            setTimeout(() => {
+                card.classList.remove('flipped');
+            }, 3000);
+        });
+        
+        // Verificar ejercicios
+        function checkExercise(exNumber) {
+            const correctAnswers = {1: 20, 2: 75, 3: 66, 4: 42};
+            const feedbackMessages = {
+                1: {
+                    correct: "¡Correcto! Hay 2 bolas verdes de 10 totales → 2/10 = 20%",
+                    incorrect: "Incorrecto. Hay 2 bolas verdes de 10 totales → 2/10 = 20%"
+                },
+                2: {
+                    correct: "¡Excelente! Los resultados posibles son CC, CX, XC, XX. 3 de 4 tienen al menos una cara → 75%",
+                    incorrect: "No es correcto. Los resultados posibles son CC, CX, XC, XX. 3 de 4 tienen al menos una cara → 75%"
+                },
+                3: {
+                    correct: "¡Muy bien! Los números >3 son 4,5,6 (3 opciones). Los pares son 4 y 6 → 2/3 ≈ 66.6%",
+                    incorrect: "Incorrecto. Los números >3 son 4,5,6 (3 opciones). Los pares son 4 y 6 → 2/3 ≈ 66.6%"
+                },
+                4: {
+                    correct: "¡Correcto! P(no llueva hoy) = 70%, P(no llueva mañana) = 60%. 0.7 × 0.6 = 0.42 → 42%",
+                    incorrect: "No es correcto. P(no llueva hoy) = 70%, P(no llueva mañana) = 60%. 0.7 × 0.6 = 0.42 → 42%"
+                }
+            };
+            
+            const selectedOption = document.querySelector(`input[name="ex${exNumber}"]:checked`);
+            const feedbackElement = document.getElementById(`ex${exNumber}-feedback`);
+            
+            if (!selectedOption) {
+                feedbackElement.textContent = "Por favor selecciona una opción";
+                feedbackElement.className = "mt-2 text-red-600";
+                feedbackElement.classList.remove("hidden");
+                return;
+            }
+            
+            const userAnswer = parseInt(selectedOption.value);
+            const isCorrect = userAnswer === correctAnswers[exNumber];
+            
+            feedbackElement.textContent = isCorrect ? feedbackMessages[exNumber].correct : feedbackMessages[exNumber].incorrect;
+            feedbackElement.className = `mt-2 ${isCorrect ? 'text-green-600' : 'text-red-600'}`;
+            feedbackElement.classList.remove("hidden");
+        }
+        
+        // Inicializar
+        setupDice();
+    </script>
+</body>
+</html>

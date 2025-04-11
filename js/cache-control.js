@@ -289,7 +289,7 @@ const CacheControl = {
         console.log('%c[Control de Caché] Limpiando caché manualmente...', 'color: #2196F3; font-weight: bold');
 
         // Si es un hard reset, mostrar confirmación
-        if (hardReset && !confirm('ATENCIÓN: Estás a punto de realizar un restablecimiento completo que borrará TODOS los datos almacenados localmente. Esta acción no se puede deshacer.\n\n¿Deseas continuar?')) {
+        if (hardReset && !confirm('Para garantizar que veas la última versión del sitio, se realizará una actualización completa que recargará todos los datos.\n\n¿Deseas continuar?')) {
             console.log('Hard reset cancelado por el usuario');
             return;
         }
@@ -301,28 +301,50 @@ const CacheControl = {
         localStorage.removeItem('hideCacheBanner');
 
         // Forzar carga desde el repositorio si DataPersistence está disponible
-        if (typeof DataPersistence !== 'undefined' && !hardReset) {
+        if (typeof DataPersistence !== 'undefined') {
             console.log('Forzando carga de datos desde el repositorio...');
 
             // Intentar cargar datos desde el repositorio antes de recargar
             try {
-                DataPersistence.init(true).then(() => {
-                    console.log('Datos cargados correctamente desde el repositorio');
+                // Si es un hard reset, forzar la carga completa desde el repositorio
+                if (hardReset) {
+                    console.log('%c[Control de Caché] HARD RESET: Forzando carga completa desde el repositorio', 'color: #FF0000; font-weight: bold');
 
-                    // Mostrar mensaje de éxito si se solicita
-                    this._showSuccessAndReload(showSuccess, hardReset);
-                }).catch(error => {
-                    console.error('Error cargando datos desde el repositorio:', error);
-                    // Recargar de todos modos
-                    this._showSuccessAndReload(showSuccess, hardReset);
-                });
+                    // Esperar un momento para asegurarnos de que localStorage se ha limpiado completamente
+                    setTimeout(async () => {
+                        try {
+                            // Inicializar con forzado de datos del repositorio
+                            await DataPersistence.init(true);
+                            console.log('Datos cargados correctamente desde el repositorio después de hard reset');
+
+                            // Mostrar mensaje de éxito si se solicita
+                            this._showSuccessAndReload(showSuccess, hardReset);
+                        } catch (initError) {
+                            console.error('Error cargando datos desde el repositorio después de hard reset:', initError);
+                            // Recargar de todos modos
+                            this._showSuccessAndReload(showSuccess, hardReset);
+                        }
+                    }, 500);
+                } else {
+                    // Carga normal desde el repositorio
+                    DataPersistence.init(true).then(() => {
+                        console.log('Datos cargados correctamente desde el repositorio');
+
+                        // Mostrar mensaje de éxito si se solicita
+                        this._showSuccessAndReload(showSuccess, hardReset);
+                    }).catch(error => {
+                        console.error('Error cargando datos desde el repositorio:', error);
+                        // Recargar de todos modos
+                        this._showSuccessAndReload(showSuccess, hardReset);
+                    });
+                }
             } catch (error) {
                 console.error('Error iniciando carga de datos:', error);
                 // Recargar de todos modos
                 this._showSuccessAndReload(showSuccess, hardReset);
             }
         } else {
-            // Si DataPersistence no está disponible o es un hard reset, simplemente recargar
+            // Si DataPersistence no está disponible, simplemente recargar
             this._showSuccessAndReload(showSuccess, hardReset);
         }
     },
@@ -347,8 +369,8 @@ const CacheControl = {
             successAlert.style.width = '90%';
 
             let message = hardReset ?
-                '¡Restablecimiento completo realizado! Todos los datos locales han sido borrados.' :
-                '¡Caché limpiada correctamente!';
+                '¡Actualización completa realizada! Todos los datos han sido recargados.' :
+                '¡Actualización realizada correctamente!';
 
             successAlert.innerHTML = `
                 <div class="d-flex align-items-center">
@@ -386,10 +408,19 @@ const CacheControl = {
             console.log('%c[Control de Caché] Realizando HARD RELOAD...', 'color: #FF0000; font-weight: bold');
 
             // Intentar usar la API de navegación para forzar una recarga completa
-            if (window.location.href.indexOf('?') === -1) {
-                window.location.href = window.location.href + '?forceReload=' + Date.now();
+            let url = window.location.href;
+
+            // Limpiar parámetros de URL existentes
+            url = url.split('?')[0];
+
+            // Redirigir a la página de inicio para asegurar una carga completa
+            if (url.endsWith('/') || url.endsWith('/index.html')) {
+                // Ya estamos en la página de inicio, solo añadir parámetro
+                window.location.href = url + '?forceReload=' + Date.now();
             } else {
-                window.location.href = window.location.href + '&forceReload=' + Date.now();
+                // Redirigir a la página de inicio
+                const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+                window.location.href = baseUrl + '?forceReload=' + Date.now();
             }
         } else {
             // Recarga normal

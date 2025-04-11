@@ -3,1386 +3,1102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inducción Completa Interactiva</title>
+    <title>Inducción Completa Interactiva - Versión Mejorada</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Polyfill es menos crucial con MathJax 3 moderno, pero se puede mantener si se necesita compatibilidad amplia -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <!-- Cargar la configuración ANTES del script principal de MathJax -->
-    <script>
-        // Configuración opcional de MathJax (generalmente no necesaria si usamos delimitadores estándar)
-        // window.MathJax = {
-        //   tex: {
-        //     inlineMath: [['\\(', '\\)']], // Delimitadores en línea
-        //     displayMath: [['\\[', '\\]']] // Delimitadores display
-        //   },
-        //   svg: {
-        //     fontCache: 'global'
-        //   }
-        // };
-    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* --- Estilos Combinados y Refinados --- */
         :root {
-            --primary: #4f46e5;
+            --primary: #4f46e5; /* Indigo */
             --primary-light: #6366f1;
-            --secondary: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --dark: #1f2937;
-            --light: #f9fafb;
+            --secondary: #10b981; /* Emerald (usado poco aquí, podría ser success) */
+            --success: #22c55e; /* Green */
+            --danger: #ef4444; /* Red */
+            --warning: #f59e0b; /* Amber */
+            --info: #3b82f6; /* Blue */
+            --dark: #1f2937; /* Gray 800 */
+            --light: #f9fafb; /* Gray 50 */
+            --input-border: #d1d5db; /* Gray 300 */
+            --input-focus-border: var(--primary);
         }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .gradient-header { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
+        .card { transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); margin-bottom: 2rem; background-color: white; border-radius: 0.75rem; overflow: hidden; }
+        .card:hover { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); transform: translateY(-2px); }
+        .step-indicator { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; position: absolute; top: -15px; left: 15px; z-index: 5; }
+        #activity-1 .step-indicator { background-color: var(--primary); }
+        #activity-2 .step-indicator { background-color: var(--success); }
+        #activity-3 .step-indicator { background-color: var(--danger); }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
+        /* Drag & Drop Styles */
+        .options-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; min-height: 40px; }
+        .drop-zone { min-height: 60px; border: 2px dashed var(--input-border); border-radius: 8px; transition: all 0.3s ease; background-color: var(--light); padding: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; position: relative; }
+        .drop-zone.active { border-color: var(--primary); background-color: rgba(79, 70, 229, 0.05); }
+        .drop-placeholder { color: #9ca3af; font-style: italic; text-align: center; width: 100%; font-size: 0.9em; }
+        .draggable { display: inline-block; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; margin: 2px; cursor: grab; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); transition: all 0.2s ease; user-select: none; touch-action: none; font-size: 0.95em; }
+        .draggable:hover { border-color: var(--primary); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .draggable.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 1000; }
+        .dropped-item { display: inline-block; background-color: white; border: 1px solid var(--primary); border-radius: 6px; padding: 6px 10px; margin: 0; position: relative; font-size: 0.95em; }
+        .delete-btn { position: absolute; top: -9px; right: -9px; width: 20px; height: 20px; border-radius: 50%; background-color: var(--danger); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10; border: 1px solid white; }
+        .dropped-item:hover .delete-btn { opacity: 1; }
 
-        .gradient-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-        }
+        /* Text Input Styles */
+        .input-group { margin-top: 0.75rem; margin-bottom: 0.5rem; }
+        .input-label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151; font-size: 0.9em; }
+        .text-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--input-border); border-radius: 6px; font-size: 1em; transition: border-color 0.2s ease, box-shadow 0.2s ease; line-height: 1.5; }
+        .text-input.w-1\/2 { width: 50%; }
+        .text-input:focus { outline: none; border-color: var(--input-focus-border); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
+        .symbol-buttons { margin-top: 0.5rem; display: flex; gap: 0.25rem; flex-wrap: wrap; }
+        .symbol-btn { background-color: #e5e7eb; color: #374151; border: none; border-radius: 4px; padding: 0.25rem 0.6rem; font-family: 'Courier New', Courier, monospace; font-size: 1em; font-weight: bold; cursor: pointer; transition: background-color 0.2s ease; }
+        .symbol-btn:hover { background-color: #d1d5db; }
 
-        .card {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
+        /* Feedback & Hint Styles */
+        .math-expression { background-color: #f3f4f6; border-left: 4px solid var(--primary); padding: 10px 15px; border-radius: 4px; margin: 10px 0; overflow-x: auto; }
+        .feedback { font-size: 0.85em; padding: 8px 12px; border-radius: 4px; margin-top: 0.5rem; line-height: 1.4; }
+        .feedback-correct { background-color: #ecfdf5; border-left: 4px solid var(--success); color: #065f46; }
+        .feedback-incorrect { background-color: #fef2f2; border-left: 4px solid var(--danger); color: #991b1b; }
+        .hidden { display: none; }
+        .hint-box { background-color: #fffbeb; border-left: 4px solid var(--warning); padding: 10px 15px; border-radius: 4px; margin: 10px 0; font-size: 0.85em; color: #78350f; }
+        .hint-box.hidden { display: none; }
+        .input-group .hint-box { margin-top: 0.75rem; }
 
-        .card:hover {
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
+        /* Visual Highlight & Steps */
+        .visual-highlight { background-color: #eff6ff; border-left: 4px solid var(--info); padding: 12px; border-radius: 4px; margin: 10px 0; position: relative; padding-top: 20px; }
+        .visual-highlight::before { content: "Aplicando Hipótesis Inductiva"; position: absolute; top: -10px; left: 10px; background-color: white; padding: 0 10px; font-size: 0.75rem; color: var(--info); font-weight: bold; }
+        .step-content { margin-left: 2.5rem; padding-top: 0.5rem;}
+        .step-container { position: relative; background-color: var(--light); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid #e5e7eb; }
 
-        .step-indicator {
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background-color: var(--primary);
-            color: white;
-            font-weight: bold;
-            position: absolute;
-            top: -15px;
-            left: 15px;
-        }
+        /* Progress Tracker */
+        .progress-tracker { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); z-index: 50; }
+        .progress-step { width: 12px; height: 12px; border-radius: 50%; background-color: #e5e7eb; margin: 8px 0; position: relative; cursor: pointer; transition: all 0.3s; }
+        .progress-step.active { background-color: var(--primary); }
+        .progress-step.completed { background-color: var(--success); }
+        .progress-step:hover::after { content: attr(data-title); position: absolute; left: 20px; top: 50%; transform: translateY(-50%); white-space: nowrap; background-color: var(--dark); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
 
-        .drop-zone {
-            min-height: 60px;
-            border: 2px dashed #d1d5db;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            background-color: #f9fafb;
-            padding: 10px; /* Añadir padding para mejor visualización */
+        /* Animations */
+        .animate-pulse-border { animation: pulse-border 1.5s infinite; border: 2px dashed var(--danger) !important; }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-
-        .drop-zone.active {
-            border-color: var(--primary);
-            background-color: rgba(79, 70, 229, 0.05);
-        }
-
-        .draggable {
-            display: inline-block; /* Para que el MathJax se ajuste bien */
-            background-color: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin: 5px;
-            cursor: grab;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease;
-            user-select: none;
-            touch-action: none; /* Recomendado por InteractJS */
-        }
-
-        .draggable:hover {
-            border-color: var(--primary);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .draggable.dragging {
-            opacity: 0.8;
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-        }
-
-        .dropped-item {
-            display: inline-block; /* Ajustar display */
-            background-color: white;
-            border: 1px solid var(--primary);
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin: 5px 0;
-            position: relative;
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: var(--danger);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10; /* Asegurar que esté sobre el item */
-        }
-
-        .dropped-item:hover .delete-btn {
-            opacity: 1;
-        }
-
-        /* MathJax usa sus propios estilos, pero podemos estilizar el contenedor */
-        .math-expression {
-            background-color: #f3f4f6;
-            border-left: 4px solid var(--primary);
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin: 10px 0;
-            overflow-x: auto; /* Para expresiones largas */
-        }
-
-        .hint-box {
-            background-color: #fffbeb;
-            border-left: 4px solid var(--warning);
-            padding: 12px;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-
-        .feedback-correct {
-            background-color: #ecfdf5;
-            border-left: 4px solid var(--secondary);
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-
-        .feedback-incorrect {
-            background-color: #fef2f2;
-            border-left: 4px solid var(--danger);
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-
-        .visual-highlight {
-            background-color: #eff6ff;
-            border-left: 4px solid var(--info);
-            padding: 12px;
-            border-radius: 4px;
-            margin: 10px 0;
-            position: relative;
-        }
-
-        .visual-highlight::before {
-            content: "Aplicación de la hipótesis inductiva";
-            position: absolute;
-            top: -10px;
-            left: 10px;
-            background-color: white;
-            padding: 0 10px;
-            font-size: 0.75rem;
-            color: var(--info);
-            font-weight: bold;
-        }
-
-        .progress-tracker {
-            position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 50;
-        }
-
-        .progress-step {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #e5e7eb;
-            margin: 8px 0;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .progress-step.active {
-            background-color: var(--primary);
-        }
-
-        .progress-step.completed {
-            background-color: var(--secondary);
-        }
-
-        .progress-step:hover::after {
-            content: attr(data-title);
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            white-space: nowrap;
-            background-color: var(--dark);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-        }
-
-        .tooltip {
-            position: relative;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--dark);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            margin-bottom: 5px;
-        }
-
-        .animate-pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; border-color: var(--danger); }
-            50% { opacity: 0.7; border-color: var(--danger); }
-            100% { opacity: 1; border-color: var(--danger); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Clase para el placeholder del dropzone */
-        .drop-placeholder {
-            color: #9ca3af; /* Gray 400 */
-            font-style: italic;
-            text-align: center;
-            width: 100%;
-            padding: 10px 0;
-        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-gray-100">
     <!-- Progress Tracker -->
     <div class="progress-tracker hidden md:block">
         <div class="progress-step active" data-title="Introducción" onclick="scrollToSection('introduction')"></div>
-        <div class="progress-step" data-title="Actividad 1" onclick="scrollToSection('activity-1')"></div>
-        <div class="progress-step" data-title="Actividad 2" onclick="scrollToSection('activity-2')"></div>
-        <div class="progress-step" data-title="Actividad 3" onclick="scrollToSection('activity-3')"></div>
+        <div class="progress-step" data-title="Actividad 1: Suma Impares" onclick="scrollToSection('activity-1')"></div>
+        <div class="progress-step" data-title="Actividad 2: Suma Naturales" onclick="scrollToSection('activity-2')"></div>
+        <div class="progress-step" data-title="Actividad 3: Desigualdad 2^n" onclick="scrollToSection('activity-3')"></div>
     </div>
+<!-- Header -->
+<header class="gradient-header text-white py-8 shadow-lg">
+    <div class="container mx-auto px-4">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">Inducción Completa Interactiva Mejorada</h1>
+        <p class="text-lg text-center text-blue-100 max-w-2xl mx-auto">
+            Domina el método de demostración por inducción combinando selección y escritura.
+        </p>
+    </div>
+</header>
 
-    <!-- Header -->
-    <header class="gradient-header text-white py-8 shadow-lg">
-        <div class="container mx-auto px-4">
-            <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">Inducción Completa Interactiva</h1>
-            <p class="text-lg text-center text-blue-100 max-w-2xl mx-auto">
-                Domina el método de demostración por inducción matemática con ejercicios interactivos
+<main class="container mx-auto px-4 py-8">
+    <!-- Introduction Section -->
+    <section id="introduction" class="card fade-in p-6 mb-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+            ¿Qué es la inducción matemática?
+        </h2>
+        <div class="mb-6">
+            <p class="text-gray-700 mb-4">
+                La <strong class="text-indigo-600">inducción matemática</strong> es un método de demostración poderoso que nos permite probar que una propiedad \(P(n)\) es verdadera para todos los números naturales \(n \geq n_0\), donde \(n_0\) es algún número natural fijo.
             </p>
+            <div class="math-expression">
+                <p class="font-medium text-gray-800 mb-2">El principio de inducción establece:</p>
+                <p>Para demostrar \(P(n)\) \(\forall n \geq n_0\), debemos probar:</p>
+                <ol class="list-decimal pl-5 mt-2 space-y-2 text-sm">
+                    <li><strong>Caso base:</strong> \(P(n_0)\) es verdadera.</li>
+                    <li><strong>Paso inductivo:</strong> Si \(P(k)\) es verdadera para algún \(k \geq n_0\) (Hipótesis Inductiva), entonces \(P(k+1)\) también es verdadera.</li>
+                </ol>
+            </div>
         </div>
-    </header>
-
-    <main class="container mx-auto px-4 py-8">
-        <!-- Introduction Section -->
-        <section id="introduction" class="mb-12 fade-in">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
-                <div class="p-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
-                        ¿Qué es la inducción matemática?
-                    </h2>
-
-                    <div class="mb-6">
-                        <p class="text-gray-700 mb-4">
-                            La <strong class="text-indigo-600">inducción matemática</strong> es un método de demostración poderoso que nos permite probar que una propiedad \(P(n)\) es verdadera para todos los números naturales \(n \geq n_0\), donde \(n_0\) es algún número natural fijo.
-                        </p>
-
-                        <div class="math-expression">
-                            <p class="font-medium text-gray-800 mb-2">El principio de inducción establece que:</p>
-                            <p>Para demostrar que \(P(n)\) es verdadera para todo \(n \geq n_0\), debemos probar:</p>
-                            <ol class="list-decimal pl-5 mt-2 space-y-2">
-                                <li><strong>Caso base:</strong> \(P(n_0)\) es verdadera</li>
-                                <li><strong>Paso inductivo:</strong> Si \(P(k)\) es verdadera para algún \(k \geq n_0\), entonces \(P(k+1)\) también es verdadera</li>
-                            </ol>
-                        </div>
-                    </div>
-
-                    <div class="bg-indigo-50 rounded-lg p-5 border border-indigo-100">
-                        <h3 class="font-bold text-indigo-700 mb-3 flex items-center">
-                            <i class="fas fa-sitemap mr-2"></i>
-                            Estructura de una demostración por inducción
-                        </h3>
-                        <ol class="space-y-3">
-                            <li class="flex items-start">
-                                <span class="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">1</span>
-                                <div>
-                                    <strong class="text-indigo-700">Caso base:</strong> Demostrar que la propiedad se cumple para el primer valor (normalmente \(n = 1\) o el valor inicial indicado).
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">2</span>
-                                <div>
-                                    <strong class="text-indigo-700">Hipótesis inductiva:</strong> Suponer que la propiedad es válida para un número natural \(k\) arbitrario (este es nuestro "supongamos que es cierto para k").
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="bg-indigo-100 text-indigo-800 rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">3</span>
-                                <div>
-                                    <strong class="text-indigo-700">Demostración (paso inductivo):</strong> Utilizando la hipótesis inductiva, demostrar que la propiedad también se cumple para \(k+1\) (este es nuestro "demostremos que es cierto para k+1").
-                                </div>
-                            </li>
-                        </ol>
-                    </div>
-
-                    <div class="mt-6 bg-blue-50 rounded-lg p-5 border border-blue-100">
-                        <h3 class="font-bold text-blue-700 mb-2 flex items-center">
-                            <i class="fas fa-question-circle mr-2"></i>
-                            ¿Cómo abordar cada paso?
-                        </h3>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div>
-                                <h4 class="font-semibold text-blue-800 mb-1">Para igualdades:</h4>
-                                <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                                    <li>Puedes partir del primer miembro y llegar al segundo</li>
-                                    <li>O desarrollar el segundo miembro para llegar al primero</li>
-                                    <li>O transformar ambos miembros hasta obtener una identidad</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold text-blue-800 mb-1">Para desigualdades:</h4>
-                                <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                                    <li>Parte de un miembro y aplica la hipótesis inductiva</li>
-                                    <li>Mantén la desigualdad en cada paso de transformación</li>
-                                    <li>Verifica que las operaciones mantienen el sentido de la desigualdad</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Activity 1: Sum of odd numbers -->
-        <section id="activity-1" class="mb-12 fade-in">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
-                <div class="bg-indigo-600 text-white px-6 py-4">
-                    <h2 class="text-xl font-bold flex items-center">
-                        <i class="fas fa-calculator mr-3"></i>
-                        Actividad 1: Suma de los primeros n números impares
-                    </h2>
-                </div>
-                <div class="p-6">
-                    <div class="mb-6">
-                        <p class="text-gray-700 mb-4">
-                            Demuestra por inducción matemática que la suma de los primeros \(n\) números impares es igual a \(n^2\):
-                        </p>
-                        <div class="math-expression text-center">
-                            \[1 + 3 + 5 + \cdots + (2n - 1) = n^2\]
-                        </div>
-                    </div>
-
-                    <!-- Step 1: Base Case -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">1</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Caso Base</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Verifica que la propiedad se cumple para \(n = 1\):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-caso-base">
-                                <span class="drop-placeholder">Arrastra aquí la expresión correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-caso-base">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Para n=1 solo tenemos el primer término impar (1) que efectivamente es igual a 1².">
-                                    \(1 = 1^2 = 1\) ✓
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Para n=1 solo debemos considerar el primer término impar.">
-                                    \(1 + 3 = 1^2\) ✗
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El primer número impar es 1, no 0.">
-                                    \(0 = 1^2\) ✗
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La igualdad debe mostrar la relación con n².">
-                                    \(1 = 1 + 0\) ✗
-                                </div>
-                            </div>
-
-                            <div id="feedback-caso-base" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Inductive Hypothesis -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">2</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Hipótesis Inductiva</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Suponemos que la propiedad se cumple para un cierto \(n = k\) (\(k \geq 1\)):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-hipotesis">
-                                <span class="drop-placeholder">Arrastra aquí la hipótesis correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-hipotesis">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la hipótesis que necesitaremos usar en el paso inductivo.">
-                                    \(1 + 3 + 5 + \cdots + (2k - 1) = k^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El último término debe corresponder al k-ésimo número impar.">
-                                    \(1 + 3 + 5 + \cdots + (2k + 1) = k^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. (2k) es par, no impar.">
-                                    \(1 + 3 + 5 + \cdots + (2k) = k^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Estos son números consecutivos, no impares.">
-                                    \(1 + 2 + 3 + \cdots + k = k^2\)
-                                </div>
-                            </div>
-
-                            <div id="feedback-hipotesis" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Inductive Step -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">3</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Paso Inductivo</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Debemos probar que la propiedad se cumple para \(n = k + 1\):</p>
-
-                        <div class="math-expression ml-4 mb-4">
-                            \[1 + 3 + 5 + \cdots + (2k - 1) + (2(k + 1) - 1) = (k + 1)^2\]
-                        </div>
-
-                        <div class="ml-4">
-                            <!-- Substep 1 -->
-                            <div class="mb-4 pl-4 border-l-2 border-indigo-200">
-                                <h4 class="font-medium text-gray-700 mb-2">1. Comenzamos con el primer miembro:</h4>
-                                <div class="math-expression mb-3">
-                                    \[1 + 3 + 5 + \cdots + (2k - 1) + (2(k + 1) - 1)\]
-                                </div>
-
-                                <h4 class="font-medium text-gray-700 mb-2">2. Simplificamos el último término:</h4>
-                                <div class="drop-zone mb-3" id="drop-simplificar">
-                                    <span class="drop-placeholder">Arrastra aquí la simplificación correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! 2(k+1)-1 = 2k+2-1 = 2k+1">
-                                        \(1 + 3 + 5 + \cdots + (2k - 1) + (2k + 1)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta sumar el +1 al simplificar.">
-                                        \(1 + 3 + 5 + \cdots + (2k - 1) + 2k\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. No olvides simplificar correctamente.">
-                                        \(1 + 3 + 5 + \cdots + (2k - 1) + (2k + 2)\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-simplificar" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 2 -->
-                            <div class="visual-highlight mb-4 pl-4">
-                                <h4 class="font-medium text-gray-700 mb-2">3. Aplicamos la hipótesis inductiva:</h4>
-                                <div class="drop-zone mb-3" id="drop-aplicar-hipotesis">
-                                    <span class="drop-placeholder">Arrastra aquí la expresión correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Usamos la hipótesis para reemplazar la suma.">
-                                        \(k^2 + (2k + 1)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La hipótesis nos da k², no k.">
-                                        \(k + (2k + 1)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. No estamos restando términos aquí.">
-                                        \((k + 1)^2 - (2k + 1)\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-aplicar-hipotesis" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 3 -->
-                            <div class="mb-4 pl-4 border-l-2 border-indigo-200">
-                                <h4 class="font-medium text-gray-700 mb-2">4. Desarrollamos algebraicamente:</h4>
-                                <div class="drop-zone mb-3" id="drop-desarrollar">
-                                    <span class="drop-placeholder">Arrastra aquí el desarrollo correcto</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Perfecto! Has completado el cuadrado perfecto.">
-                                        \(k^2 + 2k + 1 = (k + 1)^2\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta el término +1 para completar el cuadrado.">
-                                        \(k^2 + 2k = (k + 1)^2\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El +2 adicional no corresponde.">
-                                        \(k^2 + 2k + 2 = (k + 1)^2\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-desarrollar" class="hidden"></div>
-                            </div>
-                        </div>
-
-                        <div class="hint-box ml-4">
-                            <p class="text-amber-800 font-medium flex items-start">
-                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
-                                <span>Recuerda que el objetivo es transformar el primer miembro hasta obtener el segundo miembro de la tesis: \((k + 1)^2\). Puedes hacerlo desarrollando algebraicamente o reconociendo patrones como el cuadrado perfecto.</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between mt-6">
-                        <button class="reset-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center">
-                            <i class="fas fa-redo mr-2"></i> Reiniciar
-                        </button>
-                        <button class="check-button px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center">
-                            <i class="fas fa-check-circle mr-2"></i> Verificar solución completa
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Activity 2: Sum of first n natural numbers -->
-        <section id="activity-2" class="mb-12 fade-in">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
-                <div class="bg-green-600 text-white px-6 py-4">
-                    <h2 class="text-xl font-bold flex items-center">
-                        <i class="fas fa-sigma mr-3"></i>
-                        Actividad 2: Suma de los primeros n números naturales
-                    </h2>
-                </div>
-                <div class="p-6">
-                    <div class="mb-6">
-                        <p class="text-gray-700 mb-4">
-                            Demuestra por inducción matemática que la suma de los primeros \(n\) números naturales es igual a \(\frac{n(n + 1)}{2}\):
-                        </p>
-                        <div class="math-expression text-center">
-                            \[1 + 2 + 3 + \cdots + n = \frac{n(n + 1)}{2}\]
-                        </div>
-                    </div>
-
-                    <!-- Step 1: Base Case -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">1</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Caso Base</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Verifica que la propiedad se cumple para \(n = 1\):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-caso-base-2">
-                                <span class="drop-placeholder">Arrastra aquí la verificación correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-caso-base-2">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Para n=1, ambos lados de la igualdad dan 1.">
-                                    \(1 = \frac{1(1 + 1)}{2} = \frac{2}{2} = 1\) ✓
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta dividir por 2 según la fórmula.">
-                                    \(1 = 1(1 + 1) = 2\) ✗
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La fórmula correcta incluye (n+1).">
-                                    \(1 = \frac{1(1)}{2} = 0.5\) ✗
-                                </div>
-                            </div>
-
-                            <div id="feedback-caso-base-2" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Inductive Hypothesis -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">2</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Hipótesis Inductiva</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Suponemos que la propiedad se cumple para un cierto \(n = k\) (\(k \geq 1\)):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-hipotesis-2">
-                                <span class="drop-placeholder">Arrastra aquí la hipótesis correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-hipotesis-2">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la hipótesis que usaremos en el paso inductivo.">
-                                    \(1 + 2 + 3 + \cdots + k = \frac{k(k + 1)}{2}\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El último término debe ser k, no k+1.">
-                                    \(1 + 2 + 3 + \cdots + (k + 1) = \frac{k(k + 1)}{2}\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La fórmula correcta es k(k+1)/2, no k²/2.">
-                                    \(1 + 2 + 3 + \cdots + k = \frac{k^2}{2}\)
-                                </div>
-                            </div>
-
-                            <div id="feedback-hipotesis-2" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Inductive Thesis -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">3</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Tesis Inductiva</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Debemos demostrar que la propiedad se cumple para \(n = k + 1\):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-tesis-2">
-                                <span class="drop-placeholder">Arrastra aquí la tesis correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-tesis-2">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la tesis que debemos demostrar.">
-                                    \(1 + 2 + 3 + \cdots + k + (k + 1) = \frac{(k + 1)(k + 2)}{2}\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El denominador debe ser (k+2), no (k+1).">
-                                    \(1 + 2 + 3 + \cdots + k + (k + 1) = \frac{(k + 1)^2}{2}\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Esto es parte del desarrollo, no la tesis final.">
-                                    \(1 + 2 + 3 + \cdots + k + (k + 1) = \frac{k(k + 1)}{2} + (k + 1)\)
-                                </div>
-                            </div>
-
-                            <div id="feedback-tesis-2" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 4: Inductive Step -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">4</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Demostración</h3>
-
-                        <div class="ml-4">
-                            <!-- Substep 1 -->
-                            <div class="mb-4 pl-4 border-l-2 border-green-200">
-                                <h4 class="font-medium text-gray-700 mb-2">1. Comenzamos con el primer miembro:</h4>
-                                <div class="math-expression mb-3">
-                                    \[1 + 2 + 3 + \cdots + k + (k + 1)\]
-                                </div>
-                            </div>
-
-                            <!-- Substep 2 -->
-                            <div class="visual-highlight mb-4 pl-4">
-                                <h4 class="font-medium text-gray-700 mb-2">2. Aplicamos la hipótesis inductiva:</h4>
-                                <div class="drop-zone mb-3" id="drop-aplicar-hipotesis-2">
-                                    <span class="drop-placeholder">Arrastra aquí la expresión correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Hemos aplicado la hipótesis a los primeros k términos.">
-                                        \(\frac{k(k + 1)}{2} + (k + 1)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta dividir por 2 según la hipótesis.">
-                                        \(k(k + 1) + (k + 1)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La hipótesis nos da k(k+1)/2, no k².">
-                                        \(k^2 + (k + 1)\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-aplicar-hipotesis-2" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 3 -->
-                            <div class="mb-4 pl-4 border-l-2 border-green-200">
-                                <h4 class="font-medium text-gray-700 mb-2">3. Factorizamos \((k + 1)\):</h4>
-                                <div class="drop-zone mb-3" id="drop-factorizar">
-                                    <span class="drop-placeholder">Arrastra aquí la factorización correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! (k+1) es factor común de ambos términos.">
-                                        \((k + 1)\left(\frac{k}{2} + 1\right)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta sumar el +1 dentro del paréntesis.">
-                                        \((k + 1)\left(\frac{k}{2}\right)\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El 1 debe estar dividido por 2 para factorizar correctamente.">
-                                        \((k + 1)\left(k + \frac{1}{2}\right)\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-factorizar" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 4 -->
-                            <div class="mb-4 pl-4 border-l-2 border-green-200">
-                                <h4 class="font-medium text-gray-700 mb-2">4. Simplificamos la expresión:</h4>
-                                <div class="drop-zone mb-3" id="drop-simplificar-2">
-                                    <span class="drop-placeholder">Arrastra aquí la simplificación final</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Perfecto! Has llegado a la expresión que queríamos demostrar.">
-                                        \(\frac{(k + 1)(k + 2)}{2}\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El segundo factor debe ser (k+2), no (k+1).">
-                                        \(\frac{(k + 1)(k + 1)}{2}\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El numerador debe ser (k+1)(k+2).">
-                                        \(\frac{(k + 1)^2}{2}\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-simplificar-2" class="hidden"></div>
-                            </div>
-                        </div>
-
-                        <div class="hint-box ml-4">
-                            <p class="text-amber-800 font-medium flex items-start">
-                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
-                                <span>Observación: Al factorizar, busca un denominador común para simplificar la expresión. En este caso, podemos escribir 1 como 2/2 para combinar los términos dentro del paréntesis: \(\frac{k}{2} + 1 = \frac{k}{2} + \frac{2}{2} = \frac{k+2}{2}\).</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between mt-6">
-                        <button class="reset-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center">
-                            <i class="fas fa-redo mr-2"></i> Reiniciar
-                        </button>
-                        <button class="check-button px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center">
-                            <i class="fas fa-check-circle mr-2"></i> Verificar solución completa
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Activity 3: Inequality proof -->
-        <section id="activity-3" class="mb-12 fade-in">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden card">
-                <div class="bg-red-600 text-white px-6 py-4">
-                    <h2 class="text-xl font-bold flex items-center">
-                        <i class="fas fa-greater-than-equal mr-3"></i>
-                        Actividad 3: Demostración de una desigualdad
-                    </h2>
-                </div>
-                <div class="p-6">
-                    <div class="mb-6">
-                        <p class="text-gray-700 mb-4">
-                            Demuestra por inducción matemática que \(2^n > n^2\) para todo \(n \geq 5\):
-                        </p>
-                        <div class="math-expression text-center">
-                            \[2^n > n^2 \quad \text{para todo } n \geq 5\]
-                        </div>
-                    </div>
-
-                    <!-- Step 1: Base Case -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">1</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Caso Base</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Verifica que la propiedad se cumple para \(n = 5\):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-caso-base-3">
-                                <span class="drop-placeholder">Arrastra aquí la verificación correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-caso-base-3">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! 32 > 25, por lo que la desigualdad se cumple para n=5.">
-                                    \(2^5 = 32 > 25 = 5^2\) ✓
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser >, no <.">
-                                    \(2^5 = 32 < 25 = 5^2\) ✗
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. 2⁵ es 32, no 25.">
-                                    \(2^5 = 25 > 25 = 5^2\) ✗
-                                </div>
-                            </div>
-
-                            <div id="feedback-caso-base-3" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Inductive Hypothesis -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">2</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Hipótesis Inductiva</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Suponemos que la propiedad se cumple para un cierto \(n = k\) (\(k \geq 5\)):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-hipotesis-3">
-                                <span class="drop-placeholder">Arrastra aquí la hipótesis correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-hipotesis-3">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la hipótesis que usaremos.">
-                                    \(2^k > k^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser estricta (>) según el enunciado.">
-                                    \(2^k \geq k^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El lado derecho debe ser k², no k.">
-                                    \(2^k > k\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La hipótesis debe ser para k, no para k+1.">
-                                    \(2^{k + 1} > k^2\)
-                                </div>
-                            </div>
-
-                            <div id="feedback-hipotesis-3" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Inductive Thesis -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">3</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Tesis Inductiva</h3>
-                        <p class="text-gray-700 mb-4 ml-4">Debemos demostrar que la propiedad se cumple para \(n = k + 1\):</p>
-
-                        <div class="ml-4">
-                            <div class="drop-zone mb-3" id="drop-tesis-3">
-                                <span class="drop-placeholder">Arrastra aquí la tesis correcta</span>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 mb-4" id="options-tesis-3">
-                                <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la desigualdad que debemos demostrar.">
-                                    \(2^{k + 1} > (k + 1)^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser estricta (>) según el enunciado.">
-                                    \(2^{k + 1} = (k + 1)^2\)
-                                </div>
-                                <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser estricta (>) según el enunciado.">
-                                    \(2^{k + 1} \geq (k + 1)^2\)
-                                </div>
-                            </div>
-
-                            <div id="feedback-tesis-3" class="hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Step 4: Inductive Step -->
-                    <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
-                        <div class="step-indicator">4</div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-4">Demostración</h3>
-
-                        <div class="ml-4">
-                            <!-- Substep 1 -->
-                            <div class="mb-4 pl-4 border-l-2 border-red-200">
-                                <h4 class="font-medium text-gray-700 mb-2">1. Comenzamos con el primer miembro de la tesis:</h4>
-                                <div class="math-expression mb-3">
-                                    \[2^{k + 1}\]
-                                </div>
-
-                                <h4 class="font-medium text-gray-700 mb-2">2. Expresamos \(2^{k + 1}\) en términos de \(2^k\):</h4>
-                                <div class="drop-zone mb-3" id="drop-paso-1">
-                                    <span class="drop-placeholder">Arrastra aquí la expresión correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! 2^{k+1} = 2·2^k por propiedades de exponentes.">
-                                        \(2^{k + 1} = 2 \cdot 2^k\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Los exponentes se multiplican, no se suman.">
-                                        \(2^{k + 1} = 2^k + 2\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. No estamos restando 1 aquí.">
-                                        \(2^{k + 1} = 2(2^k - 1)\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-paso-1" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 2 -->
-                            <div class="visual-highlight mb-4 pl-4">
-                                <h4 class="font-medium text-gray-700 mb-2">3. Aplicamos la hipótesis inductiva (\(2^k > k^2\)):</h4>
-                                <div class="drop-zone mb-3" id="drop-paso-2">
-                                    <span class="drop-placeholder">Arrastra aquí la desigualdad resultante</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Usamos la hipótesis 2^k > k² para obtener esta desigualdad.">
-                                        \(2^{k + 1} = 2 \cdot 2^k > 2 \cdot k^2\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe mantenerse según la hipótesis (>).">
-                                        \(2^{k + 1} = 2 \cdot 2^k = 2 \cdot k^2\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad va en la dirección opuesta.">
-                                        \(2^{k + 1} = 2 \cdot 2^k < 2 \cdot k^2\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-paso-2" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 3 -->
-                            <div class="mb-4 pl-4 border-l-2 border-red-200">
-                                <h4 class="font-medium text-gray-700 mb-2">4. Nuestro objetivo es probar \(2^{k+1} > (k+1)^2\). Ya tenemos \(2^{k+1} > 2k^2\). Si demostramos que \(2k^2 > (k+1)^2\) para \(k \ge 5\), habremos terminado por transitividad. Expandimos \((k + 1)^2\):</h4>
-                                <div class="drop-zone mb-3" id="drop-paso-3">
-                                    <span class="drop-placeholder">Arrastra aquí el desarrollo correcto</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Este es el desarrollo del cuadrado perfecto.">
-                                        \((k + 1)^2 = k^2 + 2k + 1\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta el término 2k en el desarrollo.">
-                                        \((k + 1)^2 = k^2 + 1\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. No es equivalente al cuadrado perfecto.">
-                                        \((k + 1)^2 = 2k^2\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-paso-3" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 4 -->
-                            <div class="mb-4 pl-4 border-l-2 border-red-200">
-                                <h4 class="font-medium text-gray-700 mb-2">5. Ahora, debemos demostrar la desigualdad auxiliar:</h4>
-                                <div class="drop-zone mb-3" id="drop-paso-4">
-                                    <span class="drop-placeholder">Arrastra aquí la desigualdad a verificar</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Necesitamos demostrar que 2k² es mayor que el desarrollo de (k+1)².">
-                                        \(2 k^2 > k^2 + 2k + 1\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser >, no =.">
-                                        \(2 k^2 = k^2 + 2k + 1\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad va en la dirección opuesta.">
-                                        \(2 k^2 < k^2 + 2k + 1\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-paso-4" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 5 -->
-                            <div class="mb-4 pl-4 border-l-2 border-red-200">
-                                <h4 class="font-medium text-gray-700 mb-2">6. Simplificando la desigualdad \(2k^2 > k^2 + 2k + 1\):</h4>
-                                <div class="drop-zone mb-3" id="drop-paso-5">
-                                    <span class="drop-placeholder">Arrastra aquí la simplificación correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Restamos k² a ambos lados para simplificar.">
-                                        \(k^2 > 2k + 1\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser >, no =.">
-                                        \(k^2 = 2k + 1\)
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad va en la dirección opuesta.">
-                                        \(k^2 < 2k + 1\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-paso-5" class="hidden"></div>
-                            </div>
-
-                            <!-- Substep 6 -->
-                            <div class="mb-4 pl-4 border-l-2 border-red-200">
-                                <h4 class="font-medium text-gray-700 mb-2">7. Verificamos si \(k^2 > 2k + 1\) es cierto para \(k \geq 5\):</h4>
-                                <div class="drop-zone mb-3" id="drop-paso-final">
-                                    <span class="drop-placeholder">Arrastra aquí la justificación correcta</span>
-                                </div>
-
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                     <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Perfecto! Para k=5, tenemos 25 > 11. Para k>5, k² crece más rápido que 2k+1. Puedes probarlo viendo que k² - 2k - 1 > 0 para k≥5 (las raíces de x²-2x-1=0 son 1±√2 ≈ 2.41 y -0.41, así que para x>2.41 la parábola es positiva).">
-                                        Verdadero para \(k \geq 5\). (Ej: k=5: \(25 > 11\); k=6: \(36 > 13\))
-                                    </div>
-                                    <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Necesitamos una justificación concreta basada en valores o análisis de funciones.">
-                                        La desigualdad es verdadera por definición
-                                    </div>
-                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. No es cierto para k=1 (1>3 es falso) o k=2 (4>5 es falso). Solo es cierto a partir de cierto valor (en este caso, k=3). Necesitamos que sea cierto para k≥5.">
-                                        \(k^2\) siempre es mayor que \(2k + 1\) para cualquier \(k\)
-                                    </div>
-                                </div>
-
-                                <div id="feedback-paso-final" class="hidden"></div>
-                            </div>
-                        </div>
-
-                        <div class="hint-box ml-4">
-                            <p class="text-amber-800 font-medium flex items-start">
-                                <i class="fas fa-lightbulb mt-1 mr-2"></i>
-                                <span>Consejo: En desigualdades, a menudo usamos la hipótesis inductiva y luego necesitamos demostrar una desigualdad auxiliar. Para probar \(k^2 > 2k + 1\) para \(k \ge 5\), puedes considerar la función \(f(k) = k^2 - 2k - 1\). Queremos ver dónde \(f(k) > 0\). Las raíces son \(k = \frac{2 \pm \sqrt{4 - 4(1)(-1)}}{2} = 1 \pm \sqrt{2}\). Como la parábola abre hacia arriba, es positiva fuera de las raíces, es decir, para \(k > 1 + \sqrt{2} \approx 2.41\). Por lo tanto, es ciertamente verdadera para \(k \ge 5\).</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between mt-6">
-                        <button class="reset-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center">
-                            <i class="fas fa-redo mr-2"></i> Reiniciar
-                        </button>
-                        <button class="check-button px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center">
-                            <i class="fas fa-check-circle mr-2"></i> Verificar solución completa
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="bg-gray-800 text-white py-6">
-        <div class="container mx-auto px-4 text-center">
-            <p class="mb-2">Sistema de Aprendizaje de Inducción Matemática</p>
-            <p class="text-gray-400 text-sm">© 2023 - Todos los derechos reservados</p>
+        <div class="bg-indigo-50 rounded-lg p-4 border border-indigo-100 text-sm">
+            <h3 class="font-bold text-indigo-700 mb-2 flex items-center"><i class="fas fa-sitemap mr-2"></i>Estructura Típica</h3>
+             <ol class="list-decimal list-inside space-y-1">
+                 <li>Verificar Caso Base.</li>
+                 <li>Enunciar Hipótesis Inductiva (H.I.) para \(n=k\).</li>
+                 <li>Enunciar Tesis para \(n=k+1\).</li>
+                 <li>Demostrar la Tesis usando la H.I.</li>
+             </ol>
         </div>
-    </footer>
+         <div class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+            <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>En esta versión, arrastrarás pasos clave y escribirás resultados intermedios o finales. Usa los botones <button class="symbol-btn text-xs">^</button> <button class="symbol-btn text-xs">+</button> para ayuda.</p>
+        </div>
+    </section>
 
-    <script>
-        // Initialize MathJax
-        document.addEventListener('DOMContentLoaded', function() {
-            // Process math expressions on page load
-            // MathJax.typesetPromise() se ejecutará automáticamente gracias al script async
-            // Si hubiera contenido matemático NO envuelto en delimitadores estándar que necesitara
-            // ser procesado, lo llamaríamos explícitamente aquí.
+    <!-- Activity 1: Sum of odd numbers -->
+    <section id="activity-1" class="card fade-in">
+        <div class="bg-indigo-600 text-white px-6 py-4 rounded-t-xl">
+            <h2 class="text-xl font-bold flex items-center"><i class="fas fa-calculator mr-3"></i>Actividad 1: Suma de los primeros n números impares</h2>
+        </div>
+        <div class="p-6">
+            <div class="mb-6">
+                <p class="text-gray-700 mb-4">Demuestra por inducción: \(1 + 3 + 5 + \cdots + (2n - 1) = n^2 \quad \forall n \ge 1\)</p>
+            </div>
 
-            // Set up scroll spy for progress tracker
-            setupScrollSpy();
+            <!-- Step 1: Base Case (Input) -->
+            <div class="step-container">
+                <div class="step-indicator">1</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Caso Base (\(n=1\))</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Verifica la igualdad para \(n = 1\).</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="input-group">
+                            <label for="act1-base-lhs" class="input-label">Lado izquierdo (\(1+\dots+(2n-1)\)) para \(n=1\):</label>
+                            <input type="text" id="act1-base-lhs" class="text-input" data-correct-answer="1" data-attempt-count="0">
+                            <div id="feedback-act1-base-lhs" class="feedback hidden"></div>
+                        </div>
+                        <div class="input-group">
+                             <label for="act1-base-rhs" class="input-label">Lado derecho (\(n^2\)) para \(n=1\):</label>
+                            <input type="text" id="act1-base-rhs" class="text-input" data-correct-answer="1" data-attempt-count="0">
+                            <div id="feedback-act1-base-rhs" class="feedback hidden"></div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3">¿Se cumple la igualdad para \(n=1\)? (Debería ser Sí)</p>
+                </div>
+            </div>
 
-            // Initialize drag and drop functionality
-            setupDragAndDrop();
+            <!-- Step 2: Inductive Hypothesis (Drag/Drop) -->
+            <div class="step-container">
+                <div class="step-indicator">2</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Hipótesis Inductiva</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Suponemos que se cumple para \(n = k\) (\(k \geq 1\)).</p>
+                     <div class="drop-zone mb-3" id="drop-act1-hypo" data-placeholder="Arrastra la hipótesis correcta">
+                        <span class="drop-placeholder">Arrastra la hipótesis correcta</span>
+                    </div>
+                    <div class="options-container" id="options-act1-hypo">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la H.I. que usaremos.">\(1 + 3 + \cdots + (2k - 1) = k^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El último término debe ser para k.">\(1 + 3 + \cdots + (2k + 1) = k^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. 2k es par.">\(1 + 3 + \cdots + (2k) = k^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Suma de naturales, no impares.">\(1 + 2 + \cdots + k = k^2\)</div>
+                    </div>
+                    <div id="feedback-drop-act1-hypo" class="feedback hidden"></div>
+                </div>
+            </div>
 
-            // Set up reset buttons
-            setupResetButtons();
+            <!-- Step 3: Inductive Step (Mix Drag/Drop and Input) -->
+            <div class="step-container">
+                <div class="step-indicator">3</div>
+                 <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Paso Inductivo (Probar para \(n=k+1\))</h3>
+                    <p class="text-gray-700 mb-2 text-sm">Tesis (lo que queremos probar):</p>
+                    <div class="math-expression text-sm mb-4">\[1 + 3 + \cdots + (2k - 1) + (2(k + 1) - 1) = (k + 1)^2\]</div>
 
-            // Set up check buttons
-            setupCheckButtons();
-        });
+                    <h4 class="font-medium text-gray-700 mb-2 text-sm">1. Simplifica el último término \(2(k+1)-1\):</h4>
+                    <div class="input-group">
+                         <label for="act1-last-term" class="input-label">¿A qué se simplifica \(2(k+1)-1\)?:</label>
+                         <input type="text" id="act1-last-term" class="text-input w-1/2"
+                                data-correct-answer="2k+1"
+                                data-attempt-count="0"
+                                data-hint1="Pista: Distribuye el 2 primero: \(2 \times k + 2 \times 1\), luego resta 1."
+                                data-hint2="Pista Detallada: \(2(k+1)-1 = (2k+2)-1 = 2k+1\).">
+                         <div class="symbol-buttons">
+                             <button class="symbol-btn" data-symbol="k">k</button>
+                             <button class="symbol-btn" data-symbol="+">+</button>
+                             <button class="symbol-btn" data-symbol="1">1</button>
+                             <button class="symbol-btn" data-symbol="2">2</button>
+                         </div>
+                         <div id="feedback-act1-last-term" class="feedback hidden"></div>
+                         <div id="hint-act1-last-term" class="hint-box hidden"></div>
+                    </div>
 
-        function setupScrollSpy() {
-            const sections = document.querySelectorAll('section[id]'); // Asegurar que tengan ID
-            const progressSteps = document.querySelectorAll('.progress-step');
+                    <h4 class="font-medium text-gray-700 mt-4 mb-2 text-sm">2. Aplica la H.I. a \(1 + 3 + \cdots + (2k - 1)\) en la expresión \( [1 + \cdots + (2k - 1)] + (2k + 1) \):</h4>
+                     <div class="visual-highlight my-4">
+                         <div class="drop-zone mb-3" id="drop-act1-apply-hypo" data-placeholder="Arrastra el resultado de aplicar la H.I.">
+                             <span class="drop-placeholder">Arrastra el resultado de aplicar la H.I.</span>
+                         </div>
+                         <div class="options-container" id="options-act1-apply-hypo">
+                             <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Reemplazaste la suma usando \(H.I. = k^2\).">\(k^2 + (2k + 1)\)</div>
+                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La H.I. da \(k^2\).">\(k + (2k + 1)\)</div>
+                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es la tesis, no el resultado de aplicar la H.I.">\((k+1)^2\)</div>
+                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Aplicaste mal la H.I.">\((k+1)^2 - (2k+1)\)</div>
+                         </div>
+                         <div id="feedback-drop-act1-apply-hypo" class="feedback hidden"></div>
+                     </div>
 
-            if (sections.length === 0 || progressSteps.length === 0) return; // Salir si no hay elementos
+                    <h4 class="font-medium text-gray-700 mb-2 text-sm">3. Simplifica algebraicamente \(k^2 + 2k + 1\):</h4>
+                    <div class="input-group">
+                        <label for="act1-final-simplify" class="input-label">Escribe la forma factorizada de \(k^2+2k+1\):</label>
+                        <input type="text" id="act1-final-simplify" class="text-input w-1/2"
+                               data-correct-answer="(k+1)^2"
+                               data-attempt-count="0"
+                               data-hint1="Pista: ¿Reconoces este patrón como un producto notable (trinomio cuadrado perfecto)?"
+                               data-hint2="Pista Detallada: Esto es un trinomio cuadrado perfecto: \(a^2+2ab+b^2=(a+b)^2\). Aquí, \(a=k\) y \(b=1\).">
+                         <div class="symbol-buttons">
+                             <button class="symbol-btn" data-symbol="^">^</button>
+                             <button class="symbol-btn" data-symbol="(">(</button>
+                             <button class="symbol-btn" data-symbol=")">)</button>
+                             <button class="symbol-btn" data-symbol="+">+</button>
+                             <button class="symbol-btn" data-symbol="k">k</button>
+                             <button class="symbol-btn" data-symbol="1">1</button>
+                             <button class="symbol-btn" data-symbol="2">2</button>
+                         </div>
+                        <div id="feedback-act1-final-simplify" class="feedback hidden"></div>
+                        <div id="hint-act1-final-simplify" class="hint-box hidden"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3">Si obtuviste \((k+1)^2\), has llegado a la tesis.</p>
+                 </div>
+            </div>
 
-            const observer = new IntersectionObserver(entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const id = entry.target.getAttribute('id');
-                        progressSteps.forEach(step => {
-                            step.classList.remove('active');
-                            // Usamos includes para encontrar el título en el data-title
-                            const title = step.getAttribute('data-title').toLowerCase().replace(/\s+/g, '-');
-                            if (id.includes(title.substring(0, 8))) { // Compara parte del id y título
-                                step.classList.add('active');
-                            } else if (id === 'introduction' && step.getAttribute('data-title') === 'Introducción') {
-                                step.classList.add('active'); // Caso especial intro
-                            }
-                        });
-                    }
-                });
-            }, { rootMargin: "-40% 0px -60% 0px" }); // Ajustar márgenes para activar en el centro
+            <div class="flex justify-end mt-6 space-x-4">
+                <button class="reset-button px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center"><i class="fas fa-redo mr-2"></i> Reiniciar</button>
+                <button class="check-button px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center"><i class="fas fa-check-circle mr-2"></i> Verificar</button>
+            </div>
+        </div>
+    </section>
 
-            sections.forEach(section => observer.observe(section));
+    <!-- Activity 2: Sum of first n natural numbers -->
+    <section id="activity-2" class="card fade-in">
+         <div class="bg-green-600 text-white px-6 py-4 rounded-t-xl">
+            <h2 class="text-xl font-bold flex items-center"><i class="fas fa-sigma mr-3"></i>Actividad 2: Suma de los primeros n números naturales</h2>
+        </div>
+        <div class="p-6">
+            <div class="mb-6">
+                <p class="text-gray-700 mb-4">Demuestra: \(1 + 2 + 3 + \cdots + n = \frac{n(n + 1)}{2} \quad \forall n \ge 1\)</p>
+            </div>
+
+            <!-- Step 1: Base Case (Input) -->
+            <div class="step-container">
+                <div class="step-indicator">1</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Caso Base (\(n=1\))</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Verifica la igualdad para \(n = 1\).</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div class="input-group">
+                            <label for="act2-base-lhs" class="input-label">Lado izquierdo (\(1 + \dots + n\)) para \(n=1\):</label>
+                            <input type="text" id="act2-base-lhs" class="text-input" data-correct-answer="1" data-attempt-count="0">
+                            <div id="feedback-act2-base-lhs" class="feedback hidden"></div>
+                        </div>
+                        <div class="input-group">
+                            <label for="act2-base-rhs" class="input-label">Lado derecho \(\frac{n(n+1)}{2}\) para \(n=1\):</label>
+                            <input type="text" id="act2-base-rhs" class="text-input"
+                                   data-correct-answer="1"
+                                   data-attempt-count="0"
+                                   data-hint1="Pista: Sustituye n=1 en la fórmula \(\frac{n(n+1)}{2}\)."
+                                   data-hint2="Pista Detallada: \(\frac{1(1+1)}{2} = \frac{1(2)}{2} = \frac{2}{2} = 1\).">
+                            <div id="feedback-act2-base-rhs" class="feedback hidden"></div>
+                            <div id="hint-act2-base-rhs" class="hint-box hidden"></div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3">¿Son iguales ambos lados? (Debería ser Sí)</p>
+                </div>
+            </div>
+
+            <!-- Step 2: Inductive Hypothesis (Drag/Drop) -->
+            <div class="step-container">
+                 <div class="step-indicator">2</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Hipótesis Inductiva</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Suponemos que se cumple para \(n = k\) (\(k \geq 1\)).</p>
+                     <div class="drop-zone mb-3" id="drop-act2-hypo" data-placeholder="Arrastra la hipótesis correcta">
+                        <span class="drop-placeholder">Arrastra la hipótesis correcta</span>
+                    </div>
+                    <div class="options-container" id="options-act2-hypo">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la H.I. que usaremos.">\(1 + 2 + \cdots + k = \frac{k(k + 1)}{2}\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El último término debe ser k.">\(1 + 2 + \cdots + (k + 1) = \frac{k(k + 1)}{2}\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Fórmula equivocada.">\(1 + 2 + \cdots + k = \frac{k^2}{2}\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es la tesis para k+1.">\(1 + 2 + \cdots + k + (k + 1) = \frac{(k + 1)(k + 2)}{2}\)</div>
+                    </div>
+                    <div id="feedback-drop-act2-hypo" class="feedback hidden"></div>
+                </div>
+            </div>
+
+            <!-- Step 3: Inductive Thesis (Drag/Drop) -->
+             <div class="step-container">
+                 <div class="step-indicator">3</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Tesis Inductiva</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Debemos demostrar que se cumple para \(n = k + 1\).</p>
+                    <div class="drop-zone mb-3" id="drop-act2-tesis" data-placeholder="Arrastra la tesis correcta">
+                        <span class="drop-placeholder">Arrastra la tesis correcta</span>
+                    </div>
+                    <div class="options-container" id="options-act2-tesis">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la igualdad que queremos demostrar.">\(1 + 2 + \cdots + k + (k + 1) = \frac{(k + 1)(k + 2)}{2}\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El segundo factor en el numerador debe ser (k+2).">\(1 + 2 + \cdots + k + (k + 1) = \frac{(k + 1)^2}{2}\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es la hipótesis, no la tesis.">\(1 + 2 + \cdots + k = \frac{k(k + 1)}{2}\)</div>
+                         <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es un paso intermedio de la demostración.">\(1 + 2 + \cdots + k + (k + 1) = \frac{k(k + 1)}{2} + (k + 1)\)</div>
+                    </div>
+                    <div id="feedback-drop-act2-tesis" class="feedback hidden"></div>
+                </div>
+            </div>
+
+            <!-- Step 4: Inductive Step (Proof - Mix) -->
+            <div class="step-container">
+                <div class="step-indicator">4</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Demostración</h3>
+
+                    <h4 class="font-medium text-gray-700 mb-2 text-sm">1. Aplica la H.I. a \(1 + \cdots + k\) en la expresión \( [1 + \cdots + k] + (k + 1) \):</h4>
+                    <div class="visual-highlight my-4">
+                        <div class="drop-zone mb-3" id="drop-act2-apply-hypo" data-placeholder="Arrastra el resultado de aplicar la H.I.">
+                            <span class="drop-placeholder">Arrastra el resultado de aplicar la H.I.</span>
+                        </div>
+                        <div class="options-container" id="options-act2-apply-hypo">
+                            <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Reemplazaste la suma con la H.I.">\(\frac{k(k + 1)}{2} + (k + 1)\)</div>
+                            <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Falta el /2 de la H.I.">\(k(k + 1) + (k + 1)\)</div>
+                            <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Usaste la tesis, no la H.I.">\(\frac{(k + 1)(k + 2)}{2}\)</div>
+                            <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Fórmula incorrecta en la H.I.">\(k^2 + (k + 1)\)</div>
+                        </div>
+                        <div id="feedback-drop-act2-apply-hypo" class="feedback hidden"></div>
+                    </div>
+
+                    <h4 class="font-medium text-gray-700 mb-2 text-sm">2. Factoriza \((k+1)\) de la expresión \(\frac{k(k+1)}{2} + (k+1)\):</h4>
+                     <div class="drop-zone mb-3" id="drop-act2-factor" data-placeholder="Arrastra la expresión factorizada">
+                        <span class="drop-placeholder">Arrastra la expresión factorizada</span>
+                    </div>
+                     <div class="options-container" id="options-act2-factor">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Sacaste factor común (k+1).">\((k + 1)\left(\frac{k}{2} + 1\right)\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Al sacar (k+1) del segundo término, queda 1.">\((k + 1)\left(\frac{k}{2}\right)\)</div>
+                         <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El 1 no está multiplicado por k/2.">\((k + 1)\frac{k}{2} + 1\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es el resultado final, no el paso de factorización.">\(\frac{(k + 1)(k + 2)}{2}\)</div>
+                    </div>
+                    <div id="feedback-drop-act2-factor" class="feedback hidden"></div>
+
+
+                    <h4 class="font-medium text-gray-700 mt-4 mb-2 text-sm">3. Simplifica \((k+1)(\frac{k}{2} + 1)\):</h4>
+                    <div class="input-group">
+                        <label for="act2-final-simplify" class="input-label">Escribe la expresión simplificada final (usa / para fracción):</label>
+                         <input type="text" id="act2-final-simplify" class="text-input"
+                               data-correct-answer="(k+1)(k+2)/2"
+                               data-attempt-count="0"
+                               data-hint1="Pista: Primero suma la fracción dentro del segundo paréntesis: \(\frac{k}{2} + 1 = \frac{k}{2} + \frac{2}{2} = ?\)"
+                               data-hint2="Pista Detallada: \(\frac{k}{2} + 1 = \frac{k+2}{2}\). Entonces, \((k+1)\left(\frac{k+2}{2}\right) = \frac{(k+1)(k+2)}{2}\).">
+                         <div class="symbol-buttons">
+                             <button class="symbol-btn" data-symbol="(">(</button>
+                             <button class="symbol-btn" data-symbol=")">)</button>
+                             <button class="symbol-btn" data-symbol="+">+</button>
+                             <button class="symbol-btn" data-symbol="k">k</button>
+                             <button class="symbol-btn" data-symbol="1">1</button>
+                             <button class="symbol-btn" data-symbol="2">2</button>
+                             <button class="symbol-btn" data-symbol="/">/</button>
+                         </div>
+                         <div id="feedback-act2-final-simplify" class="feedback hidden"></div>
+                         <div id="hint-act2-final-simplify" class="hint-box hidden"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3">Si obtuviste \(\frac{(k+1)(k+2)}{2}\), has llegado a la tesis.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6 space-x-4">
+                <button class="reset-button px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center"><i class="fas fa-redo mr-2"></i> Reiniciar</button>
+                <button class="check-button px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center"><i class="fas fa-check-circle mr-2"></i> Verificar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Activity 3: Inequality proof -->
+     <section id="activity-3" class="card fade-in">
+        <div class="bg-red-600 text-white px-6 py-4 rounded-t-xl">
+            <h2 class="text-xl font-bold flex items-center"><i class="fas fa-greater-than-equal mr-3"></i>Actividad 3: Desigualdad \(2^n > n^2\)</h2>
+        </div>
+        <div class="p-6">
+            <div class="mb-6">
+                <p class="text-gray-700 mb-4">Demuestra: \(2^n > n^2 \quad \forall n \ge 5\)</p>
+            </div>
+
+            <!-- Step 1: Base Case (Input) -->
+            <div class="step-container">
+                 <div class="step-indicator">1</div>
+                 <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Caso Base (\(n=5\))</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Verifica la desigualdad \(2^n > n^2\) para \(n = 5\).</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="input-group">
+                             <label for="act3-base-lhs" class="input-label">Calcula \(2^n\) para \(n=5\):</label>
+                             <input type="text" id="act3-base-lhs" class="text-input" data-correct-answer="32" data-attempt-count="0">
+                             <div id="feedback-act3-base-lhs" class="feedback hidden"></div>
+                         </div>
+                         <div class="input-group">
+                            <label for="act3-base-rhs" class="input-label">Calcula \(n^2\) para \(n=5\):</label>
+                            <input type="text" id="act3-base-rhs" class="text-input" data-correct-answer="25" data-attempt-count="0">
+                            <div id="feedback-act3-base-rhs" class="feedback hidden"></div>
+                        </div>
+                    </div>
+                     <p class="text-sm text-gray-600 mt-3">¿Se cumple \(2^5 > 5^2\)? (Debería ser Sí, ya que \(32>25\))</p>
+                 </div>
+            </div>
+
+            <!-- Step 2: Inductive Hypothesis (Drag/Drop) -->
+            <div class="step-container">
+                <div class="step-indicator">2</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Hipótesis Inductiva</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Suponemos que se cumple para \(n = k\) (\(k \geq 5\)).</p>
+                    <div class="drop-zone mb-3" id="drop-act3-hypo" data-placeholder="Arrastra la hipótesis correcta">
+                        <span class="drop-placeholder">Arrastra la hipótesis correcta</span>
+                    </div>
+                    <div class="options-container" id="options-act3-hypo">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la H.I. que usaremos.">\(2^k > k^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser estricta (>).">\(2^k \geq k^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Lado derecho equivocado.">\(2^k > k\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La H.I. es para k.">\(2^{k + 1} > k^2\)</div>
+                    </div>
+                    <div id="feedback-drop-act3-hypo" class="feedback hidden"></div>
+                </div>
+            </div>
+
+             <!-- Step 3: Inductive Thesis (Drag/Drop) -->
+            <div class="step-container">
+                <div class="step-indicator">3</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Tesis Inductiva</h3>
+                    <p class="text-gray-700 mb-4 text-sm">Debemos demostrar que se cumple para \(n = k + 1\).</p>
+                     <div class="drop-zone mb-3" id="drop-act3-tesis" data-placeholder="Arrastra la tesis correcta">
+                        <span class="drop-placeholder">Arrastra la tesis correcta</span>
+                    </div>
+                    <div class="options-container" id="options-act3-tesis">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Esta es la desigualdad a demostrar.">\(2^{k + 1} > (k + 1)^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Es una desigualdad, no igualdad.">\(2^{k + 1} = (k + 1)^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe ser estricta (>).">\(2^{k + 1} \geq (k + 1)^2\)</div>
+                         <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es la H.I., no la tesis.">\(2^k > k^2\)</div>
+                    </div>
+                     <div id="feedback-drop-act3-tesis" class="feedback hidden"></div>
+                </div>
+            </div>
+
+            <!-- Step 4: Inductive Step (Proof - Mix) -->
+            <div class="step-container">
+                 <div class="step-indicator">4</div>
+                <div class="step-content">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Demostración</h3>
+
+                    <h4 class="font-medium text-gray-700 mb-2 text-sm">1. Reescribe \(2^{k+1}\) usando \(2^k\):</h4>
+                    <div class="drop-zone mb-3" id="drop-act3-rewrite" data-placeholder="Arrastra la forma correcta">
+                        <span class="drop-placeholder">Arrastra la forma correcta</span>
+                    </div>
+                    <div class="options-container" id="options-act3-rewrite">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Propiedad de exponentes.">\(2^{k + 1} = 2 \cdot 2^k\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Los exponentes no se suman así.">\(2^{k + 1} = 2^k + 2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto.">\(2^{k + 1} = 2(2^k - 1)\)</div>
+                    </div>
+                    <div id="feedback-drop-act3-rewrite" class="feedback hidden"></div>
+
+                    <h4 class="font-medium text-gray-700 mt-4 mb-2 text-sm">2. Aplica la H.I. (\(2^k > k^2\)) a \(2 \cdot 2^k\):</h4>
+                    <div class="visual-highlight my-4">
+                         <div class="drop-zone mb-3" id="drop-act3-apply-hypo" data-placeholder="Arrastra la desigualdad resultante">
+                            <span class="drop-placeholder">Arrastra la desigualdad resultante</span>
+                        </div>
+                         <div class="options-container" id="options-act3-apply-hypo">
+                            <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Como \(2^k > k^2\), entonces \(2 \cdot 2^k > 2 \cdot k^2\).">\(2^{k + 1} = 2 \cdot 2^k > 2 \cdot k^2\)</div>
+                            <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La desigualdad debe mantenerse.">\(2^{k + 1} = 2 \cdot 2^k = 2 \cdot k^2\)</div>
+                            <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Sentido opuesto de la desigualdad.">\(2^{k + 1} = 2 \cdot 2^k < 2 \cdot k^2\)</div>
+                        </div>
+                         <div id="feedback-drop-act3-apply-hypo" class="feedback hidden"></div>
+                    </div>
+
+                    <p class="text-sm text-gray-600 my-3">Ahora tenemos \(2^{k+1} > 2k^2\). Nuestro objetivo es \(2^{k+1} > (k+1)^2\). Si logramos probar que \(2k^2 > (k+1)^2\) para \(k \ge 5\), habremos terminado por transitividad.</p>
+
+                    <h4 class="font-medium text-gray-700 mb-2 text-sm">3. ¿Cuál es la desigualdad auxiliar que necesitamos probar?</h4>
+                     <div class="drop-zone mb-3" id="drop-act3-aux-ineq" data-placeholder="Arrastra la desigualdad auxiliar">
+                        <span class="drop-placeholder">Arrastra la desigualdad auxiliar</span>
+                    </div>
+                     <div class="options-container" id="options-act3-aux-ineq">
+                        <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Correcto! Si probamos esto, la transitividad nos da el resultado.">\(2k^2 > (k+1)^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Necesitamos comparar \(2k^2\) con \((k+1)^2\).">\(2k^2 < (k+1)^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Esta es la H.I.">\(2^k > k^2\)</div>
+                        <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Esta es la tesis final.">\(2^{k+1} > (k+1)^2\)</div>
+                    </div>
+                     <div id="feedback-drop-act3-aux-ineq" class="feedback hidden"></div>
+
+                    <h4 class="font-medium text-gray-700 mt-4 mb-2 text-sm">4. Simplifica la desigualdad \(2k^2 > (k+1)^2\):</h4>
+                    <div class="input-group">
+                         <label for="act3-simplify-ineq" class="input-label">Desarrolla \((k+1)^2\) y pasa todo a un lado para obtener una desigualdad simplificada (ej. k^2-2k-1>0):</label>
+                         <input type="text" id="act3-simplify-ineq" class="text-input"
+                                data-correct-answer="k^2-2k-1>0"
+                                data-attempt-count="0"
+                                data-hint1="Pista: \((k+1)^2 = k^2+2k+1\). Luego, resta \(k^2+2k+1\) de ambos lados de \(2k^2 > k^2+2k+1\)."
+                                data-hint2="Pista Detallada: \(2k^2 > k^2+2k+1 \implies 2k^2 - (k^2+2k+1) > 0 \implies 2k^2 - k^2 - 2k - 1 > 0 \implies k^2-2k-1 > 0\).">
+                         <div class="symbol-buttons">
+                             <button class="symbol-btn" data-symbol="k">k</button>
+                             <button class="symbol-btn" data-symbol="^">^</button>
+                             <button class="symbol-btn" data-symbol="-">-</button>
+                             <button class="symbol-btn" data-symbol="+">+</button>
+                             <button class="symbol-btn" data-symbol=">">></button>
+                             <button class="symbol-btn" data-symbol="<"><</button>
+                             <button class="symbol-btn" data-symbol="0">0</button>
+                             <button class="symbol-btn" data-symbol="1">1</button>
+                             <button class="symbol-btn" data-symbol="2">2</button>
+                         </div>
+                         <div id="feedback-act3-simplify-ineq" class="feedback hidden"></div>
+                         <div id="hint-act3-simplify-ineq" class="hint-box hidden"></div>
+                    </div>
+
+                    <!-- Modificación: Justificación final como Drag & Drop con Hints -->
+                    <h4 class="font-medium text-gray-700 mt-4 mb-2 text-sm">5. ¿Por qué es cierta la desigualdad \(k^2 - 2k - 1 > 0\) para \(k \ge 5\)?</h4>
+                    <div class="input-group"> <!-- Mantenemos input-group para consistencia visual -->
+                        <label class="input-label">Selecciona la justificación correcta:</label>
+                        <div class="drop-zone mb-3"
+                             id="drop-act3-final-reason"
+                             data-placeholder="Arrastra la justificación correcta aquí"
+                             data-attempt-count="0"
+                             data-hint1="Pista: Considera el valor inicial \(k=5\). ¿Se cumple \(k^2-2k-1 > 0\) para ese valor? ¿Qué te dice eso sobre valores mayores?"
+                             data-hint2="Pista Detallada: Para \(k=5\), \(5^2-2(5)-1 = 14 > 0\). Para \(k>5\), \(k^2\) crece más rápido que \(2k+1\), así que la diferencia (\(k^2-2k-1\)) seguirá siendo positiva y aumentará. Por eso la opción correcta menciona ambos puntos.">
+                            <span class="drop-placeholder">Arrastra la justificación correcta aquí</span>
+                        </div>
+                        <div class="options-container" id="options-act3-final-reason">
+                             <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Exacto! Se verifica para k=5 (14>0) y la expresión crece para k>5.">
+                                Se cumple para \(k=5\) (da \(14>0\)) y la función \(f(k)=k^2-2k-1\) es creciente para \(k \ge 5\).
+                             </div>
+                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Que sea cierto para k=5 no garantiza que lo sea para k>5 sin más análisis.">
+                                Simplemente porque se cumple para el caso base \(k=5\).
+                             </div>
+                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. No es cierto para todo k. Falla para k=1 y k=2.">
+                                La desigualdad \(k^2 > 2k+1\) es verdadera para todo \(k \ge 1\).
+                             </div>
+                              <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Esta es la desigualdad original que estamos tratando de probar, no la justificación de este paso intermedio.">
+                                Porque estamos intentando probar que \(2^{k+1} > (k+1)^2\).
+                             </div>
+                        </div>
+                        <div id="feedback-drop-act3-final-reason" class="feedback hidden"></div>
+                        <div id="hint-drop-act3-final-reason" class="hint-box hidden"></div> <!-- Div para las pistas -->
+                    </div>
+                    <!-- Fin Modificación -->
+
+                    <p class="text-sm text-gray-600 mt-3">Como hemos probado la desigualdad auxiliar, la demostración por inducción está completa.</p>
+                 </div>
+            </div>
+
+            <div class="flex justify-end mt-6 space-x-4">
+                <button class="reset-button px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition flex items-center"><i class="fas fa-redo mr-2"></i> Reiniciar</button>
+                <button class="check-button px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center"><i class="fas fa-check-circle mr-2"></i> Verificar</button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="bg-gray-800 text-white py-6 mt-12">
+    <div class="container mx-auto px-4 text-center">
+        <p class="mb-2">Sistema de Aprendizaje de Inducción Matemática</p>
+        <p class="text-gray-400 text-sm">© 2023 - Adaptado y Mejorado</p>
+    </div>
+</footer>
+
+<script>
+    // --- MathJax Configuration ---
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], processEscapes: true },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'], ignoreHtmlClass: 'tex2jax_ignore' },
+      startup: {
+        ready: () => { console.log('MathJax Ready'); MathJax.startup.defaultReady(); }
+      }
+    };
+
+    // --- Core Logic (Includes shuffling, hints, etc.) ---
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded.");
+        // Initial setup order matters
+        convertMathSpans(); // Convert old spans FIRST
+        shuffleAllOptions();
+        initializePlaceholders();
+        setupDragAndDrop(); // Initialize interact.js AFTER shuffling/DOM manipulation
+        setupScrollSpy();
+        setupSymbolButtons();
+        setupResetButtons();
+        setupCheckButtons();
+        console.log("Setup complete.");
+        // Initial MathJax typesetting
+        if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+            MathJax.typesetPromise().catch(e => console.error("Initial MathJax typeset error:", e));
+        } else {
+             console.warn("MathJax not ready for initial typeset call.");
         }
+    });
 
-
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                // Calcula la posición considerando un posible header fijo (ajusta el valor -80 si es necesario)
-                const offsetTop = section.offsetTop - 80;
-                window.scrollTo({
-                    top: offsetTop,
-                    behavior: 'smooth'
-                });
+     // --- Utility to convert old <span class="math"> to \(...\) ---
+    function convertMathSpans() {
+        // console.log("Converting <span class='math'>...");
+        document.querySelectorAll('span.math').forEach(span => {
+            const mathContent = span.textContent || span.innerText;
+            const isDisplay = span.closest('.math-expression.text-center') || span.closest('.math-expression > span:only-child'); // Detect display context
+            const newNode = document.createTextNode(isDisplay ? `\\[${mathContent}\\]` : `\\(${mathContent}\\)`);
+            try {
+                span.parentNode.replaceChild(newNode, span);
+            } catch (e) {
+                 console.error("Error replacing math span:", e, span);
             }
+        });
+         // console.log("Conversion complete.");
+    }
+
+
+    // --- Shuffle ---
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+    function shuffleOptions(container) {
+         const options = Array.from(container.children).filter(el => el.classList.contains('draggable'));
+         if (options.length > 1) {
+            shuffleArray(options);
+            options.forEach(option => container.appendChild(option)); // Move to end preserves shuffled order
+         }
+    }
+    function shuffleAllOptions() {
+        // console.log("Shuffling options...");
+        document.querySelectorAll('.options-container').forEach(container => {
+            shuffleOptions(container);
+        });
+         // console.log("Options shuffled.");
+    }
 
-        function setupDragAndDrop() {
-            // Setup draggable elements
-            interact('.draggable').draggable({
-                inertia: true,
-                modifiers: [
-                    interact.modifiers.restrictRect({
-                        restriction: 'body', // Restringir al cuerpo del documento
-                        endOnly: true
-                    })
-                ],
-                autoScroll: true,
-                listeners: { // Usar la nueva sintaxis de listeners
-                    start(event) {
-                        const target = event.target;
-                        target.classList.add('dragging');
-                        target.style.zIndex = 1000; // Asegurar que esté por encima
-                        // Guardar posición inicial si es necesario
-                        target.setAttribute('data-start-x', target.getBoundingClientRect().left);
-                        target.setAttribute('data-start-y', target.getBoundingClientRect().top);
-                    },
-                    move(event) {
-                        const target = event.target;
-                        const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                        const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+    // --- Placeholder Init ---
+    function initializePlaceholders() {
+         document.querySelectorAll('.drop-zone').forEach(zone => {
+            if (!zone.querySelector('.dropped-item') && !zone.querySelector('.drop-placeholder')) {
+                 const placeholderText = zone.dataset.placeholder || 'Arrastra aquí';
+                 zone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
+            }
+         });
+    }
 
-                        target.style.transform = `translate(${x}px, ${y}px)`;
-                        target.setAttribute('data-x', x);
-                        target.setAttribute('data-y', y);
-                    },
-                    end(event) {
+    // --- Scroll & Nav ---
+     function setupScrollSpy() {
+        const sections = document.querySelectorAll('section[id]');
+        const progressSteps = document.querySelectorAll('.progress-step');
+        if (!sections.length || !progressSteps.length) { console.warn("ScrollSpy: No sections or steps found."); return; }
+
+        let currentActiveId = null; // Track the currently active section
+
+        const observer = new IntersectionObserver(entries => {
+            let bestCandidate = null;
+            const viewportCenter = window.innerHeight / 2;
+
+            entries.forEach(entry => {
+                const rect = entry.boundingClientRect;
+                // Prioritize sections that are crossing the middle of the viewport
+                const distanceToCenter = Math.abs(rect.top + rect.height / 2 - viewportCenter);
+
+                if (entry.isIntersecting) {
+                     // If we don't have a candidate yet, or this one is closer to the center
+                    if (!bestCandidate || distanceToCenter < bestCandidate.distanceToCenter) {
+                        bestCandidate = entry;
+                        bestCandidate.distanceToCenter = distanceToCenter; // Add distance for comparison
+                    }
+                }
+            });
+
+            const newActiveId = bestCandidate ? bestCandidate.target.getAttribute('id') : null;
+
+            if (newActiveId !== currentActiveId) {
+                currentActiveId = newActiveId;
+                let foundActive = false;
+                progressSteps.forEach(step => {
+                    const isActive = step.getAttribute('onclick')?.includes(`scrollToSection('${currentActiveId}')`);
+                    step.classList.toggle('active', isActive);
+                    if (isActive) foundActive = true;
+                });
+                 // Ensure first step is active if nothing else is, especially on initial load
+                 if (!foundActive && !document.querySelector('.progress-step.active') && progressSteps.length > 0) {
+                     progressSteps[0].classList.add('active');
+                 }
+            }
+
+         }, { rootMargin: "-40% 0px -40% 0px", threshold: [0, 0.1, 0.9, 1] }); // Use thresholds and margins
+
+        sections.forEach(section => observer.observe(section));
+
+        // Trigger initial check
+         setTimeout(() => {
+            const initialEntries = [];
+            sections.forEach(section => {
+                initialEntries.push({
+                    target: section,
+                    isIntersecting: isElementInViewport(section, 0.4), // Check if element is roughly centered
+                    boundingClientRect: section.getBoundingClientRect()
+                });
+            });
+             // Manually call the observer callback logic with initial state
+             observer.callback(initialEntries.filter(e => e.isIntersecting), observer);
+             // Ensure *something* is active initially
+             if (!document.querySelector('.progress-step.active') && progressSteps.length > 0) {
+                 progressSteps[0].classList.add('active');
+             }
+         }, 150);
+    }
+
+    // Helper to check if element is roughly centered in viewport
+    function isElementInViewport(el, centerThreshold = 0.4) {
+        const rect = el.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const topVisible = rect.top >= 0 && rect.top <= viewportHeight * (1 - centerThreshold);
+        const bottomVisible = rect.bottom <= viewportHeight && rect.bottom >= viewportHeight * centerThreshold;
+        const crossesCenter = rect.top < viewportHeight * centerThreshold && rect.bottom > viewportHeight * (1 - centerThreshold);
+        return topVisible && bottomVisible || crossesCenter;
+    }
+
+
+    function scrollToSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (section) { window.scrollTo({ top: section.offsetTop - 80, behavior: 'smooth' }); }
+    }
+
+
+    // --- Drag & Drop ---
+     function setupDragAndDrop() {
+         // console.log("Setting up Drag and Drop...");
+         interact('.draggable')
+             .draggable({
+                 inertia: true,
+                 modifiers: [interact.modifiers.restrictRect({ restriction: 'body', endOnly: true })],
+                 autoScroll: true,
+                 listeners: {
+                     start(event) {
+                         const target = event.target;
+                         target.classList.add('dragging');
+                         target.style.position = 'relative';
+                         target.style.zIndex = 1000;
+                     },
+                     move(event) {
+                         const target = event.target;
+                         const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                         const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                         target.style.transform = `translate(${x}px, ${y}px)`;
+                         target.setAttribute('data-x', x);
+                         target.setAttribute('data-y', y);
+                     },
+                     end(event) {
                         const target = event.target;
                         target.classList.remove('dragging');
                         target.style.zIndex = 'auto';
-
-                        // Si no se soltó en una zona válida, retornar a origen
-                        // InteractJS maneja esto mejor con snap o restrict, pero un reset simple es:
-                        if (!event.dropzone) {
-                           target.style.transform = 'translate(0px, 0px)';
-                           target.setAttribute('data-x', 0);
-                           target.setAttribute('data-y', 0);
-                        }
-                         // Limpiar atributos de posición al finalizar si se desea
-                        // target.removeAttribute('data-x');
-                        // target.removeAttribute('data-y');
-                    }
-                }
-            });
-
-            // Setup drop zones
-            interact('.drop-zone').dropzone({
-                accept: '.draggable',
-                overlap: 0.5, // 50% de solapamiento para activar
-                listeners: {
-                    dragenter(event) {
-                        event.target.classList.add('active');
-                    },
-                    dragleave(event) {
-                        event.target.classList.remove('active');
-                    },
-                    drop(event) {
-                        const draggableElement = event.relatedTarget;
-                        const dropzone = event.target;
-
-                        // Ocultar el draggable original (opcional, o moverlo a la zona)
-                        // draggableElement.style.display = 'none';
-
-                         // Resetear posición del original para que no quede "flotando"
-                        draggableElement.style.transform = 'translate(0px, 0px)';
-                        draggableElement.setAttribute('data-x', 0);
-                        draggableElement.setAttribute('data-y', 0);
-
-                        // Clonar el item arrastrado
-                        const clone = draggableElement.cloneNode(true);
-                        clone.classList.remove('draggable', 'dragging');
-                        clone.classList.add('dropped-item');
-                        clone.style.transform = ''; // Quitar cualquier transformación residual
-                        clone.style.position = 'relative'; // Asegurar posicionamiento relativo para el botón
-                        clone.removeAttribute('data-x');
-                        clone.removeAttribute('data-y');
-                        clone.removeAttribute('data-start-x');
-                        clone.removeAttribute('data-start-y');
-                        clone.removeAttribute('style'); // Limpiar estilos inline aplicados por interactjs
-
-
-                        // Añadir botón de eliminar al clon
-                        const deleteBtn = document.createElement('span');
-                        deleteBtn.classList.add('delete-btn');
-                        deleteBtn.innerHTML = '×';
-                        deleteBtn.title = 'Eliminar'; // Tooltip básico
-                        deleteBtn.addEventListener('click', function() {
-                            const parentZone = clone.closest('.drop-zone');
-                            clone.remove();
-                            checkIfEmpty(parentZone); // Pasar el dropzone correcto
-                            hideFeedback(parentZone); // Ocultar feedback al eliminar
-                            // Aquí podrías hacer visible de nuevo el draggable original si lo ocultaste
-                            // draggableElement.style.display = 'inline-block';
-                        });
-
-                        clone.appendChild(deleteBtn);
-
-                        // Limpiar contenido previo de la dropzone
-                        dropzone.innerHTML = ''; // Más simple que buscar y quitar placeholder/items
-
-                        // Añadir el clon a la dropzone
-                        dropzone.appendChild(clone);
-
-                        // *** ¡IMPORTANTE! Procesar MathJax en el elemento clonado ***
-                        if (window.MathJax) {
-                            MathJax.typesetPromise([clone]).catch(function (err) {
-                                console.error('Error typesetting MathJax:', err);
-                            });
-                        }
-
-                        // Mostrar feedback
-                        showFeedback(dropzone, draggableElement); // Pasar el original para leer atributos data-*
-
-                        // Quitar clase 'active' de la dropzone
-                        dropzone.classList.remove('active');
-                    }
-                }
-            });
-        }
-
-        function checkIfEmpty(dropzone) {
-            if (dropzone && dropzone.querySelectorAll('.dropped-item').length === 0) {
-                 // Añadir placeholder si está vacío
-                const placeholder = document.createElement('span');
-                placeholder.className = 'drop-placeholder';
-                placeholder.textContent = dropzone.dataset.placeholder || 'Arrastra aquí la expresión correcta'; // Usar un data-attribute o texto default
-                dropzone.appendChild(placeholder);
-                hideFeedback(dropzone); // Ocultar feedback si queda vacío
-            }
-        }
-
-        function showFeedback(dropzone, draggableElement) {
-            const dropzoneId = dropzone.id;
-            if (!dropzoneId) return; // Salir si no hay ID
-
-            const feedbackId = `feedback-${dropzoneId.substring(dropzoneId.indexOf('-') + 1)}`; // Extraer ID base
-            const feedbackElement = document.getElementById(feedbackId);
-
-            if (feedbackElement) {
-                const feedbackMessage = draggableElement.getAttribute('data-feedback');
-                const isCorrect = draggableElement.getAttribute('data-value') === 'correct';
-
-                if (feedbackMessage) {
-                    feedbackElement.innerHTML = feedbackMessage;
-                    feedbackElement.className = isCorrect ? 'feedback-correct' : 'feedback-incorrect';
-                    feedbackElement.classList.remove('hidden');
-                } else {
-                    feedbackElement.classList.add('hidden'); // Ocultar si no hay mensaje
-                }
-
-                // Opcional: Auto-ocultar feedback incorrecto después de un tiempo
-                // if (!isCorrect) {
-                //     setTimeout(() => {
-                //         feedbackElement.classList.add('hidden');
-                //     }, 5000);
-                // }
-            }
-        }
-
-         function hideFeedback(dropzone) {
-             const dropzoneId = dropzone.id;
-             if (!dropzoneId) return;
-             const feedbackId = `feedback-${dropzoneId.substring(dropzoneId.indexOf('-') + 1)}`;
-             const feedbackElement = document.getElementById(feedbackId);
-             if (feedbackElement) {
-                 feedbackElement.classList.add('hidden');
-                 feedbackElement.innerHTML = ''; // Limpiar contenido
-             }
-         }
-
-        function setupResetButtons() {
-            // Usar delegación de eventos en el body para simplificar
-            document.body.addEventListener('click', function(event) {
-                if (event.target.closest('.reset-button')) {
-                    const activity = event.target.closest('section');
-                    if (!activity) return;
-
-                    // Resetear todas las drop zones en esta actividad
-                    activity.querySelectorAll('.drop-zone').forEach(zone => {
-                        zone.innerHTML = ''; // Limpiar zona
-                        checkIfEmpty(zone); // Restaurar placeholder
-                        hideFeedback(zone); // Ocultar feedback
-                        zone.classList.remove('animate-pulse'); // Quitar animación si la hubiera
-                    });
-
-                    // Resetear posición visual de draggables (opcional, si no se hace en 'end')
-                    activity.querySelectorAll('.draggable').forEach(drag => {
-                         drag.style.transform = 'translate(0px, 0px)';
-                         drag.setAttribute('data-x', 0);
-                         drag.setAttribute('data-y', 0);
-                         // drag.style.display = 'inline-block'; // Asegurarse que sean visibles
-                    });
-
-                     console.log(`Reiniciando actividad: ${activity.id}`);
-                }
-            });
-        }
-
-        function setupCheckButtons() {
-             document.body.addEventListener('click', function(event) {
-                if (event.target.closest('.check-button')) {
-                    const activity = event.target.closest('section');
-                    if (!activity) return;
-
-                    let allCorrect = true;
-                    let firstErrorZone = null;
-
-                    // Verificar todas las drop zones en esta actividad
-                    activity.querySelectorAll('.drop-zone').forEach(zone => {
-                        const droppedItem = zone.querySelector('.dropped-item');
-                        let isZoneCorrect = false;
-
-                        if (droppedItem) {
-                            // Leemos el data-value del item soltado
-                            const value = droppedItem.getAttribute('data-value');
-                            if (value === 'correct') {
-                                isZoneCorrect = true;
-                                zone.classList.remove('animate-pulse'); // Quitar pulso si estaba
-                            }
-                        }
-
-                        if (!isZoneCorrect) {
-                            allCorrect = false;
-                            zone.classList.add('animate-pulse'); // Marcar incorrecta o vacía
-                            if (!firstErrorZone) {
-                                firstErrorZone = zone; // Guardar referencia a la primera zona con error
-                            }
-                            // Opcional: Mostrar feedback de error si está vacía
-                            if (!droppedItem) {
-                                const feedbackId = `feedback-${zone.id.substring(zone.id.indexOf('-') + 1)}`;
-                                const feedbackElement = document.getElementById(feedbackId);
-                                if(feedbackElement) {
-                                    feedbackElement.innerHTML = "Este paso está incompleto.";
-                                    feedbackElement.className = 'feedback-incorrect';
-                                    feedbackElement.classList.remove('hidden');
+                         if (!event.dropzone) {
+                            setTimeout(() => {
+                                if (!target.closest('.drop-zone > .dropped-item')) {
+                                    target.style.transform = 'translate(0px, 0px)';
+                                    target.removeAttribute('data-x');
+                                    target.removeAttribute('data-y');
                                 }
-                            }
-                        } else {
-                             zone.classList.remove('animate-pulse'); // Asegurarse de quitar pulso si ahora es correcta
-                             // Opcional: Ocultar feedback si es correcto y no se quiere mostrar siempre
-                             // hideFeedback(zone);
-                        }
-                    });
+                            }, 50);
+                         }
+                     }
+                 }
+             });
 
-                    // Mostrar resultado general
-                    if (allCorrect) {
-                        alert('¡Felicidades! Has completado correctamente todos los pasos de esta demostración.');
-                         // Opcional: Marcar sección como completada en el progress tracker
-                        const sectionId = activity.getAttribute('id');
-                        const progressStep = document.querySelector(`.progress-step[onclick*="'${sectionId}'"]`);
-                        if (progressStep) {
-                            progressStep.classList.add('completed');
-                            progressStep.classList.remove('active');
-                            // Activar el siguiente paso si existe
-                            const nextStep = progressStep.nextElementSibling;
-                            if (nextStep && nextStep.classList.contains('progress-step')) {
-                                // nextStep.click(); // Simular click para scroll y activar
+         interact('.drop-zone')
+             .dropzone({
+                 accept: '.draggable', overlap: 0.5,
+                 listeners: {
+                     dragenter: event => event.target.classList.add('active'),
+                     dragleave: event => event.target.classList.remove('active'),
+                     drop(event) {
+                         const draggableElement = event.relatedTarget;
+                         const dropzone = event.target;
+
+                         // Reset Original Draggable
+                         draggableElement.style.transform = 'translate(0px, 0px)';
+                         draggableElement.removeAttribute('data-x');
+                         draggableElement.removeAttribute('data-y');
+                         draggableElement.style.zIndex = 'auto';
+
+                         // Create and Setup Clone
+                         const clone = draggableElement.cloneNode(true);
+                         clone.classList.remove('draggable', 'dragging');
+                         clone.classList.add('dropped-item');
+                         clone.removeAttribute('style'); clone.removeAttribute('data-x'); clone.removeAttribute('data-y');
+                         // Explicitly copy data attributes needed for logic
+                         clone.setAttribute('data-value', draggableElement.getAttribute('data-value'));
+                         clone.setAttribute('data-feedback', draggableElement.getAttribute('data-feedback'));
+
+                         // Add Delete Button
+                         const deleteBtn = document.createElement('span');
+                         deleteBtn.classList.add('delete-btn'); deleteBtn.innerHTML = '×'; deleteBtn.title = 'Eliminar';
+                         deleteBtn.addEventListener('click', function() {
+                             const parentZone = clone.closest('.drop-zone');
+                             clone.remove(); checkIfEmpty(parentZone); hideFeedback(parentZone); hideHints(parentZone); // Hide hints too
+                         });
+                         clone.appendChild(deleteBtn);
+
+                         // Update Dropzone
+                         dropzone.innerHTML = ''; dropzone.appendChild(clone); dropzone.classList.remove('active');
+
+                         // Typeset MathJax
+                         if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+                            MathJax.typesetPromise([clone]).catch(err => console.error('MathJax typesetting error on drop:', err));
+                         }
+
+                         // Show Feedback for the drop action itself
+                         showFeedbackMessage(dropzone, draggableElement.dataset.feedback || "Item soltado", draggableElement.dataset.value === 'correct');
+                     }
+                 }
+             });
+          // console.log("Drag and Drop setup complete.");
+     }
+
+
+    // --- Symbol Buttons ---
+    function setupSymbolButtons() {
+         document.body.addEventListener('click', function(event) {
+            if (event.target.matches('.symbol-btn')) {
+                const symbol = event.target.dataset.symbol;
+                const inputGroup = event.target.closest('.input-group');
+                const input = inputGroup?.querySelector('.text-input');
+                if (input && symbol) { insertSymbol(input, symbol); }
+            }
+         });
+    }
+    function insertSymbol(inputField, symbol) {
+        const start = inputField.selectionStart;
+        const end = inputField.selectionEnd;
+        const text = inputField.value;
+        inputField.value = text.substring(0, start) + symbol + text.substring(end);
+        inputField.selectionStart = inputField.selectionEnd = start + symbol.length;
+        inputField.focus();
+    }
+
+
+    // --- Feedback & Hint Helpers ---
+    function getAssociatedElementId(element, type) { // type = 'feedback' or 'hint'
+        const id = element.id;
+        if (!id) return null;
+        return `${type}-${id}`;
+    }
+    function getFeedbackElement(element) {
+        const feedbackId = getAssociatedElementId(element, 'feedback');
+        return feedbackId ? document.getElementById(feedbackId) : null;
+    }
+    function getHintElement(element) {
+        // Allow hints for text inputs and designated dropzones
+        if (!element.matches('.text-input') && !element.matches('.drop-zone[data-hint1]')) {
+             return null;
+        }
+        const hintId = getAssociatedElementId(element, 'hint');
+        return hintId ? document.getElementById(hintId) : null;
+    }
+    function checkIfEmpty(dropzone) {
+        if (dropzone && !dropzone.querySelector('.dropped-item')) {
+            const placeholderText = dropzone.dataset.placeholder || 'Arrastra aquí';
+            if (!dropzone.querySelector('.drop-placeholder')) {
+                dropzone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
+            }
+            hideFeedback(dropzone);
+            hideHints(dropzone);
+        }
+    }
+    function showFeedbackMessage(element, message, isCorrect) {
+       const feedbackDiv = getFeedbackElement(element);
+        if(feedbackDiv) {
+           const defaultMsg = isCorrect ? "¡Correcto!" : "Incorrecto.";
+           feedbackDiv.innerHTML = message || defaultMsg;
+           feedbackDiv.className = `feedback ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
+           feedbackDiv.classList.remove('hidden');
+           if ((message || '').includes('\\(') || (message || '').includes('\\[')) {
+               MathJax.typesetPromise([feedbackDiv]).catch(e => console.error("MathJax error in feedback:", e));
+           }
+        }
+    }
+    function hideFeedback(element) {
+         const feedbackDiv = getFeedbackElement(element);
+         if (feedbackDiv) {
+             feedbackDiv.classList.add('hidden');
+             feedbackDiv.innerHTML = '';
+         }
+    }
+    function showHint(element, hintText, level) { // Element can be input or dropzone
+        const hintDiv = getHintElement(element);
+        if (hintDiv && hintText) {
+            hintDiv.innerHTML = hintText;
+            hintDiv.className = `hint-box mt-2 hint-level-${level}`; // Keep mt-2
+            hintDiv.classList.remove('hidden');
+            if (hintText.includes('\\(') || hintText.includes('\\[')) {
+                MathJax.typesetPromise([hintDiv]).catch(e => console.error("MathJax error typesetting hint:", e));
+            }
+        }
+    }
+    function hideHints(element) {
+        const hintDiv = getHintElement(element);
+        if (hintDiv) {
+            hintDiv.classList.add('hidden');
+            hintDiv.innerHTML = '';
+            hintDiv.className = 'hint-box hidden';
+        }
+    }
+    function hideHint(element, level) { // Hide specific level for input or dropzone
+        const hintDiv = getHintElement(element);
+        if (hintDiv && hintDiv.classList.contains(`hint-level-${level}`)) {
+             hintDiv.classList.add('hidden');
+             hintDiv.innerHTML = '';
+             hintDiv.classList.remove(`hint-level-${level}`);
+        }
+    }
+
+    // --- Normalization ---
+    function normalizeAnswer(answer) {
+        return typeof answer === 'string' ? answer.trim().replace(/\s+/g, ' ').toLowerCase() : '';
+    }
+    function normalizeMathExpr(expr) {
+         return typeof expr === 'string' ? expr.replace(/\s+/g, '').replace('**','^') : '';
+    }
+
+
+    // --- Reset & Check Logic ---
+    function setupResetButtons() {
+        document.querySelector('main').addEventListener('click', function(event) {
+            const resetButton = event.target.closest('.reset-button');
+            if (resetButton) {
+                const activity = resetButton.closest('section');
+                if (!activity) return;
+                // Reset elements
+                activity.querySelectorAll('.drop-zone, .text-input').forEach(el => {
+                    el.classList.remove('animate-pulse-border');
+                    hideFeedback(el);
+                    hideHints(el);
+                    if (el.matches('.drop-zone')) {
+                         el.innerHTML = '';
+                         checkIfEmpty(el); // Restores placeholder
+                         el.dataset.attemptCount = '0'; // Reset attempt count for dropzones too
+                    } else if (el.matches('.text-input')) {
+                         el.value = '';
+                         el.dataset.attemptCount = '0';
+                    }
+                });
+                // Reset draggables position
+                activity.querySelectorAll('.draggable').forEach(drag => {
+                    drag.style.transform = 'translate(0px, 0px)'; drag.removeAttribute('data-x'); drag.removeAttribute('data-y');
+                });
+                // Re-Shuffle options
+                activity.querySelectorAll('.options-container').forEach(container => shuffleOptions(container));
+                console.log(`Reiniciando actividad: ${activity.id}`);
+            }
+        });
+    }
+
+    function setupCheckButtons() {
+         document.querySelector('main').addEventListener('click', function(event) {
+             const checkButton = event.target.closest('.check-button');
+             if (checkButton) {
+                const activity = checkButton.closest('section');
+                if (!activity) return;
+
+                let allCorrect = true;
+                let firstErrorElement = null;
+
+                // Clear previous validation states first
+                 activity.querySelectorAll('.drop-zone, .text-input').forEach(el => {
+                    el.classList.remove('animate-pulse-border');
+                    hideFeedback(el);
+                    // Don't hide hints automatically on check unless correct
+                 });
+
+                // Check Drop Zones
+                activity.querySelectorAll('.drop-zone').forEach(zone => {
+                    const droppedItem = zone.querySelector('.dropped-item');
+                    const isZoneCorrect = droppedItem?.getAttribute('data-value') === 'correct';
+                    let attemptCount = parseInt(zone.dataset.attemptCount || '0', 10);
+
+                    if (!isZoneCorrect) {
+                        allCorrect = false;
+                        zone.classList.add('animate-pulse-border');
+                        if (!firstErrorElement) firstErrorElement = zone;
+                        const feedbackMsg = droppedItem ? (droppedItem.getAttribute('data-feedback') || "Revisa este paso.") : "Este paso está incompleto.";
+                        showFeedbackMessage(zone, feedbackMsg, false);
+
+                        // --- Hint Logic for Specific Dropzone ---
+                        if (zone.id === 'drop-act3-final-reason' && zone.hasAttribute('data-hint1')) {
+                            attemptCount++;
+                            zone.dataset.attemptCount = attemptCount.toString();
+                            const hint1 = zone.dataset.hint1;
+                            const hint2 = zone.dataset.hint2;
+                            if (attemptCount === 1 && hint1) {
+                                showHint(zone, hint1, 1); hideHint(zone, 2);
+                            } else if (attemptCount >= 2) {
+                                if (hint2) { showHint(zone, hint2, 2); hideHint(zone, 1); }
+                                else if (hint1) { showHint(zone, hint1, 1); }
                             }
                         }
+                        // --- End Hint Logic ---
+
+                    } else if (droppedItem) {
+                         showFeedbackMessage(zone, droppedItem.getAttribute('data-feedback') || "¡Correcto!", true);
+                         hideHints(zone); // Hide hints if correct
+                         zone.dataset.attemptCount = '0'; // Reset attempts if correct
+                    }
+                });
+
+                // Check Text Inputs
+                activity.querySelectorAll('.text-input').forEach(input => {
+                    const userAnswer = input.value;
+                    const correctAnswer = input.dataset.correctAnswer;
+                    let inputAttemptCount = parseInt(input.dataset.attemptCount || '0', 10);
+                    let isInputCorrect = false;
+
+                    if (correctAnswer !== undefined) {
+                         const needsMathNormalization = ['^', '+', '*', '(', ')', '/', '>','-'].some(char => correctAnswer.includes(char));
+                         const normalizedUser = needsMathNormalization ? normalizeMathExpr(userAnswer) : normalizeAnswer(userAnswer);
+                         const normalizedCorrect = needsMathNormalization ? normalizeMathExpr(correctAnswer) : normalizeAnswer(correctAnswer);
+
+                         // Simplified check logic (adjust flexible checks if needed)
+                         isInputCorrect = normalizedUser === normalizedCorrect;
+
+                         // Add back flexible checks if required for specific inputs (less preferred now)
+                         // Example: if (input.id === 'act3-final-reason') { ... flexible check ... }
+
                     } else {
-                        alert('Algunos pasos no son correctos o están incompletos. Revisa las zonas marcadas y vuelve a intentarlo.');
-                        // Hacer scroll a la primera zona con error
-                        if (firstErrorZone) {
-                            firstErrorZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                         isInputCorrect = userAnswer.trim() !== '';
+                         if (!isInputCorrect) allCorrect = false;
+                    }
+
+                    // Handle feedback and hints for INPUTS
+                    if (isInputCorrect) {
+                        allCorrect = allCorrect && true;
+                        showFeedbackMessage(input, "¡Correcto!", true);
+                        hideHints(input);
+                        input.dataset.attemptCount = '0';
+                    } else {
+                        allCorrect = false;
+                        input.classList.add('animate-pulse-border');
+                        if (!firstErrorElement) firstErrorElement = input;
+                        inputAttemptCount++;
+                        input.dataset.attemptCount = inputAttemptCount.toString();
+                        showFeedbackMessage(input, "Respuesta incorrecta o incompleta.", false);
+
+                        const hint1 = input.dataset.hint1;
+                        const hint2 = input.dataset.hint2;
+                        if (inputAttemptCount === 1 && hint1) {
+                            showHint(input, hint1, 1);
+                            hideHint(input, 2);
+                        } else if (inputAttemptCount >= 2) {
+                            if (hint2) { showHint(input, hint2, 2); hideHint(input, 1); }
+                            else if (hint1) { showHint(input, hint1, 1); }
                         }
                     }
-                     console.log(`Verificando actividad: ${activity.id}, Resultado: ${allCorrect ? 'Correcto' : 'Incorrecto'}`);
+                });
+
+                // Final Outcome
+                if (allCorrect) {
+                    alert(`¡Felicidades! Has completado correctamente la ${activity.querySelector('h2').textContent.trim()}.`);
+                    const sectionId = activity.getAttribute('id');
+                    const progressStep = document.querySelector(`.progress-step[onclick*="'${sectionId}'"]`);
+                    if (progressStep) { progressStep.classList.add('completed'); }
+                } else {
+                    alert('Hay errores o pasos incompletos. Revisa las zonas marcadas y las pistas si están disponibles.');
+                    if (firstErrorElement) {
+                        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => { try { firstErrorElement.focus({ preventScroll: true }); } catch (e) {} }, 300);
+                    }
                 }
-            });
-        }
-    </script>
+                 console.log(`Verificando actividad: ${activity.id}, Resultado: ${allCorrect ? 'Correcto' : 'Incorrecto'}`);
+            }
+        });
+    }
+
+</script>
+
 </body>
 </html>

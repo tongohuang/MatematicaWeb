@@ -178,6 +178,11 @@
                                             <i class="fas fa-code-branch me-2"></i> Actualizar Versión
                                         </a>
                                     </div>
+                                    <div class="col-md-3">
+                                        <a href="#" onclick="forceRepoDataLoad(); return false;" class="btn btn-danger w-100 mb-3">
+                                            <i class="fas fa-cloud-download-alt me-2"></i> Cargar desde JSON
+                                        </a>
+                                    </div>
 
                                 </div>
                             </div>
@@ -247,7 +252,7 @@
 
         // Función para forzar la carga de datos desde el repositorio
         function forceRepoDataLoad() {
-            if (confirm('Esta acción cargará los datos desde los archivos JSON del repositorio, sobrescribiendo los datos locales.\n\nEsto es útil para sincronizar con los cambios realizados en Netlify o para depurar problemas.\n\n¿Desea continuar?')) {
+            if (confirm('Esta acción cargará los datos desde los archivos JSON del repositorio, sobrescribiendo los datos locales.\n\nEsto es útil para sincronizar con los cambios realizados en Netlify o para recuperar datos perdidos.\n\n¿Desea continuar?')) {
                 try {
                     // Mostrar indicador de carga
                     const loadingHtml = `
@@ -256,7 +261,8 @@
                                 <div class="spinner-border text-primary mb-3" role="status">
                                     <span class="visually-hidden">Cargando datos...</span>
                                 </div>
-                                <p>Cargando datos desde el repositorio...</p>
+                                <p class="mb-1">Cargando datos desde el repositorio...</p>
+                                <small class="text-muted">Esto puede tardar unos segundos</small>
                             </div>
                         </div>
                     `;
@@ -264,28 +270,284 @@
                     loadingElement.innerHTML = loadingHtml;
                     document.body.appendChild(loadingElement.firstElementChild);
 
-                    // Forzar la carga desde el repositorio
-                    DataPersistence.init(true)
-                        .then(() => {
-                            // Recargar la página para reflejar los cambios
-                            alert('Datos cargados correctamente desde el repositorio. La página se recargará para mostrar los cambios.');
-                            window.location.reload();
-                        })
-                        .catch((error) => {
-                            console.error('Error al cargar datos desde el repositorio:', error);
-                            alert('Error al cargar datos desde el repositorio. Por favor, inténtelo de nuevo.');
+                    // Limpiar localStorage antes de cargar los datos nuevos
+                    console.log('Limpiando datos locales antes de cargar desde el repositorio...');
 
-                            // Eliminar el indicador de carga en caso de error
-                            const loadingElement = document.querySelector('.bg-white.bg-opacity-75');
-                            if (loadingElement) {
-                                loadingElement.remove();
+                    // Guardar solo las claves esenciales
+                    const adminSession = localStorage.getItem('admin_session');
+                    const authToken = localStorage.getItem('auth_token');
+                    const hideCacheBanner = localStorage.getItem('hideCacheBanner');
+
+                    // Limpiar localStorage excepto las claves esenciales
+                    const keysToKeep = ['admin_session', 'auth_token', 'hideCacheBanner'];
+                    Object.keys(localStorage).forEach(key => {
+                        if (!keysToKeep.includes(key)) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+
+                    console.log('Datos locales limpiados. Cargando desde el repositorio...');
+
+                    // Cargar los archivos JSON directamente
+                    Promise.all([
+                        fetch('../data/courses.json?' + Date.now()),
+                        fetch('../data/topics.json?' + Date.now()),
+                        fetch('../data/activities.json?' + Date.now())
+                    ])
+                    .then(responses => {
+                        // Verificar si todas las respuestas son correctas
+                        console.log('Respuestas recibidas:', responses.map(r => r.status));
+
+                        const failedResponses = responses.filter(response => !response.ok);
+                        if (failedResponses.length > 0) {
+                            const statusCodes = failedResponses.map(r => r.status).join(', ');
+                            throw new Error(`Error al cargar ${failedResponses.length} archivos JSON. Códigos de estado: ${statusCodes}`);
+                        }
+
+                        // Convertir todas las respuestas a JSON
+                        console.log('Todas las respuestas son correctas, convirtiendo a JSON...');
+                        return Promise.all(responses.map(response =>
+                            response.json().catch(error => {
+                                console.error(`Error al parsear JSON de ${response.url}:`, error);
+                                throw new Error(`Error al parsear JSON de ${response.url}: ${error.message}`);
+                            })
+                        ));
+                    })
+                    .then(([coursesData, topicsData, activitiesData]) => {
+                        console.log('Archivos JSON cargados correctamente');
+                        console.log(`Cursos cargados: ${coursesData.length}`);
+                        console.log(`Temas cargados: ${topicsData.length}`);
+
+                        // Verificar si activitiesData es un objeto
+                        if (typeof activitiesData !== 'object' || activitiesData === null) {
+                            console.error('El archivo activities.json no contiene un objeto válido:', activitiesData);
+                            activitiesData = {}; // Usar un objeto vacío como fallback
+                        }
+
+                        // Procesar actividades para asegurar que todas las claves estén normalizadas
+                        const normalizedActivities = {};
+
+                        // Si activitiesData es un array, convertirlo a objeto
+                        if (Array.isArray(activitiesData)) {
+                            console.log('Convirtiendo array de actividades a objeto...');
+                            activitiesData.forEach(activity => {
+                                if (activity && activity.id) {
+                                    const normalizedId = activity.id.toString().replace('activity_', '').replace('activity_data_', '');
+                                    normalizedActivities[normalizedId] = activity;
+                                    normalizedActivities[`activity_${normalizedId}`] = activity;
+                                    normalizedActivities[`activity_data_${normalizedId}`] = activity;
+                                }
+                            });
+                            activitiesData = normalizedActivities;
+                        } else {
+                            // Si es un objeto, asegurarse de que todas las claves estén normalizadas
+                            Object.entries(activitiesData).forEach(([key, activity]) => {
+                                if (activity) {
+                                    const normalizedId = key.toString().replace('activity_', '').replace('activity_data_', '');
+                                    normalizedActivities[normalizedId] = activity;
+                                    normalizedActivities[`activity_${normalizedId}`] = activity;
+                                    normalizedActivities[`activity_data_${normalizedId}`] = activity;
+                                }
+                            });
+                            activitiesData = normalizedActivities;
+                        }
+
+                        console.log(`Actividades normalizadas: ${Object.keys(activitiesData).length / 3}`);
+                        console.log('Muestra de actividades:', Object.keys(activitiesData).slice(0, 9));
+
+                        // Convertir arrays a objetos indexados por ID
+                        const courses = {};
+                        const topics = {};
+                        const sections = {};
+
+                        // Procesar cursos
+                        coursesData.forEach(course => {
+                            courses[course.id] = course;
+                        });
+
+                        // Procesar temas y extraer secciones
+                        console.log('Procesando temas y extrayendo secciones...');
+                        let sectionCount = 0;
+                        let activitySectionCount = 0;
+                        let activityFoundCount = 0;
+                        let activityNotFoundCount = 0;
+
+                        topicsData.forEach(topic => {
+                            if (!topic.id) {
+                                console.warn('Tema sin ID encontrado:', topic);
+                                return;
+                            }
+
+                            topics[topic.id] = topic;
+                            console.log(`Procesando tema: ${topic.title} (ID: ${topic.id})`);
+
+                            // Extraer secciones
+                            if (topic.sections && Array.isArray(topic.sections)) {
+                                console.log(`  - El tema tiene ${topic.sections.length} secciones`);
+
+                                topic.sections.forEach(section => {
+                                    if (!section.id) {
+                                        console.warn('  - Sección sin ID encontrada:', section);
+                                        return;
+                                    }
+
+                                    sections[section.id] = section;
+                                    sectionCount++;
+                                    console.log(`  - Procesando sección: ${section.title} (ID: ${section.id}, Tipo: ${section.type})`);
+
+                                    // Si es una sección de tipo activity, registrar la actividad
+                                    if (section.type === 'activity' && section.content) {
+                                        activitySectionCount++;
+                                        const activityId = section.content;
+
+                                        // Normalizar el ID de la actividad (quitar prefijos si existen)
+                                        const normalizedActivityId = activityId.replace('activity_', '').replace('activity_data_', '');
+
+                                        // Buscar la actividad en el JSON con diferentes formatos de ID
+                                        let activity = activitiesData[activityId] ||
+                                                      activitiesData[normalizedActivityId] ||
+                                                      activitiesData[`activity_${normalizedActivityId}`] ||
+                                                      activitiesData[`activity_data_${normalizedActivityId}`];
+
+                                        if (activity) {
+                                            // Guardar la actividad en localStorage con diferentes formatos para asegurar compatibilidad
+                                            localStorage.setItem(`activity_${normalizedActivityId}`, JSON.stringify(activity));
+                                            localStorage.setItem(`activity_data_${normalizedActivityId}`, JSON.stringify(activity));
+                                            console.log(`    - Actividad ${normalizedActivityId} guardada en localStorage con múltiples formatos`);
+                                            activityFoundCount++;
+                                        } else {
+                                            console.warn(`    - Actividad ${activityId} (normalizada: ${normalizedActivityId}) no encontrada en el JSON`);
+                                            activityNotFoundCount++;
+                                        }
+                                    }
+                                });
+                            } else {
+                                console.warn(`  - El tema no tiene secciones o no es un array`);
                             }
                         });
+
+                        console.log(`Resumen de procesamiento:`);
+                        console.log(`- Total de temas procesados: ${Object.keys(topics).length}`);
+                        console.log(`- Total de secciones procesadas: ${sectionCount}`);
+                        console.log(`- Secciones de tipo activity: ${activitySectionCount}`);
+                        console.log(`- Actividades encontradas: ${activityFoundCount}`);
+                        console.log(`- Actividades no encontradas: ${activityNotFoundCount}`);
+
+                        // Guardar en el nuevo sistema de persistencia
+                        console.log('Preparando datos para guardar en el sistema de persistencia...');
+
+                        // Extraer solo las actividades únicas (sin duplicados por normalización)
+                        const uniqueActivities = {};
+                        const processedIds = new Set();
+
+                        Object.entries(activitiesData).forEach(([key, activity]) => {
+                            // Extraer el ID normalizado
+                            const normalizedId = key.replace('activity_', '').replace('activity_data_', '');
+
+                            // Si ya procesamos este ID, saltar
+                            if (processedIds.has(normalizedId)) return;
+
+                            // Marcar como procesado
+                            processedIds.add(normalizedId);
+
+                            // Guardar la actividad con su ID normalizado
+                            uniqueActivities[normalizedId] = activity;
+                        });
+
+                        console.log(`Actividades únicas para persistencia: ${Object.keys(uniqueActivities).length}`);
+
+                        const newData = {
+                            persistent: {
+                                courses,
+                                topics,
+                                sections,
+                                activities: uniqueActivities
+                            },
+                            unsynced: {}
+                        };
+
+                        console.log('Estructura de datos preparada:');
+                        console.log(`- Cursos: ${Object.keys(courses).length}`);
+                        console.log(`- Temas: ${Object.keys(topics).length}`);
+                        console.log(`- Secciones: ${Object.keys(sections).length}`);
+                        console.log(`- Actividades: ${Object.keys(activitiesData).length}`);
+
+                        try {
+                            // Guardar en el nuevo sistema de persistencia
+                            const newDataJson = JSON.stringify(newData);
+                            console.log(`Tamaño de los datos a guardar: ${newDataJson.length} caracteres`);
+                            localStorage.setItem('courseData', newDataJson);
+                            console.log('Datos guardados en el nuevo sistema de persistencia');
+
+                            // Verificar que se hayan guardado correctamente
+                            const savedData = localStorage.getItem('courseData');
+                            if (!savedData) {
+                                console.error('Error: Los datos no se guardaron correctamente en localStorage');
+                            } else {
+                                console.log(`Datos verificados en localStorage: ${savedData.length} caracteres`);
+                            }
+
+                            // Guardar en el sistema antiguo para compatibilidad
+                            localStorage.setItem('matematicaweb_courses', JSON.stringify(coursesData));
+                            localStorage.setItem('matematicaweb_topics', JSON.stringify(topicsData));
+                            console.log('Datos guardados en el sistema antiguo para compatibilidad');
+
+                            // Paso adicional: Guardar todas las actividades directamente en localStorage
+                            console.log('Guardando todas las actividades directamente en localStorage...');
+                            let activityCount = 0;
+
+                            // Recorrer todas las actividades únicas
+                            Object.entries(uniqueActivities).forEach(([id, activity]) => {
+                                // Asegurarse de que el ID esté normalizado
+                                const normalizedId = id.replace('activity_', '').replace('activity_data_', '');
+
+                                // Guardar con ambos formatos para asegurar compatibilidad
+                                localStorage.setItem(`activity_${normalizedId}`, JSON.stringify(activity));
+                                localStorage.setItem(`activity_data_${normalizedId}`, JSON.stringify(activity));
+                                activityCount++;
+                            });
+
+                            console.log(`Se guardaron ${activityCount} actividades directamente en localStorage`);
+
+                            // Verificar que se hayan guardado correctamente en el sistema antiguo
+                            const savedCourses = localStorage.getItem('matematicaweb_courses');
+                            const savedTopics = localStorage.getItem('matematicaweb_topics');
+
+                            if (!savedCourses || !savedTopics) {
+                                console.error('Error: Los datos no se guardaron correctamente en el sistema antiguo');
+                            } else {
+                                console.log(`Cursos verificados en sistema antiguo: ${savedCourses.length} caracteres`);
+                                console.log(`Temas verificados en sistema antiguo: ${savedTopics.length} caracteres`);
+                            }
+                        } catch (error) {
+                            console.error('Error al guardar datos en localStorage:', error);
+                            alert('Error al guardar datos en localStorage: ' + error.message);
+                        }
+
+                        // Recargar la página para reflejar los cambios
+                        alert('Datos cargados correctamente desde el repositorio. La página se recargará para mostrar los cambios.');
+                        window.location.reload();
+                    })
+                    .catch((error) => {
+                        console.error('Error al cargar datos desde el repositorio:', error);
+                        alert('Error al cargar datos desde el repositorio: ' + error.message + '\n\nPor favor, inténtelo de nuevo.');
+
+                        // Restaurar las claves esenciales
+                        if (adminSession) localStorage.setItem('admin_session', adminSession);
+                        if (authToken) localStorage.setItem('auth_token', authToken);
+                        if (hideCacheBanner) localStorage.setItem('hideCacheBanner', hideCacheBanner);
+
+                        // Eliminar el indicador de carga en caso de error
+                        const loadingElement = document.querySelector('.bg-white.bg-opacity-75');
+                        if (loadingElement) {
+                            loadingElement.remove();
+                        }
+                    });
                     return true;
                 } catch (error) {
                     // Este bloque catch solo capturará errores en la creación de la promesa, no en su ejecución
                     console.error('Error al iniciar la carga de datos:', error);
-                    alert('Error al iniciar la carga de datos. Por favor, inténtelo de nuevo.');
+                    alert('Error al iniciar la carga de datos: ' + error.message + '\n\nPor favor, inténtelo de nuevo.');
 
                     // Eliminar el indicador de carga en caso de error
                     const loadingElement = document.querySelector('.bg-white.bg-opacity-75');
