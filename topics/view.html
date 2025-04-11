@@ -17,6 +17,9 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             overflow: hidden;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .activity-content {
@@ -308,36 +311,90 @@
             let sectionsHtml = '';
             let sectionCounter = 1;
 
-            // Objeto para agrupar las secciones por su groupId
-            const groupedSections = {};
+            // Crear una estructura ordenada de elementos (secciones y grupos)
+            const allSectionsWithOrder = [];
+            const groupMap = {};
 
-            // Primero identificar todos los grupos
+            // Primero, recopilar todas las secciones no agrupadas
             currentTopic.sections.forEach(section => {
-                if (section.groupId) {
-                    // Si la sección pertenece a un grupo
-                    if (!groupedSections[section.groupId]) {
-                        groupedSections[section.groupId] = {
-                            name: section.groupName || 'Grupo sin nombre',
-                            sections: []
-                        };
-                    }
-                    groupedSections[section.groupId].sections.push(section);
+                if (!section.groupId) {
+                    allSectionsWithOrder.push({
+                        type: 'section',
+                        data: section,
+                        order: section.order || 0
+                    });
                 }
             });
 
-            // Ahora procesar todas las secciones
-            currentTopic.sections.forEach((section, index) => {
-                // Si la sección ya está procesada como parte de un grupo, la saltamos
-                if (section.groupId && section._processed) return;
+            // Luego, recopilar y organizar todos los grupos
+            currentTopic.sections.forEach(section => {
+                if (section.groupId) {
+                    if (!groupMap[section.groupId]) {
+                        groupMap[section.groupId] = {
+                            id: section.groupId,
+                            name: section.groupName || 'Grupo sin nombre',
+                            sections: [],
+                            order: section.order || 0
+                        };
+                    } else if ((section.order || 0) < groupMap[section.groupId].order) {
+                        // Actualizar el orden del grupo si encontramos una sección con orden menor
+                        groupMap[section.groupId].order = section.order || 0;
+                    }
 
-                if (section.groupId && groupedSections[section.groupId]) {
+                    // Agregar la sección al grupo
+                    groupMap[section.groupId].sections.push(section);
+                }
+            });
+
+            // Ordenar las secciones dentro de cada grupo
+            Object.values(groupMap).forEach(group => {
+                group.sections.sort((a, b) => (a.order || 0) - (b.order || 0));
+            });
+
+            // Agregar los grupos a la lista de elementos
+            Object.values(groupMap).forEach(group => {
+                allSectionsWithOrder.push({
+                    type: 'group',
+                    data: group,
+                    order: group.order
+                });
+            });
+
+            // Ordenar todos los elementos por su orden
+            allSectionsWithOrder.sort((a, b) => a.order - b.order);
+
+            // Procesar todas las secciones y grupos en el orden correcto
+            allSectionsWithOrder.forEach(item => {
+                if (item.type === 'section') {
+                    // Sección individual normal
+                    const section = item.data;
+                    sectionsHtml += `
+                        <div class="section-block" id="section-${section.id}">
+                            <div class="section-header" role="button" onclick="toggleSection(${section.id})">
+                                <div class="section-number">${sectionCounter++}</div>
+                                <h2 class="section-title">${section.title}</h2>
+                                <div class="section-controls">
+                                    <div class="section-type-badge">
+                                        <i class="${getSectionIcon(section.type).class} ${getSectionIcon(section.type).icon}" style="color: ${getSectionIcon(section.type).color};"></i> ${getTypeName(section.type)}
+                                    </div>
+                                    <button class="btn btn-sm btn-link section-toggle" aria-label="Expandir/Colapsar sección">
+                                        <i class="fas fa-chevron-down" id="toggle-icon-${section.id}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="section-content" id="section-content-${section.id}" style="display: none;">
+                                ${renderSectionContent(section)}
+                            </div>
+                        </div>
+                    `;
+                } else if (item.type === 'group') {
                     // Es parte de un grupo, mostrar el grupo
-                    const group = groupedSections[section.groupId];
+                    const group = item.data;
 
                     // Crear el encabezado del grupo
                     sectionsHtml += `
-                        <div class="section-block section-group" id="section-group-${section.groupId}">
-                            <div class="section-header" role="button" onclick="toggleSection('group-${section.groupId}')">
+                        <div class="section-block section-group" id="section-group-${group.id}">
+                            <div class="section-header" role="button" onclick="toggleSection('group-${group.id}')">
                                 <div class="section-number">${sectionCounter++}</div>
                                 <h2 class="section-title">${group.name}</h2>
                                 <div class="section-controls">
@@ -345,11 +402,11 @@
                                         <i class="fas fa-layer-group"></i> Grupo
                                     </div>
                                     <button class="btn btn-sm btn-link section-toggle" aria-label="Expandir/Colapsar grupo">
-                                        <i class="fas fa-chevron-down" id="toggle-icon-group-${section.groupId}"></i>
+                                        <i class="fas fa-chevron-down" id="toggle-icon-group-${group.id}"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="section-content" id="section-content-group-${section.groupId}" style="display: none;">
+                            <div class="section-content" id="section-content-group-${group.id}" style="display: none;">
                     `;
 
                     // Agregar el contenido de todas las secciones del grupo
@@ -539,34 +596,42 @@
                     if (activityData) {
                         // Generar HTML para la actividad
                         contentHtml = `
-                            <div class="activity-container">
-                                <div id="${containerId}" class="activity-content">
-                                    <div class="activity-header">
-                                        <h3>${activityData.title || 'Actividad sin título'}</h3>
-                                        <p class="activity-description">${activityData.description || ''}</p>
-                                    </div>
-                                    <form id="activity-form-${section.id}" class="activity-form">
-                                        ${renderActivityQuestions(activityData, section.id)}
-                                        <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
-                                            <button type="button" class="btn btn-success btn-lg" onclick="checkActivityAnswers('${section.id}', '${activityId}')">
-                                                <i class="fas fa-paper-plane me-2"></i> Enviar respuestas
-                                            </button>
+                            <table class="activity-container" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <div id="${containerId}" class="activity-content">
+                                            <div class="activity-header">
+                                                <h3>${activityData.title || 'Actividad sin título'}</h3>
+                                                <p class="activity-description">${activityData.description || ''}</p>
+                                            </div>
+                                            <form id="activity-form-${section.id}" class="activity-form">
+                                                ${renderActivityQuestions(activityData, section.id)}
+                                                <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
+                                                    <button type="button" class="btn btn-success btn-lg" onclick="checkActivityAnswers('${section.id}', '${activityId}')">
+                                                        <i class="fas fa-paper-plane me-2"></i> Enviar respuestas
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <div id="activity-feedback-${section.id}" class="activity-feedback mt-3" style="display:none;"></div>
                                         </div>
-                                    </form>
-                                    <div id="activity-feedback-${section.id}" class="activity-feedback mt-3" style="display:none;"></div>
-                                </div>
-                            </div>
+                                    </td>
+                                </tr>
+                            </table>
                         `;
                     } else {
                         // Mostrar mensaje de error si no se encuentra la actividad
                         contentHtml = `
-                            <div class="activity-container">
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>Actividad no encontrada</strong>
-                                    <p>No se pudo cargar la actividad con ID: ${activityId}</p>
-                                </div>
-                            </div>
+                            <table class="activity-container" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Actividad no encontrada</strong>
+                                            <p>No se pudo cargar la actividad con ID: ${activityId}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
                         `;
                     }
                     break;
@@ -1095,8 +1160,8 @@
 
             activityData.questions.forEach((question, index) => {
                 questionsHtml += `
-                    <div class="question-card mb-4" data-question-index="${index}">
-                        <p class="fw-bold">${index + 1}. ${question.text || 'Sin texto'}</p>
+                    <div class="question-card mb-3" data-question-index="${index}">
+                        <p class="fw-bold mb-2">${index + 1}. ${question.text || 'Sin texto'}</p>
                 `;
 
                 // Renderizar opciones según el tipo de actividad
@@ -1146,7 +1211,7 @@
                         questionsHtml += `
                             <div class="form-group">
                                 <input type="text" class="form-control" name="question_${sectionId}_${index}"
-                                       placeholder="Tu respuesta">
+                                       placeholder="Tu respuesta" style="max-width: 400px;">
                             </div>
                         `;
                         break;
