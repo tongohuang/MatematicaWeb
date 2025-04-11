@@ -1,17 +1,17 @@
 <!-- Banner de actualización de caché -->
 <div class="container mt-3" id="cacheUpdateBanner">
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
         <div class="d-flex align-items-center">
             <div class="me-3">
-                <i class="fas fa-sync-alt fa-lg"></i>
+                <i class="fas fa-exclamation-triangle fa-lg"></i>
             </div>
             <div>
-                <h5 class="alert-heading mb-1">¿No ves el contenido más reciente?</h5>
-                <p class="mb-0">Es posible que estés viendo una versión anterior almacenada en caché. Haz clic en el botón para cargar la última versión.</p>
+                <h5 class="alert-heading mb-1">IMPORTANTE: ¿No ves el contenido más reciente?</h5>
+                <p class="mb-0">Si acabas de acceder al sitio o no ves los últimos cambios, es necesario limpiar la caché. Haz clic en el botón para cargar la última versión.</p>
             </div>
             <div class="ms-auto">
-                <button type="button" class="btn btn-primary" onclick="window.CacheControl.clearCache(true)">
-                    <i class="fas fa-sync-alt me-2"></i>Actualizar sitio
+                <button type="button" class="btn btn-danger" onclick="window.CacheControl.clearCache(true, true)">
+                    <i class="fas fa-sync-alt me-2"></i>Forzar actualización
                 </button>
             </div>
         </div>
@@ -22,14 +22,37 @@
 <style>
     /* Estilos para el banner de caché */
     #cacheUpdateBanner .alert {
-        border-left: 4px solid #0dcaf0;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-left: 4px solid #ffc107;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        animation: pulse 2s infinite;
     }
-    #cacheUpdateBanner .btn-primary {
+    #cacheUpdateBanner .btn-danger {
         transition: all 0.2s;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    #cacheUpdateBanner .btn-primary:hover {
+    #cacheUpdateBanner .btn-danger:hover {
         transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    #cacheUpdateBanner .fa-exclamation-triangle {
+        color: #dc3545;
+    }
+    #cacheUpdateBanner .alert-heading {
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        50% {
+            box-shadow: 0 4px 20px rgba(220,53,69,0.3);
+        }
+        100% {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
     }
 </style>
 
@@ -38,9 +61,38 @@
     document.addEventListener('DOMContentLoaded', () => {
         const cacheUpdateBanner = document.getElementById('cacheUpdateBanner');
         const hideCacheBanner = localStorage.getItem('hideCacheBanner') === 'true';
-        
-        if (hideCacheBanner && cacheUpdateBanner) {
-            cacheUpdateBanner.style.display = 'none';
+        const lastVisit = localStorage.getItem('lastVisit');
+        const now = Date.now();
+        const oneDayAgo = now - (24 * 60 * 60 * 1000); // 24 horas en milisegundos
+
+        // Guardar la fecha de la última visita
+        localStorage.setItem('lastVisit', now.toString());
+
+        // Mostrar el banner si:
+        // 1. El usuario no lo ha ocultado explícitamente, o
+        // 2. Ha pasado más de un día desde la última visita
+        const shouldShow = !hideCacheBanner || !lastVisit || parseInt(lastVisit) < oneDayAgo;
+
+        if (cacheUpdateBanner) {
+            cacheUpdateBanner.style.display = shouldShow ? 'block' : 'none';
+
+            // Si es una nueva visita, resetear la preferencia de ocultar el banner
+            if (!lastVisit || parseInt(lastVisit) < oneDayAgo) {
+                localStorage.removeItem('hideCacheBanner');
+            }
+        }
+
+        // Verificar si estamos en Netlify y forzar la limpieza de caché automáticamente
+        // si es la primera visita o ha pasado más de un día
+        const isNetlify = window.location.hostname.includes('netlify.app');
+        if (isNetlify && (!lastVisit || parseInt(lastVisit) < oneDayAgo)) {
+            console.log('Primera visita o visita después de un día, limpiando caché automáticamente...');
+            // Esperar un momento para que la página se cargue completamente
+            setTimeout(() => {
+                if (window.CacheControl) {
+                    window.CacheControl.clearCache(false, true);
+                }
+            }, 3000);
         }
     });
 </script>

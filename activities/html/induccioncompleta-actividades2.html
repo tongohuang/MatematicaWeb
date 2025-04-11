@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inducción Interactiva con Escritura</title>
+    <title>Inducción Interactiva con Escritura y Pistas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos anteriores (reutilizados y con adiciones) */
+        /* Estilos completos */
         :root {
             --primary: #4f46e5; /* Indigo */
             --primary-light: #6366f1;
@@ -24,28 +24,28 @@
         }
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .gradient-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
-        .card { transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); margin-bottom: 2rem; }
+        .card { transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); margin-bottom: 2rem; background-color: white; border-radius: 0.75rem; /* rounded-xl */ overflow: hidden; }
         .card:hover { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); transform: translateY(-2px); }
-        .step-indicator { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; position: absolute; top: -15px; left: 15px; }
+        .step-indicator { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold; position: absolute; top: -15px; left: 15px; z-index: 5; }
         .step-indicator-primary { background-color: var(--primary); }
         .step-indicator-secondary { background-color: var(--secondary); }
         .step-indicator-tertiary { background-color: var(--tertiary); }
 
         /* Drag & Drop Styles */
-        .options-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; min-height: 40px; /* Para evitar colapso si las opciones son pequeñas */ }
-        .drop-zone { min-height: 60px; border: 2px dashed #d1d5db; border-radius: 8px; transition: all 0.3s ease; background-color: #f9fafb; padding: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
+        .options-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; min-height: 40px; }
+        .drop-zone { min-height: 60px; border: 2px dashed var(--input-border); border-radius: 8px; transition: all 0.3s ease; background-color: #f9fafb; padding: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
         .drop-zone.active { border-color: var(--primary); background-color: rgba(79, 70, 229, 0.05); }
         .drop-placeholder { color: #9ca3af; font-style: italic; text-align: center; width: 100%; font-size: 0.9em; }
-        .draggable { display: inline-block; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; /* Un poco más compacto */ margin: 2px; cursor: grab; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); transition: all 0.2s ease; user-select: none; touch-action: none; font-size: 0.95em; /* Ligeramente más pequeño */ }
+        .draggable { display: inline-block; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; margin: 2px; cursor: grab; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); transition: all 0.2s ease; user-select: none; touch-action: none; font-size: 0.95em; }
         .draggable:hover { border-color: var(--primary); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        .draggable.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 100; }
-        .dropped-item { display: inline-block; background-color: white; border: 1px solid var(--primary); border-radius: 6px; padding: 6px 10px; margin: 0; /* Sin margen extra */ position: relative; font-size: 0.95em; }
+        .draggable.dragging { opacity: 0.8; transform: scale(1.05); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 1000; /* Ensure dragging on top */ }
+        .dropped-item { display: inline-block; background-color: white; border: 1px solid var(--primary); border-radius: 6px; padding: 6px 10px; margin: 0; position: relative; font-size: 0.95em; }
         .delete-btn { position: absolute; top: -9px; right: -9px; width: 20px; height: 20px; border-radius: 50%; background-color: var(--danger); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10; border: 1px solid white; }
         .dropped-item:hover .delete-btn { opacity: 1; }
 
         /* Text Input Styles */
         .input-group { margin-top: 0.75rem; margin-bottom: 0.5rem; }
-        .input-label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151; }
+        .input-label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151; font-size: 0.9em; }
         .text-input {
             width: 100%;
             padding: 0.5rem 0.75rem;
@@ -53,11 +53,13 @@
             border-radius: 6px;
             font-size: 1em;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            line-height: 1.5; /* Ensure text is vertically centered */
         }
+        .text-input.w-1\/2 { width: 50%; } /* Utility class if needed */
         .text-input:focus {
             outline: none;
             border-color: var(--input-focus-border);
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); /* Focus ring */
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
         }
         .symbol-buttons { margin-top: 0.5rem; display: flex; gap: 0.25rem; flex-wrap: wrap; }
         .symbol-btn {
@@ -66,7 +68,7 @@
             border: none;
             border-radius: 4px;
             padding: 0.25rem 0.6rem;
-            font-family: 'Courier New', Courier, monospace; /* Monospace for symbols */
+            font-family: 'Courier New', Courier, monospace;
             font-size: 1em;
             font-weight: bold;
             cursor: pointer;
@@ -74,19 +76,31 @@
         }
         .symbol-btn:hover { background-color: #d1d5db; }
 
-        /* Feedback & General Styles */
+        /* Feedback & Hint Styles */
         .math-expression { background-color: #f3f4f6; border-left: 4px solid var(--primary); padding: 10px 15px; border-radius: 4px; margin: 10px 0; overflow-x: auto; }
-        .hint-box { background-color: #fffbeb; border-left: 4px solid var(--tertiary); padding: 12px; border-radius: 4px; margin: 15px 0; font-size: 0.9em; }
-        .feedback { font-size: 0.9em; padding: 8px 12px; border-radius: 4px; margin-top: 0.5rem; } /* Clase genérica para feedback */
+        .feedback { font-size: 0.85em; padding: 8px 12px; border-radius: 4px; margin-top: 0.5rem; line-height: 1.4; }
         .feedback-correct { background-color: #ecfdf5; border-left: 4px solid var(--secondary); color: #065f46; }
         .feedback-incorrect { background-color: #fef2f2; border-left: 4px solid var(--danger); color: #991b1b; }
         .hidden { display: none; }
+        .hint-box {
+            background-color: #fffbeb; /* Fondo amarillo pálido */
+            border-left: 4px solid var(--tertiary); /* Borde ámbar */
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.85em;
+            color: #78350f; /* Texto oscuro ámbar */
+        }
+        .hint-box.hidden { display: none; }
+        .input-group .hint-box { margin-top: 0.75rem; } /* Specific margin for hints below inputs */
+
+        /* Visual Highlight & Steps */
         .visual-highlight { background-color: #eff6ff; border-left: 4px solid var(--info); padding: 12px; border-radius: 4px; margin: 10px 0; position: relative; padding-top: 20px; }
         .visual-highlight::before { content: "Aplicando Hipótesis Inductiva"; position: absolute; top: -10px; left: 10px; background-color: white; padding: 0 10px; font-size: 0.75rem; color: var(--info); font-weight: bold; }
-        .sub-step { padding-left: 1.5rem; position: relative; margin-bottom: 1rem; border-left: 2px solid #e5e7eb; margin-left: 1rem; }
+        .proof-steps { counter-reset: substep; margin-left: 1rem; padding-top: 0.5rem; }
+        .sub-step { padding-left: 1.5rem; position: relative; margin-bottom: 1.25rem; border-left: 2px solid #e5e7eb; }
         .sub-step::before { content: counter(substep); counter-increment: substep; position: absolute; left: -11px; top: 0; background-color: #d1d5db; color: var(--dark); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
-        .proof-steps { counter-reset: substep; margin-left: 1rem; }
-        .proof-steps .sub-step:first-child { margin-top: 1rem; }
+        .sub-step:first-child { margin-top: 1rem; }
 
         /* Progress Tracker */
         .progress-tracker { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); z-index: 50; }
@@ -95,17 +109,18 @@
         .progress-step.completed { background-color: var(--secondary); }
         .progress-step:hover::after { content: attr(data-title); position: absolute; left: 20px; top: 50%; transform: translateY(-50%); white-space: nowrap; background-color: var(--dark); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
 
-        .animate-pulse-border { animation: pulse-border 1.5s infinite; }
+        /* Animations */
+        .animate-pulse-border { animation: pulse-border 1.5s infinite; border: 2px dashed var(--danger) !important; /* Override border for emphasis */ }
         @keyframes pulse-border {
-            0% { border-color: var(--danger); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
             70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-            100% { border-color: var(--danger); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-gray-100"> <!-- Light gray background -->
     <!-- Progress Tracker -->
     <div class="progress-tracker hidden md:block">
         <div class="progress-step active" data-title="Introducción" onclick="scrollToSection('introduction')"></div>
@@ -117,7 +132,7 @@
     <!-- Header -->
     <header class="gradient-header text-white py-8 shadow-lg">
         <div class="container mx-auto px-4">
-            <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">Inducción Interactiva con Escritura</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">Inducción Completa: Actividades interactivas</h1>
             <p class="text-lg text-center text-indigo-100 max-w-2xl mx-auto">
                 Combina selección y escritura para dominar las demostraciones por inducción.
             </p>
@@ -125,8 +140,8 @@
     </header>
 
     <main class="container mx-auto px-4 py-8">
-        <!-- Introduction Section (Condensed) -->
-        <section id="introduction" class="mb-12 fade-in card bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <!-- Introduction Section -->
+        <section id="introduction" class="card fade-in p-6">
              <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <i class="fas fa-book-open text-indigo-500 mr-3"></i>
                 Recordatorio: Inducción y Escritura
@@ -142,7 +157,7 @@
         <!-- Activity 1: Geometric Sum (Powers of 2) -->
         <section id="activity-1" class="card fade-in">
             <div class="bg-indigo-600 text-white px-6 py-4 rounded-t-xl">
-                <h2 class="text-xl font-bold flex items-center"><i class="fas fa-chart-line mr-3"></i>Actividad 1: Suma de Potencias de 2</h2>
+                <h2 class="text-xl font-bold flex items-center"><i class="fas fa-chart-line mr-3"></i>Actividad 1: Suma de las primeras n potencias de base 2</h2>
             </div>
             <div class="p-6">
                 <div class="mb-6">
@@ -154,20 +169,22 @@
                     <div class="step-indicator step-indicator-primary">1</div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Caso Base (\(n=1\))</h3>
                     <p class="text-gray-700 mb-2 ml-10">Verifica la igualdad para \(n=1\).</p>
-                    <div class="ml-10">
+                    <div class="ml-10 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Input for Base Case Calculation -->
                         <div class="input-group">
-                            <label for="a1-base-lhs" class="input-label text-sm">Lado izquierdo (\(1 + \dots + 2^{n-1}\)) para \(n=1\):</label>
-                            <input type="text" id="a1-base-lhs" class="text-input text-sm w-1/2" data-correct-answer="1">
+                            <label for="a1-base-lhs" class="input-label">Lado izquierdo para \(n=1\):</label>
+                            <input type="text" id="a1-base-lhs" class="text-input" data-correct-answer="1" data-attempt-count="0">
                             <div id="feedback-a1-base-lhs" class="feedback hidden"></div>
+                            <!-- No hints needed for simple calculation -->
                         </div>
                         <div class="input-group">
-                             <label for="a1-base-rhs" class="input-label text-sm">Lado derecho (\(2^n - 1\)) para \(n=1\):</label>
-                            <input type="text" id="a1-base-rhs" class="text-input text-sm w-1/2" data-correct-answer="1">
+                             <label for="a1-base-rhs" class="input-label">Lado derecho para \(n=1\):</label>
+                            <input type="text" id="a1-base-rhs" class="text-input" data-correct-answer="1" data-attempt-count="0">
                             <div id="feedback-a1-base-rhs" class="feedback hidden"></div>
+                             <!-- No hints needed for simple calculation -->
                         </div>
-                         <p class="text-sm text-gray-600 mt-3">¿Se cumple la igualdad para \(n=1\)? (Sí/No)</p>
                     </div>
+                     <p class="text-sm text-gray-600 mt-3 ml-10">¿Se cumple la igualdad para \(n=1\)? (Debería ser Sí si los cálculos son correctos)</p>
                 </div>
 
                 <!-- Step 2: Inductive Hypothesis -->
@@ -179,7 +196,7 @@
                          <div class="drop-zone mb-3" id="drop-a1-hypo" data-placeholder="Arrastra la hipótesis para n=k">
                             <span class="drop-placeholder">Arrastra la hipótesis para n=k</span>
                         </div>
-                        <div class="options-container" id="options-a1-hypo">
+                        <div class="options-container" id="options-a1-hypo"> <!-- Draggables se barajarán aquí -->
                             <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Exacto! Esta es la suposición que usaremos.">\(1 + 2 + \cdots + 2^{k-1} = 2^k - 1\)</div>
                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. El último término de la suma debe ser para el índice k-1.">\(1 + 2 + \cdots + 2^k = 2^k - 1\)</div>
                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. La hipótesis se plantea para k, no para k+1.">\(1 + 2 + \cdots + 2^k = 2^{k+1} - 1\)</div>
@@ -200,7 +217,7 @@
                                  <div class="drop-zone mb-3" id="drop-a1-apply-hypo" data-placeholder="Arrastra el resultado de aplicar la H.I.">
                                     <span class="drop-placeholder">Arrastra el resultado de aplicar la H.I.</span>
                                 </div>
-                                <div class="options-container" id="options-a1-apply-hypo">
+                                <div class="options-container" id="options-a1-apply-hypo"> <!-- Draggables se barajarán aquí -->
                                     <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Bien! Reemplazaste la suma usando la H.I."> \((2^k - 1) + 2^k\)</div>
                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Cuidado, la H.I. dice que la suma es 2^k - 1.">\(2^k + 2^k\)</div>
                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Estás cerca, pero la H.I. se aplica a la suma *hasta* 2^(k-1).">\( (2^{k+1} - 1) \)</div>
@@ -211,8 +228,14 @@
                         <div class="sub-step">
                             <h4 class="font-medium text-gray-700 mb-2">Simplifica algebraicamente \((2^k - 1) + 2^k\):</h4>
                              <div class="input-group">
-                                <label for="a1-simplify-input" class="input-label text-sm">Escribe la expresión simplificada (usa '^' para potencias, ej. 2^(k+1)-1):</label>
-                                <input type="text" id="a1-simplify-input" class="text-input text-sm" data-correct-answer="2^(k+1)-1">
+                                <label for="a1-simplify-input" class="input-label">Escribe la expresión simplificada (usa '^' para potencias, ej. 2^(k+1)-1):</label>
+                                <input type="text"
+                                       id="a1-simplify-input"
+                                       class="text-input"
+                                       data-correct-answer="2^(k+1)-1"
+                                       data-attempt-count="0"
+                                       data-hint1="Pista: Agrupa los términos \(2^k\). Recuerda que \(x+x=2x\)."
+                                       data-hint2="Pista Detallada: \( (2^k - 1) + 2^k = 2^k + 2^k - 1 = 2 \cdot (2^k) - 1 \). Luego usa propiedades de exponentes: \(2^1 \cdot 2^k = ?\).">
                                 <div class="symbol-buttons">
                                     <button class="symbol-btn" data-symbol="^">^</button>
                                     <button class="symbol-btn" data-symbol="(">(</button>
@@ -220,16 +243,13 @@
                                     <button class="symbol-btn" data-symbol="+">+</button>
                                     <button class="symbol-btn" data-symbol="-">-</button>
                                     <button class="symbol-btn" data-symbol="k">k</button>
-                                     <button class="symbol-btn" data-symbol="1">1</button>
-                                     <button class="symbol-btn" data-symbol="2">2</button>
+                                    <button class="symbol-btn" data-symbol="1">1</button>
+                                    <button class="symbol-btn" data-symbol="2">2</button>
                                 </div>
                                 <div id="feedback-a1-simplify-input" class="feedback hidden"></div>
+                                <div id="hint-a1-simplify-input" class="hint-box hidden"></div> <!-- Contenedor para pista -->
                              </div>
                         </div>
-                    </div>
-                     <p class="text-gray-700 mt-4 ml-10">Si tu simplificación coincide con \(2^{k+1} - 1\), has completado la demostración.</p>
-                     <div class="hint-box ml-10">
-                        <p class="text-amber-800 font-medium"><i class="fas fa-lightbulb mr-2"></i>Pista: Recuerda que \(x + x = 2x\) y \(2 \cdot 2^k = 2^{k+1}\).</p>
                     </div>
                 </div>
 
@@ -256,11 +276,11 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Caso Base (\(n=1\))</h3>
                     <div class="ml-10">
                         <div class="input-group">
-                            <label for="a2-base-value" class="input-label text-sm">Calcula \(n^3 + 2n\) para \(n=1\):</label>
-                            <input type="text" id="a2-base-value" class="text-input text-sm w-1/2" data-correct-answer="3">
+                            <label for="a2-base-value" class="input-label">Calcula \(n^3 + 2n\) para \(n=1\):</label>
+                            <input type="text" id="a2-base-value" class="text-input w-1/2" data-correct-answer="3" data-attempt-count="0">
                             <div id="feedback-a2-base-value" class="feedback hidden"></div>
                         </div>
-                        <p class="text-sm text-gray-600 mt-3">¿Es este valor divisible por 3? (Sí/No)</p>
+                        <p class="text-sm text-gray-600 mt-3">¿Es este valor divisible por 3? (Debería ser Sí)</p>
                     </div>
                  </div>
 
@@ -273,7 +293,7 @@
                          <div class="drop-zone mb-3" id="drop-a2-hypo" data-placeholder="Arrastra la forma matemática de la H.I.">
                             <span class="drop-placeholder">Arrastra la forma matemática de la H.I.</span>
                         </div>
-                        <div class="options-container" id="options-a2-hypo">
+                        <div class="options-container" id="options-a2-hypo"> <!-- Draggables se barajarán aquí -->
                             <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Bien! Esto significa que k³+2k = 3m para algún entero m.">\(k^3 + 2k = 3m\), para algún entero \(m\)</div>
                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Esto es la tesis, no la hipótesis.">\((k+1)^3 + 2(k+1)\) es divisible por 3</div>
                             <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La hipótesis es sobre divisibilidad por 3, no igualdad a 3.">\(k^3 + 2k = 3\)</div>
@@ -292,8 +312,14 @@
                         <div class="sub-step">
                             <h4 class="font-medium text-gray-700 mb-2">Expande \((k+1)^3 + 2(k+1)\).</h4>
                             <div class="input-group">
-                                <label for="a2-expand-input" class="input-label text-sm">Escribe la expresión expandida y simplificada (ej. k^3+3k^2+5k+3):</label>
-                                <input type="text" id="a2-expand-input" class="text-input text-sm" data-correct-answer="k^3+3k^2+5k+3">
+                                <label for="a2-expand-input" class="input-label">Escribe la expresión expandida y simplificada (ej. k^3+3k^2+5k+3):</label>
+                                <input type="text"
+                                       id="a2-expand-input"
+                                       class="text-input"
+                                       data-correct-answer="k^3+3k^2+5k+3"
+                                       data-attempt-count="0"
+                                       data-hint1="Pista: Usa la fórmula del binomio al cubo: \((a+b)^3 = a^3 + 3a^2b + 3ab^2 + b^3\) y distribuye el \(2(k+1)\)."
+                                       data-hint2="Pista Detallada: \((k+1)^3 = k^3 + 3k^2 + 3k + 1\). Suma \(2k+2\). Agrupa términos semejantes.">
                                  <div class="symbol-buttons">
                                     <button class="symbol-btn" data-symbol="^">^</button>
                                     <button class="symbol-btn" data-symbol="+">+</button>
@@ -303,6 +329,7 @@
                                     <button class="symbol-btn" data-symbol="5">5</button>
                                 </div>
                                 <div id="feedback-a2-expand-input" class="feedback hidden"></div>
+                                <div id="hint-a2-expand-input" class="hint-box hidden"></div> <!-- Contenedor para pista -->
                             </div>
                         </div>
                         <div class="sub-step">
@@ -312,7 +339,7 @@
                                 <div class="drop-zone mb-3" id="drop-a2-regroup" data-placeholder="Arrastra la forma reagrupada">
                                     <span class="drop-placeholder">Arrastra la forma reagrupada</span>
                                 </div>
-                                <div class="options-container" id="options-a2-regroup">
+                                <div class="options-container" id="options-a2-regroup"> <!-- Draggables se barajarán aquí -->
                                     <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Excelente! Separaste (k³+2k) y agrupaste el resto.">\((k^3 + 2k) + (3k^2 + 3k + 3)\)</div>
                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. Revisa los términos restantes al sacar k³+2k.">\((k^3 + 2k) + (3k^2 + 5k + 3)\)</div>
                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="No has aislado k³+2k. El objetivo es usar la H.I.">\( k^3 + 3k^2 + 5k + 3 \)</div>
@@ -325,15 +352,19 @@
                              <p class="text-sm text-gray-600 mb-2">El primer término \((k^3+2k)\) es divisible por 3 por la H.I.</p>
                              <p class="text-sm text-gray-600 mb-2">El segundo término \((3k^2+3k+3)\) es divisible por 3 porque...</p>
                              <div class="input-group">
-                                <label for="a2-divisibility-reason" class="input-label text-sm">¿Cuál es la razón principal por la que \(3k^2+3k+3\) es divisible por 3? (Escribe brevemente)</label>
-                                <input type="text" id="a2-divisibility-reason" class="text-input text-sm" data-correct-answer="factor comun 3"> <!-- Aceptaremos variaciones simples -->
+                                <label for="a2-divisibility-reason" class="input-label">¿Cuál es la razón principal por la que \(3k^2+3k+3\) es divisible por 3? (Escribe brevemente)</label>
+                                <input type="text"
+                                       id="a2-divisibility-reason"
+                                       class="text-input"
+                                       data-correct-answer="factor comun 3"
+                                       data-attempt-count="0"
+                                       data-hint1="Pista: Observa cada término en \(3k^2+3k+3\). ¿Tienen algo en común numéricamente?"
+                                       data-hint2="Pista Detallada: Puedes sacar <strong>factor común 3</strong>: \(3k^2+3k+3 = 3(k^2+k+1)\). Cualquier entero multiplicado por 3 es divisible por 3.">
                                 <div id="feedback-a2-divisibility-reason" class="feedback hidden"></div>
+                                <div id="hint-a2-divisibility-reason" class="hint-box hidden"></div> <!-- Contenedor para pista -->
                              </div>
                              <p class="text-sm text-gray-600 mt-3">Como ambas partes son divisibles por 3, su suma también lo es.</p>
                         </div>
-                    </div>
-                     <div class="hint-box ml-10">
-                        <p class="text-amber-800 font-medium"><i class="fas fa-lightbulb mr-2"></i>Pista: Para la divisibilidad de la segunda parte, busca un factor común obvio en \(3k^2+3k+3\).</p>
                     </div>
                  </div>
 
@@ -358,19 +389,19 @@
                  <div class="relative bg-gray-50 rounded-lg p-5 mb-6 border border-gray-200">
                     <div class="step-indicator step-indicator-tertiary">1</div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Caso Base (\(n=4\))</h3>
-                     <div class="ml-10">
+                     <div class="ml-10 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="input-group">
-                            <label for="a3-base-lhs" class="input-label text-sm">Calcula \(n!\) para \(n=4\):</label>
-                            <input type="text" id="a3-base-lhs" class="text-input text-sm w-1/2" data-correct-answer="24">
+                            <label for="a3-base-lhs" class="input-label">Calcula \(n!\) para \(n=4\):</label>
+                            <input type="text" id="a3-base-lhs" class="text-input" data-correct-answer="24" data-attempt-count="0">
                             <div id="feedback-a3-base-lhs" class="feedback hidden"></div>
                         </div>
                          <div class="input-group">
-                            <label for="a3-base-rhs" class="input-label text-sm">Calcula \(2^n\) para \(n=4\):</label>
-                            <input type="text" id="a3-base-rhs" class="text-input text-sm w-1/2" data-correct-answer="16">
+                            <label for="a3-base-rhs" class="input-label">Calcula \(2^n\) para \(n=4\):</label>
+                            <input type="text" id="a3-base-rhs" class="text-input" data-correct-answer="16" data-attempt-count="0">
                             <div id="feedback-a3-base-rhs" class="feedback hidden"></div>
                         </div>
-                        <p class="text-sm text-gray-600 mt-3">¿Se cumple la desigualdad \(n! > 2^n\) para \(n=4\)? (Sí/No)</p>
                     </div>
+                    <p class="text-sm text-gray-600 mt-3 ml-10">¿Se cumple la desigualdad \(n! > 2^n\) para \(n=4\)? (Debería ser Sí)</p>
                  </div>
 
                 <!-- Step 2: Inductive Hypothesis -->
@@ -378,8 +409,8 @@
                     <div class="step-indicator step-indicator-tertiary">2</div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 ml-10">Hipótesis Inductiva</h3>
                     <p class="text-gray-700 mb-4 ml-10">Suponemos que \(k! > 2^k\) para un entero \(k \ge 4\).</p>
-                    <div class="ml-10"> <!-- No drag/drop here, stated directly -->
-                         <p class="math-expression bg-indigo-50 border-indigo-200">Hipótesis: \(k! > 2^k\) (para \(k \ge 4\))</p>
+                    <div class="ml-10">
+                         <p class="math-expression bg-amber-50 border-amber-200">Hipótesis: \(k! > 2^k\) (para \(k \ge 4\))</p>
                     </div>
                  </div>
 
@@ -394,7 +425,7 @@
                             <div class="drop-zone mb-3" id="drop-a3-rewrite" data-placeholder="Arrastra la reescritura de (k+1)!">
                                 <span class="drop-placeholder">Arrastra la reescritura de (k+1)!</span>
                             </div>
-                            <div class="options-container" id="options-a3-rewrite">
+                            <div class="options-container" id="options-a3-rewrite"> <!-- Draggables se barajarán aquí -->
                                 <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Exacto! Por definición de factorial.">\((k+1)! = (k+1) \cdot k!\)</div>
                                 <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. k! no es k.">\((k+1)! = (k+1) \cdot k\)</div>
                                 <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Incorrecto. (k+1)! no es k! + 1.">\((k+1)! = k! + 1\)</div>
@@ -408,7 +439,7 @@
                                 <div class="drop-zone mb-3" id="drop-a3-apply-hypo" data-placeholder="Arrastra la desigualdad resultante">
                                     <span class="drop-placeholder">Arrastra la desigualdad resultante</span>
                                 </div>
-                                <div class="options-container" id="options-a3-apply-hypo">
+                                <div class="options-container" id="options-a3-apply-hypo"> <!-- Draggables se barajarán aquí -->
                                     <div class="draggable" draggable="true" data-value="correct" data-feedback="¡Bien! Como k! > 2^k y k+1 > 0, la desigualdad se mantiene al multiplicar.">\((k+1)! = (k+1) \cdot k! > (k+1) \cdot 2^k\)</div>
                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="La desigualdad debe mantenerse (>), no ser igualdad.">\((k+1)! = (k+1) \cdot k! = (k+1) \cdot 2^k\)</div>
                                     <div class="draggable" draggable="true" data-value="incorrect" data-feedback="Aplicaste la H.I. a (k+1)! directamente.">\((k+1)! > 2^{k+1}\)</div>
@@ -418,20 +449,34 @@
                             </div>
                          </div>
                          <div class="sub-step">
-                             <h4 class="font-medium text-gray-700 mb-2">Compara \((k+1) \cdot 2^k\) con el objetivo \(2^{k+1}\):</h4>
-                             <p class="text-sm text-gray-600 mb-2">Tenemos \((k+1)! > (k+1) \cdot 2^k\). Queremos \((k+1)! > 2^{k+1} = 2 \cdot 2^k\).</p>
+                             <h4 class="font-medium text-gray-700 mb-2">Compara \((k+1) \cdot 2^k\) con el objetivo \(2^{k+1} = 2 \cdot 2^k\):</h4>
+                             <p class="text-sm text-gray-600 mb-2">Tenemos \((k+1)! > (k+1) \cdot 2^k\).</p>
                              <p class="text-sm text-gray-600 mb-2">Necesitamos mostrar que \((k+1) \cdot 2^k > 2 \cdot 2^k\). Esto es cierto si \((k+1) > 2\).</p>
                              <div class="input-group">
-                                <label for="a3-compare-reason" class="input-label text-sm">¿Por qué podemos asegurar que \(k+1 > 2\) en este problema?</label>
-                                <input type="text" id="a3-compare-reason" class="text-input text-sm" data-correct-answer="k>=4"> <!-- Aceptar variaciones -->
+                                <label for="a3-compare-reason" class="input-label">¿Por qué podemos asegurar que \(k+1 > 2\) en este problema? (Indica la condición sobre k)</label>
+                                <input type="text"
+                                       id="a3-compare-reason"
+                                       class="text-input"
+                                       data-correct-answer="k>=4"
+                                       data-attempt-count="0"
+                                       data-hint1="Pista: Revisa la condición inicial sobre \(n\) (y por tanto sobre \(k\)). ¿Cuál es el valor más pequeño que puede tener \(k\)? ¿Y \(k+1\)?."
+                                       data-hint2="Pista Detallada: El problema indica \(n \ge 4\), así que la H.I. asume \(k \ge 4\). Si \(k\) es al menos 4, entonces \(k+1\) es al menos \(4+1=5\). Como \(5 > 2\), podemos concluir que \(k+1 > 2\).">
+                                <div class="symbol-buttons"> <!-- Simple symbols often used in inequalities -->
+                                     <button class="symbol-btn" data-symbol="k">k</button>
+                                     <button class="symbol-btn" data-symbol=">">></button>
+                                     <button class="symbol-btn" data-symbol="=">=</button>
+                                     <button class="symbol-btn" data-symbol="<"><</button>
+                                     <button class="symbol-btn" data-symbol="4">4</button>
+                                     <button class="symbol-btn" data-symbol="2">2</button>
+                                     <button class="symbol-btn" data-symbol="+">+</button>
+                                     <button class="symbol-btn" data-symbol="1">1</button>
+                                </div>
                                 <div id="feedback-a3-compare-reason" class="feedback hidden"></div>
+                                <div id="hint-a3-compare-reason" class="hint-box hidden"></div> <!-- Contenedor para pista -->
                              </div>
                         </div>
                      </div>
-                     <p class="text-gray-700 mt-4 ml-10">Combinando: \((k+1)! > (k+1) 2^k > 2 \cdot 2^k = 2^{k+1}\).</p>
-                      <div class="hint-box ml-10">
-                        <p class="text-amber-800 font-medium"><i class="fas fa-lightbulb mr-2"></i>Pista: Revisa la condición inicial sobre \(n\) (y por tanto sobre \(k\)) en el enunciado del problema. ¿Qué implica esa condición para el valor de \(k+1\)?</p>
-                    </div>
+                     <p class="text-gray-700 mt-4 ml-10">Combinando los pasos, hemos mostrado que \((k+1)! > 2^{k+1}\).</p>
                  </div>
 
                  <div class="flex justify-end mt-6 space-x-4">
@@ -452,405 +497,418 @@
 
     <script>
         // --- MathJax Configuration ---
-window.MathJax = {
-  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], processEscapes: true },
-  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'], ignoreHtmlClass: 'tex2jax_ignore' },
-  startup: {
-    ready: () => {
-      console.log('MathJax Ready');
-      MathJax.startup.defaultReady();
-      // Ejecutar la lógica principal DESPUÉS de que MathJax esté listo (opcional pero seguro)
-      // Sin embargo, interact.js no depende de MathJax, así que podemos hacerlo en DOMContentLoaded
-    }
-  }
-};
+        window.MathJax = {
+          tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], processEscapes: true },
+          options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'], ignoreHtmlClass: 'tex2jax_ignore' },
+          startup: {
+            ready: () => { console.log('MathJax Ready'); MathJax.startup.defaultReady(); }
+          }
+        };
 
-// --- Core Logic ---
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM fully loaded and parsed.");
-    // 1. Barajar opciones PRIMERO
-    shuffleAllOptions();
-    // 2. Inicializar placeholders (puede ir antes o después de barajar)
-    initializePlaceholders();
-    // 3. Configurar InteractJS DESPUÉS del barajado y la carga del DOM
-    setupDragAndDrop();
-    // 4. Configurar el resto de funcionalidades
-    setupScrollSpy();
-    setupSymbolButtons();
-    setupResetButtons();
-    setupCheckButtons();
-    console.log("All setup functions initiated.");
-});
-
-// --- Shuffle Draggable Options ---
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-function shuffleOptions(container) {
-    // Seleccionar solo los elementos directamente hijos que sean 'draggable'
-    const options = Array.from(container.children).filter(el => el.classList.contains('draggable'));
-    if (options.length > 1) {
-        shuffleArray(options);
-        // Re-adjuntar los elementos al contenedor en el nuevo orden.
-        // Esto los mueve al final, manteniendo el orden barajado.
-        options.forEach(option => container.appendChild(option));
-    }
-}
-
-function shuffleAllOptions() {
-    console.log("Shuffling options...");
-    document.querySelectorAll('.options-container').forEach(container => {
-        shuffleOptions(container);
-    });
-    console.log("Options shuffled.");
-}
-
- // --- Placeholder Initialization ---
-function initializePlaceholders() {
-     document.querySelectorAll('.drop-zone').forEach(zone => {
-        // Solo añadir placeholder si la zona está vacía (no tiene dropped-item ni placeholder)
-        if (!zone.querySelector('.dropped-item') && !zone.querySelector('.drop-placeholder')) {
-             const placeholderText = zone.dataset.placeholder || 'Arrastra aquí';
-             zone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
-        }
-     });
-}
-
-// --- Scroll & Navigation ---
- function setupScrollSpy() {
-    const sections = document.querySelectorAll('section[id]');
-    const progressSteps = document.querySelectorAll('.progress-step');
-    if (!sections.length || !progressSteps.length) return;
-    const observer = new IntersectionObserver(entries => {
-        let lastActiveId = null;
-        entries.forEach(entry => { if (entry.isIntersecting) { lastActiveId = entry.target.getAttribute('id'); } });
-        progressSteps.forEach(step => {
-            step.classList.remove('active');
-            const targetId = step.getAttribute('onclick')?.match(/scrollToSection\('([^']+)'\)/)?.[1];
-            if (targetId && targetId === lastActiveId) { step.classList.add('active'); }
+        // --- Core Logic ---
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded.");
+            shuffleAllOptions();
+            initializePlaceholders();
+            setupDragAndDrop();
+            setupScrollSpy();
+            setupSymbolButtons();
+            setupResetButtons();
+            setupCheckButtons();
+            console.log("Setup complete.");
         });
-    }, { rootMargin: "-40% 0px -60% 0px" });
-    sections.forEach(section => observer.observe(section));
-}
-function scrollToSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (section) { window.scrollTo({ top: section.offsetTop - 80, behavior: 'smooth' }); }
-}
 
-// --- Drag & Drop (Revisión Enfocada) ---
-function setupDragAndDrop() {
-    console.log("Setting up Drag and Drop...");
-    interact('.draggable')
-        .draggable({
-            inertia: true,
-            modifiers: [interact.modifiers.restrictRect({ restriction: 'body', endOnly: true })],
-            autoScroll: true,
-            listeners: {
-                start(event) {
-                    console.log("Drag Start:", event.target.id || event.target.textContent.trim());
-                    const target = event.target;
-                    target.classList.add('dragging');
-                    target.style.position = 'relative'; // Asegurar que z-index funcione
-                    target.style.zIndex = 1000;
-                    // No es necesario guardar start-x/y si usamos data-x/y
-                },
-                move(event) {
-                    const target = event.target;
-                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-                    target.style.transform = `translate(${x}px, ${y}px)`;
-                    target.setAttribute('data-x', x);
-                    target.setAttribute('data-y', y);
-                },
-                end(event) {
-                    console.log("Drag End:", event.target.id || event.target.textContent.trim());
-                    const target = event.target;
-                    target.classList.remove('dragging');
-                    target.style.zIndex = 'auto'; // Restablecer z-index
+        // --- Shuffle ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        function shuffleOptions(container) {
+             const options = Array.from(container.children).filter(el => el.classList.contains('draggable'));
+             if (options.length > 1) {
+                shuffleArray(options);
+                options.forEach(option => container.appendChild(option)); // Move to end preserves shuffled order
+             }
+        }
+        function shuffleAllOptions() {
+            console.log("Shuffling options...");
+            document.querySelectorAll('.options-container').forEach(container => {
+                shuffleOptions(container);
+            });
+             console.log("Options shuffled.");
+        }
 
-                    // Reset position attributes and transform style IF NOT dropped successfully
-                    if (!event.dropzone) {
-                       console.log("... Drag ended outside dropzone, resetting position.");
-                       target.style.transform = 'translate(0px, 0px)';
-                       target.removeAttribute('data-x'); // Limpiar atributos
-                       target.removeAttribute('data-y');
-                    } else {
-                        console.log("... Drag ended inside dropzone.");
-                        // La posición se resetea en la función 'drop' para el original
-                        // No limpiar data-x/y aquí, se hace en 'drop'
-                    }
+        // --- Placeholder Init ---
+        function initializePlaceholders() {
+             document.querySelectorAll('.drop-zone').forEach(zone => {
+                if (!zone.querySelector('.dropped-item') && !zone.querySelector('.drop-placeholder')) {
+                     const placeholderText = zone.dataset.placeholder || 'Arrastra aquí';
+                     zone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
                 }
-            }
-        });
-
-    interact('.drop-zone')
-        .dropzone({
-            accept: '.draggable',
-            overlap: 0.5,
-            listeners: {
-                dragenter: event => event.target.classList.add('active'),
-                dragleave: event => event.target.classList.remove('active'),
-                drop(event) {
-                    console.log(`Item dropped on: ${event.target.id}`);
-                    const draggableElement = event.relatedTarget;
-                    const dropzone = event.target;
-
-                    // --- Reset Original Draggable ---
-                    console.log("... Resetting original draggable's position.");
-                    draggableElement.style.transform = 'translate(0px, 0px)';
-                    draggableElement.removeAttribute('data-x');
-                    draggableElement.removeAttribute('data-y');
-                    draggableElement.style.zIndex = 'auto'; // Asegurar z-index normal
-
-                    // --- Create and Setup Clone ---
-                    const clone = draggableElement.cloneNode(true);
-                    clone.classList.remove('draggable', 'dragging'); // Quitar clases de drag
-                    clone.classList.add('dropped-item');
-                    clone.removeAttribute('style'); // Limpiar todos los estilos inline
-                    clone.removeAttribute('data-x'); // Limpiar atributos de posición
-                    clone.removeAttribute('data-y');
-                    // Mantener atributos de datos necesarios para la lógica
-                    clone.setAttribute('data-value', draggableElement.getAttribute('data-value'));
-                    clone.setAttribute('data-feedback', draggableElement.getAttribute('data-feedback'));
-
-                    // --- Add Delete Button ---
-                    const deleteBtn = document.createElement('span');
-                    deleteBtn.classList.add('delete-btn');
-                    deleteBtn.innerHTML = '×';
-                    deleteBtn.title = 'Eliminar';
-                    deleteBtn.addEventListener('click', function() {
-                        const parentZone = clone.closest('.drop-zone'); // Asegurar que se refiere al contenedor correcto
-                        clone.remove();
-                        checkIfEmpty(parentZone);
-                        hideFeedback(parentZone); // Ocultar feedback al eliminar
-                    });
-                    clone.appendChild(deleteBtn);
-
-                    // --- Update Dropzone ---
-                    dropzone.innerHTML = ''; // Limpiar completamente la zona
-                    dropzone.appendChild(clone);
-                    dropzone.classList.remove('active');
-
-                    // --- Typeset MathJax ---
-                    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
-                        console.log("... Typesetting MathJax for dropped item.");
-                        MathJax.typesetPromise([clone]).catch(err => console.error('MathJax typesetting error on drop:', err));
-                    } else {
-                        console.warn("MathJax or typesetPromise not available.");
-                    }
-
-                    // --- Show Feedback ---
-                    showFeedback(dropzone, draggableElement); // Mostrar feedback para la dropzone
-                }
-            }
-        });
-    console.log("Drag and Drop setup complete.");
-}
-
-// --- Symbol Button Logic ---
-function setupSymbolButtons() {
-     document.body.addEventListener('click', function(event) {
-        if (event.target.matches('.symbol-btn')) {
-            const symbol = event.target.dataset.symbol;
-            const inputGroup = event.target.closest('.input-group');
-            const input = inputGroup?.querySelector('.text-input');
-            if (input && symbol) {
-                insertSymbol(input, symbol);
-            }
-        }
-     });
-}
-function insertSymbol(inputField, symbol) {
-    const start = inputField.selectionStart;
-    const end = inputField.selectionEnd;
-    const text = inputField.value;
-    inputField.value = text.substring(0, start) + symbol + text.substring(end);
-    inputField.selectionStart = inputField.selectionEnd = start + symbol.length;
-    inputField.focus();
-}
-
-// --- Feedback Handling ---
-function getFeedbackElement(element) {
-    const id = element.id;
-    if (!id) return null;
-    let feedbackId = '';
-    // Determinar el ID del div de feedback basado en el ID del elemento (dropzone o input)
-    if (id.startsWith('drop-')) {
-        feedbackId = `feedback-${id}`; // Ej: feedback-drop-a1-hypo
-    } else if (element.matches('.text-input')) {
-        feedbackId = `feedback-${id}`; // Ej: feedback-a1-base-lhs
-    } else {
-        return null; // No es un elemento esperado para feedback directo
-    }
-    return document.getElementById(feedbackId);
-}
-
-function checkIfEmpty(dropzone) {
-    if (dropzone && !dropzone.querySelector('.dropped-item')) {
-        const placeholderText = dropzone.dataset.placeholder || 'Arrastra aquí';
-        // Asegurarse de no duplicar el placeholder span
-        if (!dropzone.querySelector('.drop-placeholder')) {
-            dropzone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
-        }
-        hideFeedback(dropzone);
-    }
-}
-
-function showFeedback(targetElement, sourceElement) {
-    const feedbackDiv = getFeedbackElement(targetElement);
-    if (feedbackDiv) {
-        const feedbackMsg = sourceElement.getAttribute('data-feedback');
-        const isCorrect = sourceElement.getAttribute('data-value') === 'correct';
-        if (feedbackMsg) {
-            feedbackDiv.innerHTML = feedbackMsg;
-            feedbackDiv.className = `feedback ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
-            feedbackDiv.classList.remove('hidden');
-        } else {
-            feedbackDiv.classList.add('hidden');
-        }
-    }
-}
-
-function showInputFeedback(inputElement, message, isCorrect) {
-   const feedbackDiv = getFeedbackElement(inputElement);
-    if(feedbackDiv) {
-       feedbackDiv.innerHTML = message;
-       feedbackDiv.className = `feedback ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
-       feedbackDiv.classList.remove('hidden');
-    }
-}
-
-function hideFeedback(targetElement) {
-     const feedbackDiv = getFeedbackElement(targetElement);
-     if (feedbackDiv) {
-         feedbackDiv.classList.add('hidden');
-         feedbackDiv.innerHTML = '';
-     }
-}
-
-// --- Normalization ---
-function normalizeAnswer(answer) {
-    return typeof answer === 'string' ? answer.trim().replace(/\s+/g, ' ').toLowerCase() : '';
-}
-function normalizeMathExpr(expr) {
-     return typeof expr === 'string' ? expr.replace(/\s+/g, '') : '';
-}
-
-// --- Reset & Check Logic ---
-function setupResetButtons() {
-    document.body.addEventListener('click', function(event) {
-        if (event.target.closest('.reset-button')) {
-            const activity = event.target.closest('section');
-            if (!activity) return;
-            // Reset drop zones
-            activity.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.innerHTML = ''; checkIfEmpty(zone); zone.classList.remove('animate-pulse-border'); hideFeedback(zone);
-            });
-            // Reset draggables (position)
-            activity.querySelectorAll('.draggable').forEach(drag => {
-                drag.style.transform = 'translate(0px, 0px)'; drag.removeAttribute('data-x'); drag.removeAttribute('data-y');
-            });
-            // Reset input fields
-            activity.querySelectorAll('.text-input').forEach(input => {
-                input.value = ''; input.classList.remove('animate-pulse-border'); hideFeedback(input);
-            });
-            // Re-Shuffle options for this activity
-             activity.querySelectorAll('.options-container').forEach(container => shuffleOptions(container));
-             console.log(`Reiniciando actividad: ${activity.id}`);
-        }
-    });
-}
-
-function setupCheckButtons() {
-     document.body.addEventListener('click', function(event) {
-        if (event.target.closest('.check-button')) {
-            const activity = event.target.closest('section');
-            if (!activity) return;
-
-            let allCorrect = true;
-            let firstErrorElement = null;
-
-            // --- Clear previous validation states ---
-             activity.querySelectorAll('.drop-zone, .text-input').forEach(el => {
-                el.classList.remove('animate-pulse-border');
-                hideFeedback(el);
              });
+        }
 
-            // --- Check Drop Zones ---
-            activity.querySelectorAll('.drop-zone').forEach(zone => {
-                const droppedItem = zone.querySelector('.dropped-item');
-                const isZoneCorrect = droppedItem?.getAttribute('data-value') === 'correct';
-
-                if (!isZoneCorrect) {
-                    allCorrect = false;
-                    zone.classList.add('animate-pulse-border');
-                    if (!firstErrorElement) firstErrorElement = zone;
-                    const feedbackMsg = droppedItem ? (droppedItem.getAttribute('data-feedback') || "Revisa este paso.") : "Este paso está incompleto.";
-                    showInputFeedback(zone, feedbackMsg, false); // Re-use function for consistency
-                } else if (droppedItem) {
-                     showInputFeedback(zone, droppedItem.getAttribute('data-feedback') || "¡Correcto!", true);
+        // --- Scroll & Nav ---
+        function setupScrollSpy() {
+            const sections = document.querySelectorAll('section[id]');
+            const progressSteps = document.querySelectorAll('.progress-step');
+            if (!sections.length || !progressSteps.length) return;
+            const observer = new IntersectionObserver(entries => {
+                let lastActiveId = null;
+                entries.forEach(entry => { if (entry.isIntersecting) { lastActiveId = entry.target.getAttribute('id'); } });
+                let foundActive = false;
+                progressSteps.forEach(step => {
+                    step.classList.remove('active');
+                    const targetId = step.getAttribute('onclick')?.match(/scrollToSection\('([^']+)'\)/)?.[1];
+                    if (targetId && targetId === lastActiveId) {
+                        step.classList.add('active');
+                        foundActive = true;
+                    }
+                });
+                // Fallback for initial load or if observer fails
+                if (!foundActive && progressSteps.length > 0) {
+                     progressSteps[0].classList.add('active');
                 }
-            });
+            }, { rootMargin: "-40% 0px -60% 0px" });
+            sections.forEach(section => observer.observe(section));
+        }
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) { window.scrollTo({ top: section.offsetTop - 80, behavior: 'smooth' }); }
+        }
 
-             // --- Check Text Inputs ---
-            activity.querySelectorAll('.text-input').forEach(input => {
-                const userAnswer = input.value;
-                const correctAnswer = input.dataset.correctAnswer;
-                let isInputCorrect = false;
+        // --- Drag & Drop ---
+        function setupDragAndDrop() {
+             console.log("Setting up Drag and Drop...");
+            interact('.draggable')
+                .draggable({
+                    inertia: true,
+                    modifiers: [interact.modifiers.restrictRect({ restriction: 'body', endOnly: true })],
+                    autoScroll: true,
+                    listeners: {
+                        start(event) {
+                            // console.log("Drag Start:", event.target.textContent.trim());
+                            const target = event.target;
+                            target.classList.add('dragging');
+                            target.style.position = 'relative';
+                            target.style.zIndex = 1000;
+                        },
+                        move(event) {
+                            const target = event.target;
+                            const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                            const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                            target.style.transform = `translate(${x}px, ${y}px)`;
+                            target.setAttribute('data-x', x);
+                            target.setAttribute('data-y', y);
+                        },
+                        end(event) {
+                            // console.log("Drag End:", event.target.textContent.trim());
+                            const target = event.target;
+                            target.classList.remove('dragging');
+                            target.style.zIndex = 'auto';
+                            if (!event.dropzone) {
+                            //    console.log("... Resetting position.");
+                               target.style.transform = 'translate(0px, 0px)';
+                               target.removeAttribute('data-x');
+                               target.removeAttribute('data-y');
+                            }
+                        }
+                    }
+                });
 
-                if (correctAnswer) {
-                     // Determine normalization strategy (adjust as needed)
-                     const needsMathNormalization = ['^', '+', '*', '(', ')'].some(char => correctAnswer.includes(char));
-                     const normalizedUser = needsMathNormalization ? normalizeMathExpr(userAnswer) : normalizeAnswer(userAnswer);
-                     const normalizedCorrect = needsMathNormalization ? normalizeMathExpr(correctAnswer) : normalizeAnswer(correctAnswer);
+            interact('.drop-zone')
+                .dropzone({
+                    accept: '.draggable', overlap: 0.5,
+                    listeners: {
+                        dragenter: event => event.target.classList.add('active'),
+                        dragleave: event => event.target.classList.remove('active'),
+                        drop(event) {
+                            // console.log(`Item dropped on: ${event.target.id}`);
+                            const draggableElement = event.relatedTarget;
+                            const dropzone = event.target;
 
-                    // Special handling for flexible text answers
-                    if (input.id === 'a2-divisibility-reason') {
-                        isInputCorrect = ['factor', 'comun', 'multiple', '3'].some(term => normalizedUser.includes(term));
-                     } else if (input.id === 'a3-compare-reason') {
-                         isInputCorrect = normalizedUser.includes('k>=4') || normalizedUser.includes('k > 2') || normalizedUser.includes('k > 3') || normalizedUser.includes('k+1>2') || normalizedUser.includes('k+1>=5');
-                     }
-                     else {
-                        isInputCorrect = normalizedUser === normalizedCorrect;
-                     }
-                } else {
-                    // If no correct answer is defined, maybe treat as correct or ignore? Assume requires answer for now.
-                    isInputCorrect = userAnswer.trim() !== ''; // Basic check: is it filled? Might need adjustment.
-                     if (userAnswer.trim() === '') allCorrect = false; // Empty is incorrect if answer expected
+                            // Reset Original Draggable
+                            draggableElement.style.transform = 'translate(0px, 0px)';
+                            draggableElement.removeAttribute('data-x');
+                            draggableElement.removeAttribute('data-y');
+                            draggableElement.style.zIndex = 'auto';
+
+                            // Create and Setup Clone
+                            const clone = draggableElement.cloneNode(true);
+                            clone.classList.remove('draggable', 'dragging');
+                            clone.classList.add('dropped-item');
+                            clone.removeAttribute('style'); clone.removeAttribute('data-x'); clone.removeAttribute('data-y');
+                            clone.setAttribute('data-value', draggableElement.getAttribute('data-value'));
+                            clone.setAttribute('data-feedback', draggableElement.getAttribute('data-feedback'));
+
+                            // Add Delete Button
+                            const deleteBtn = document.createElement('span');
+                            deleteBtn.classList.add('delete-btn'); deleteBtn.innerHTML = '×'; deleteBtn.title = 'Eliminar';
+                            deleteBtn.addEventListener('click', function() {
+                                const parentZone = clone.closest('.drop-zone');
+                                clone.remove(); checkIfEmpty(parentZone); hideFeedback(parentZone); hideHints(parentZone); // Hide hints too
+                            });
+                            clone.appendChild(deleteBtn);
+
+                            // Update Dropzone
+                            dropzone.innerHTML = ''; dropzone.appendChild(clone); dropzone.classList.remove('active');
+
+                            // Typeset MathJax
+                            if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+                                MathJax.typesetPromise([clone]).catch(err => console.error('MathJax typesetting error on drop:', err));
+                            }
+
+                            // Show Feedback for the drop action
+                            showFeedbackMessage(dropzone, draggableElement.dataset.feedback || "Item soltado", draggableElement.dataset.value === 'correct');
+                        }
+                    }
+                });
+             console.log("Drag and Drop setup complete.");
+        }
+
+
+        // --- Symbol Buttons ---
+        function setupSymbolButtons() {
+             document.body.addEventListener('click', function(event) {
+                if (event.target.matches('.symbol-btn')) {
+                    const symbol = event.target.dataset.symbol;
+                    const inputGroup = event.target.closest('.input-group');
+                    const input = inputGroup?.querySelector('.text-input');
+                    if (input && symbol) { insertSymbol(input, symbol); }
                 }
+             });
+        }
+        function insertSymbol(inputField, symbol) {
+            const start = inputField.selectionStart;
+            const end = inputField.selectionEnd;
+            const text = inputField.value;
+            inputField.value = text.substring(0, start) + symbol + text.substring(end);
+            inputField.selectionStart = inputField.selectionEnd = start + symbol.length;
+            inputField.focus();
+        }
 
-                if (!isInputCorrect) {
-                    allCorrect = false;
-                    input.classList.add('animate-pulse-border');
-                    if (!firstErrorElement) firstErrorElement = input;
-                    // Provide generic feedback or check if a specific incorrect feedback is needed
-                    showInputFeedback(input, "Respuesta incorrecta o incompleta.", false);
-                } else {
-                    showInputFeedback(input, "¡Correcto!", true);
+
+        // --- Feedback & Hint Helpers ---
+        function getAssociatedElementId(element, type) { // type = 'feedback' or 'hint'
+            const id = element.id;
+            if (!id) return null;
+            let baseId = id;
+            if (id.startsWith('drop-')) { baseId = id; } // Keep drop- prefix for these
+            // For inputs like 'a1-base-lhs', the hint/feedback ID is constructed
+            return `${type}-${id}`; // ej: feedback-a1-base-lhs, hint-a1-simplify-input, feedback-drop-a1-hypo
+        }
+        function getFeedbackElement(element) {
+            const feedbackId = getAssociatedElementId(element, 'feedback');
+            return feedbackId ? document.getElementById(feedbackId) : null;
+        }
+        function getHintElement(element) {
+            // Hints are primarily for inputs, but check dropzones too if needed later
+            if (!element.matches('.text-input') && !element.matches('.drop-zone')) return null;
+            const hintId = getAssociatedElementId(element, 'hint');
+            return hintId ? document.getElementById(hintId) : null;
+        }
+        function checkIfEmpty(dropzone) {
+            if (dropzone && !dropzone.querySelector('.dropped-item')) {
+                const placeholderText = dropzone.dataset.placeholder || 'Arrastra aquí';
+                if (!dropzone.querySelector('.drop-placeholder')) {
+                    dropzone.innerHTML = `<span class="drop-placeholder">${placeholderText}</span>`;
                 }
-            });
-
-            // --- Final Feedback & Actions ---
-            if (allCorrect) {
-                alert(`¡Felicidades! Has completado correctamente la ${activity.querySelector('h2').textContent.trim()}.`);
-                const sectionId = activity.getAttribute('id');
-                const progressStep = document.querySelector(`.progress-step[onclick*="'${sectionId}'"]`);
-                if (progressStep) { progressStep.classList.add('completed'); }
-            } else {
-                alert('Hay errores o pasos incompletos. Revisa las zonas marcadas.');
-                if (firstErrorElement) {
-                    firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => { firstErrorElement.focus(); }, 300);
+                hideFeedback(dropzone);
+                hideHints(dropzone);
+            }
+        }
+        function showFeedbackMessage(element, message, isCorrect) {
+           const feedbackDiv = getFeedbackElement(element);
+            if(feedbackDiv) {
+               feedbackDiv.innerHTML = message || (isCorrect ? "Correcto" : "Incorrecto"); // Provide default message
+               feedbackDiv.className = `feedback ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
+               feedbackDiv.classList.remove('hidden');
+               if ((message || '').includes('\\(') || (message || '').includes('\\[')) {
+                   MathJax.typesetPromise([feedbackDiv]).catch(e => console.error("MathJax error in feedback:", e));
+               }
+            }
+        }
+        function hideFeedback(element) {
+             const feedbackDiv = getFeedbackElement(element);
+             if (feedbackDiv) {
+                 feedbackDiv.classList.add('hidden');
+                 feedbackDiv.innerHTML = '';
+             }
+        }
+        function showHint(inputElement, hintText, level) {
+            const hintDiv = getHintElement(inputElement);
+            if (hintDiv && hintText) {
+                hintDiv.innerHTML = hintText;
+                hintDiv.className = `hint-box mt-2 hint-level-${level}`;
+                hintDiv.classList.remove('hidden');
+                if (hintText.includes('\\(') || hintText.includes('\\[')) {
+                    // console.log(`Typesetting hint for ${inputElement.id}`);
+                    MathJax.typesetPromise([hintDiv]).catch(e => console.error("MathJax error typesetting hint:", e));
                 }
             }
-             console.log(`Verificando actividad: ${activity.id}, Resultado: ${allCorrect ? 'Correcto' : 'Incorrecto'}`);
         }
-    });
-}
+        function hideHints(element) {
+            const hintDiv = getHintElement(element);
+            if (hintDiv) {
+                hintDiv.classList.add('hidden');
+                hintDiv.innerHTML = '';
+                hintDiv.className = 'hint-box hidden'; // Reset classes
+            }
+        }
+        // Helper to hide a specific hint level (used when showing the other level)
+        function hideHint(inputElement, level) {
+            const hintDiv = getHintElement(inputElement);
+            if (hintDiv && hintDiv.classList.contains(`hint-level-${level}`)) {
+                 hintDiv.classList.add('hidden');
+                 hintDiv.innerHTML = '';
+                 hintDiv.classList.remove(`hint-level-${level}`);
+            }
+        }
+
+        // --- Normalization ---
+        function normalizeAnswer(answer) {
+            return typeof answer === 'string' ? answer.trim().replace(/\s+/g, ' ').toLowerCase() : '';
+        }
+        function normalizeMathExpr(expr) {
+             return typeof expr === 'string' ? expr.replace(/\s+/g, '') : '';
+        }
+
+        // --- Reset & Check Logic ---
+        function setupResetButtons() {
+            document.body.addEventListener('click', function(event) {
+                if (event.target.closest('.reset-button')) {
+                    const activity = event.target.closest('section');
+                    if (!activity) return;
+                    // Reset elements
+                    activity.querySelectorAll('.drop-zone, .text-input').forEach(el => {
+                        el.classList.remove('animate-pulse-border');
+                        hideFeedback(el);
+                        hideHints(el);
+                        if (el.matches('.drop-zone')) {
+                             el.innerHTML = ''; checkIfEmpty(el);
+                        } else if (el.matches('.text-input')) {
+                             el.value = '';
+                             el.dataset.attemptCount = '0'; // Reset attempt count
+                        }
+                    });
+                    // Reset draggables position
+                    activity.querySelectorAll('.draggable').forEach(drag => {
+                        drag.style.transform = 'translate(0px, 0px)'; drag.removeAttribute('data-x'); drag.removeAttribute('data-y');
+                    });
+                    // Re-Shuffle options
+                    activity.querySelectorAll('.options-container').forEach(container => shuffleOptions(container));
+                    console.log(`Reiniciando actividad: ${activity.id}`);
+                }
+            });
+        }
+
+        function setupCheckButtons() {
+             document.body.addEventListener('click', function(event) {
+                if (event.target.closest('.check-button')) {
+                    const activity = event.target.closest('section');
+                    if (!activity) return;
+
+                    let allCorrect = true;
+                    let firstErrorElement = null;
+
+                    // Clear previous validation states first
+                     activity.querySelectorAll('.drop-zone, .text-input').forEach(el => {
+                        el.classList.remove('animate-pulse-border');
+                        hideFeedback(el);
+                        // Don't hide hints on check, only on correct/reset
+                     });
+
+                    // Check Drop Zones
+                    activity.querySelectorAll('.drop-zone').forEach(zone => {
+                        const droppedItem = zone.querySelector('.dropped-item');
+                        const isZoneCorrect = droppedItem?.getAttribute('data-value') === 'correct';
+                        if (!isZoneCorrect) {
+                            allCorrect = false;
+                            zone.classList.add('animate-pulse-border');
+                            if (!firstErrorElement) firstErrorElement = zone;
+                            const feedbackMsg = droppedItem ? (droppedItem.getAttribute('data-feedback') || "Revisa este paso.") : "Este paso está incompleto.";
+                            showFeedbackMessage(zone, feedbackMsg, false);
+                        } else if (droppedItem) {
+                             showFeedbackMessage(zone, droppedItem.getAttribute('data-feedback') || "¡Correcto!", true);
+                             hideHints(zone); // Hide hints if correct
+                        }
+                    });
+
+                    // Check Text Inputs
+                    activity.querySelectorAll('.text-input').forEach(input => {
+                        const userAnswer = input.value;
+                        const correctAnswer = input.dataset.correctAnswer;
+                        let attemptCount = parseInt(input.dataset.attemptCount || '0', 10);
+                        let isInputCorrect = false;
+
+                        if (correctAnswer) {
+                             const needsMathNormalization = ['^', '+', '*', '(', ')', '!'].some(char => correctAnswer.includes(char)); // Added '!' for factorial case
+                             const normalizedUser = needsMathNormalization ? normalizeMathExpr(userAnswer) : normalizeAnswer(userAnswer);
+                             const normalizedCorrect = needsMathNormalization ? normalizeMathExpr(correctAnswer) : normalizeAnswer(correctAnswer);
+
+                            // Flexible checks
+                            if (input.id === 'a2-divisibility-reason') {
+                                isInputCorrect = ['factor', 'comun', 'multiple', '3', 'tres', 'divisible por 3', 'sacar 3'].some(term => normalizedUser.includes(term));
+                             } else if (input.id === 'a3-compare-reason') {
+                                 isInputCorrect = normalizedUser.includes('k>=4') || normalizedUser.includes('k>3') || normalizedUser.includes('k+1>2') || normalizedUser.includes('k+1>=5') || normalizedUser.includes('mayor o igual a 4');
+                             } else {
+                                isInputCorrect = normalizedUser === normalizedCorrect;
+                             }
+                        } else {
+                            // Input might not have a specific answer (e.g., just needs filling?)
+                            // Treat non-empty as correct for now, adjust if needed
+                            isInputCorrect = userAnswer.trim() !== '';
+                            if (!isInputCorrect) allCorrect = false;
+                        }
+
+                        // Handle feedback and hints
+                        if (isInputCorrect) {
+                            allCorrect = allCorrect && true;
+                            showFeedbackMessage(input, "¡Correcto!", true);
+                            hideHints(input);
+                            input.dataset.attemptCount = '0'; // Reset on correct
+                        } else {
+                            allCorrect = false;
+                            input.classList.add('animate-pulse-border');
+                            if (!firstErrorElement) firstErrorElement = input;
+                            attemptCount++;
+                            input.dataset.attemptCount = attemptCount.toString();
+                            showFeedbackMessage(input, "Respuesta incorrecta o incompleta.", false);
+
+                            const hint1 = input.dataset.hint1;
+                            const hint2 = input.dataset.hint2;
+                            if (attemptCount === 1 && hint1) {
+                                showHint(input, hint1, 1);
+                                hideHint(input, 2); // Ensure only one level is shown
+                            } else if (attemptCount >= 2) {
+                                if (hint2) {
+                                     showHint(input, hint2, 2);
+                                     hideHint(input, 1); // Ensure only one level is shown
+                                } else if (hint1) { showHint(input, hint1, 1); } // Fallback to hint 1
+                            }
+                        }
+                    });
+
+                    // Final Outcome
+                    if (allCorrect) {
+                        alert(`¡Felicidades! Has completado correctamente la ${activity.querySelector('h2').textContent.trim()}.`);
+                        const sectionId = activity.getAttribute('id');
+                        const progressStep = document.querySelector(`.progress-step[onclick*="'${sectionId}'"]`);
+                        if (progressStep) { progressStep.classList.add('completed'); }
+                    } else {
+                        alert('Hay errores o pasos incompletos. Revisa las zonas marcadas y las pistas si están disponibles.');
+                        if (firstErrorElement) {
+                            firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            setTimeout(() => { try { firstErrorElement.focus(); } catch (e) { /* ignore if cannot focus */ } }, 300);
+                        }
+                    }
+                     console.log(`Verificando actividad: ${activity.id}, Resultado: ${allCorrect ? 'Correcto' : 'Incorrecto'}`);
+                }
+            });
+        }
+
     </script>
 
 </body>

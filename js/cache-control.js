@@ -87,8 +87,9 @@ const CacheControl = {
 
     /**
      * Limpia la caché de localStorage
+     * @param {boolean} fullClean - Si es true, limpia también los datos de courseData
      */
-    clearLocalStorageCache() {
+    clearLocalStorageCache(fullClean = false) {
         // Limpiar solo las claves relacionadas con la caché
         const cacheKeys = [
             'jsonData_courseData',
@@ -97,8 +98,18 @@ const CacheControl = {
             'jsonData_settings',
             'jsonData_activities',
             'lastGeneratedJSON',
-            'lastJSONGenerationTime'
+            'lastJSONGenerationTime',
+            'siteVersion',
+            'netlify_cache_cleared'
         ];
+
+        // Si es limpieza completa, añadir también courseData
+        if (fullClean) {
+            cacheKeys.push('courseData');
+            // Limpiar también sessionStorage
+            sessionStorage.clear();
+            console.log('SessionStorage limpiado completamente');
+        }
 
         cacheKeys.forEach(key => {
             if (localStorage.getItem(key)) {
@@ -106,6 +117,16 @@ const CacheControl = {
                 console.log(`Caché eliminada: ${key}`);
             }
         });
+
+        // Limpiar también la caché del navegador si es posible
+        if ('caches' in window) {
+            caches.keys().then(cacheNames => {
+                cacheNames.forEach(cacheName => {
+                    caches.delete(cacheName);
+                    console.log(`Caché del navegador eliminada: ${cacheName}`);
+                });
+            });
+        }
     },
 
     /**
@@ -225,16 +246,50 @@ const CacheControl = {
     /**
      * Limpia la caché y recarga la página (para usuarios)
      * @param {boolean} showSuccess - Si es true, muestra un mensaje de éxito antes de recargar
+     * @param {boolean} fullClean - Si es true, realiza una limpieza completa incluyendo courseData
      */
-    clearCache(showSuccess = false) {
+    clearCache(showSuccess = false, fullClean = true) {
         console.log('%c[Control de Caché] Limpiando caché manualmente...', 'color: #2196F3; font-weight: bold');
 
         // Limpiar caché de localStorage
-        this.clearLocalStorageCache();
+        this.clearLocalStorageCache(fullClean);
 
         // Resetear la preferencia de ocultar el banner
         localStorage.removeItem('hideCacheBanner');
 
+        // Forzar carga desde el repositorio si DataPersistence está disponible
+        if (typeof DataPersistence !== 'undefined') {
+            console.log('Forzando carga de datos desde el repositorio...');
+
+            // Intentar cargar datos desde el repositorio antes de recargar
+            try {
+                DataPersistence.init(true).then(() => {
+                    console.log('Datos cargados correctamente desde el repositorio');
+
+                    // Mostrar mensaje de éxito si se solicita
+                    this._showSuccessAndReload(showSuccess);
+                }).catch(error => {
+                    console.error('Error cargando datos desde el repositorio:', error);
+                    // Recargar de todos modos
+                    this._showSuccessAndReload(showSuccess);
+                });
+            } catch (error) {
+                console.error('Error iniciando carga de datos:', error);
+                // Recargar de todos modos
+                this._showSuccessAndReload(showSuccess);
+            }
+        } else {
+            // Si DataPersistence no está disponible, simplemente recargar
+            this._showSuccessAndReload(showSuccess);
+        }
+    },
+
+    /**
+     * Muestra un mensaje de éxito y recarga la página
+     * @private
+     * @param {boolean} showSuccess - Si es true, muestra un mensaje de éxito antes de recargar
+     */
+    _showSuccessAndReload(showSuccess) {
         if (showSuccess) {
             // Crear alerta de éxito
             const successAlert = document.createElement('div');
