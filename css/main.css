@@ -569,3 +569,46 @@ main {
 .social-links a:hover {
     color: #007bff;
 }
+
+/* Estilos para contenedores HTML */
+.html-container {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #fff;
+    position: relative;
+}
+
+.html-content {
+    padding: 15px;
+    min-height: 300px;
+}
+
+/* Controles para contenido HTML */
+.html-controls {
+    padding: 8px 10px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.html-controls .open-in-new-window {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Estilos responsivos para dispositivos móviles */
+@media (max-width: 768px) {
+    .html-controls {
+        padding: 10px;
+    }
+
+    .html-controls .open-in-new-window {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+}

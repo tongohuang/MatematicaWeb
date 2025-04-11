@@ -32,7 +32,7 @@
         "type": "html"
       }
     ],
-    "order": 1
+    "order": 2
   },
   {
     "id": 1744260169532,
@@ -54,6 +54,24 @@
         "title": "Actividades interactivas 2",
         "content": "induccioncompleta-actividades2.html",
         "topicId": 1744260169532,
+        "order": "0",
+        "type": "html"
+      }
+    ],
+    "order": 1
+  },
+  {
+    "id": 1744260169533,
+    "courseId": 1744260101845,
+    "title": "Probabilidad",
+    "description": "Conceptos básicos",
+    "icon": "fas fa-book",
+    "sections": [
+      {
+        "id": "1744400215491",
+        "title": "Conceptos básicos",
+        "content": "probabilidadintroduccion.html",
+        "topicId": 1744260169533,
         "order": "0",
         "type": "html"
       }
