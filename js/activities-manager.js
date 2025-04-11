@@ -6,14 +6,15 @@
  *
  * Índice de funciones:
  * 1. init() - Inicializa la página
- * 2. loadActivities() - Carga todas las actividades desde localStorage
- * 3. displayActivities() - Muestra las actividades en la interfaz
- * 4. filterActivities() - Filtra las actividades según los criterios
- * 5. updateStatistics() - Actualiza los contadores de actividades
- * 6. toggleActivitySelection() - Selecciona/deselecciona una actividad
- * 7. showActivityDetails() - Muestra los detalles de una actividad
- * 8. deleteSelectedActivities() - Elimina las actividades seleccionadas
- * 9. isActivityInUse() - Verifica si una actividad está en uso en alguna sección
+ * 2. loadDirectActivitiesTable() - Carga todas las actividades desde localStorage
+ * 3. findSectionsUsingActivity() - Encuentra secciones que usan una actividad
+ * 4. showActivityDetails() - Muestra los detalles de una actividad
+ * 5. getActivityTypeIcon() - Obtiene el icono para un tipo de actividad
+ * 6. getActivityTypeLabel() - Obtiene la etiqueta para un tipo de actividad
+ * 7. deleteSelectedActivities() - Elimina las actividades seleccionadas
+ * 8. deleteActivity() - Elimina una actividad específica
+ * 9. refreshActivitiesTable() - Actualiza la tabla de actividades
+ * 10. updateStatistics() - Actualiza los contadores de actividades
  */
 
 // Variables globales
@@ -49,7 +50,7 @@ function init() {
     // Configurar eventos para selección
     document.getElementById('selectAllBtn').addEventListener('click', selectAllActivities);
     document.getElementById('deselectAllBtn').addEventListener('click', deselectAllActivities);
-    document.getElementById('refreshTableBtn').addEventListener('click', loadDirectActivitiesTable);
+    document.getElementById('refreshTableBtn').addEventListener('click', refreshActivitiesTable);
     document.getElementById('selectAllCheckbox').addEventListener('change', toggleSelectAllTableRows);
 
     // Configurar evento para eliminar
@@ -532,8 +533,7 @@ function deleteSelectedActivities() {
     document.getElementById('selectAllCheckbox').checked = false;
 
     // Recargar datos
-    loadActivities();
-    loadDirectActivitiesTable();
+    refreshActivitiesTable();
 }
 
 /**
@@ -565,7 +565,7 @@ function showActivityDetails(activityId) {
     activity.inUse = usedInSections.length > 0;
 
     // Actualizar la insignia de estado
-    const statusBadge = activity.inUse
+    let detailsStatusBadge = activity.inUse
         ? '<span class="badge bg-success">En uso</span>'
         : '<span class="badge bg-secondary">Sin usar</span>';
 
@@ -581,11 +581,25 @@ function showActivityDetails(activityId) {
         if (activeSections.length > 0) {
             usageHtml += '<div class="alert alert-success p-2 mb-3"><strong>Secciones activas:</strong><ul class="mb-0">';
             activeSections.forEach(section => {
+                // Preparar la información de cursos relacionados
+                let courseInfo = '';
+                if (section.relatedCourses && section.relatedCourses.length > 0) {
+                    if (section.relatedCourses.length === 1) {
+                        courseInfo = `Curso: <strong>${section.relatedCourses[0].title}</strong>`;
+                    } else {
+                        courseInfo = `Cursos: <strong>${section.relatedCourses.map(c => c.title).join('</strong>, <strong>')}</strong>`;
+                    }
+                } else {
+                    courseInfo = `Curso: ${section.courseName || 'No asignado'}`;
+                }
+
                 usageHtml += `
                     <li>
-                        <strong>${section.title}</strong>
-                        <span class="text-muted">(Tema: ${section.topicTitle || 'Desconocido'},
-                        Curso: ${section.courseName})</span>
+                        <div><strong>${section.title}</strong></div>
+                        <div class="text-muted small">
+                            <i class="fas fa-book me-1"></i> Tema: <strong>${section.topicTitle || 'Desconocido'}</strong><br>
+                            <i class="fas fa-graduation-cap me-1"></i> ${courseInfo}
+                        </div>
                     </li>
                 `;
             });
@@ -596,11 +610,25 @@ function showActivityDetails(activityId) {
         if (inactiveSections.length > 0) {
             usageHtml += '<div class="alert alert-secondary p-2"><strong>Secciones inactivas:</strong><ul class="mb-0">';
             inactiveSections.forEach(section => {
+                // Preparar la información de cursos relacionados
+                let courseInfo = '';
+                if (section.relatedCourses && section.relatedCourses.length > 0) {
+                    if (section.relatedCourses.length === 1) {
+                        courseInfo = `Curso: <strong>${section.relatedCourses[0].title}</strong>`;
+                    } else {
+                        courseInfo = `Cursos: <strong>${section.relatedCourses.map(c => c.title).join('</strong>, <strong>')}</strong>`;
+                    }
+                } else {
+                    courseInfo = `Curso: ${section.courseName || 'No asignado'}`;
+                }
+
                 usageHtml += `
                     <li>
-                        <strong>${section.title}</strong>
-                        <span class="text-muted">(Tema: ${section.topicTitle || 'Desconocido'},
-                        ${section.courseName})</span>
+                        <div><strong>${section.title}</strong></div>
+                        <div class="text-muted small">
+                            <i class="fas fa-book me-1"></i> Tema: <strong>${section.topicTitle || 'Desconocido'}</strong><br>
+                            <i class="fas fa-graduation-cap me-1"></i> ${courseInfo}
+                        </div>
                     </li>
                 `;
             });
@@ -616,7 +644,7 @@ function showActivityDetails(activityId) {
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">${activity.title || 'Sin título'}</h5>
-                ${statusBadge}
+                ${detailsStatusBadge}
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -682,8 +710,15 @@ function isActivityInUse(activityId) {
                         // Convertir el contenido a string para comparación consistente
                         const sectionContent = String(section.content);
 
-                        // Comparar con el ID de la actividad
-                        if (sectionContent === activityIdStr) {
+                        // Normalizar IDs para comparación (con y sin prefijo 'activity_')
+                        const normalizedSectionContent = sectionContent.replace('activity_', '');
+                        const normalizedActivityId = activityIdStr.replace('activity_', '');
+
+                        // Comparar con el ID de la actividad (considerando diferentes formatos)
+                        if (sectionContent === activityIdStr ||
+                            normalizedSectionContent === normalizedActivityId ||
+                            sectionContent === `activity_${normalizedActivityId}` ||
+                            `activity_${normalizedSectionContent}` === activityIdStr) {
                             console.log(`Actividad ${activityIdStr} encontrada en uso en sección "${section.title}" (ID: ${section.id}) del tema "${topic.title}"`);
                             return true;
                         }
@@ -696,9 +731,22 @@ function isActivityInUse(activityId) {
         for (const topic of topics) {
             if (!activeTopicIds.has(String(topic.id)) && topic.sections) {
                 for (const section of topic.sections) {
-                    if (section.type === 'activity' && String(section.content) === activityIdStr) {
-                        console.log(`Actividad ${activityIdStr} encontrada en tema inactivo "${topic.title}"`);
-                        return true;
+                    if (section.type === 'activity') {
+                        // Convertir el contenido a string para comparación consistente
+                        const sectionContent = String(section.content);
+
+                        // Normalizar IDs para comparación (con y sin prefijo 'activity_')
+                        const normalizedSectionContent = sectionContent.replace('activity_', '');
+                        const normalizedActivityId = activityIdStr.replace('activity_', '');
+
+                        // Comparar con el ID de la actividad (considerando diferentes formatos)
+                        if (sectionContent === activityIdStr ||
+                            normalizedSectionContent === normalizedActivityId ||
+                            sectionContent === `activity_${normalizedActivityId}` ||
+                            `activity_${normalizedSectionContent}` === activityIdStr) {
+                            console.log(`Actividad ${activityIdStr} encontrada en tema inactivo "${topic.title}"`);
+                            return true;
+                        }
                     }
                 }
             }
@@ -714,6 +762,8 @@ function isActivityInUse(activityId) {
 
 /**
  * Encuentra las secciones que usan una actividad
+ * @param {string|number} activityId - ID de la actividad a buscar
+ * @returns {Array} - Lista de secciones que usan la actividad con información detallada
  */
 function findSectionsUsingActivity(activityId) {
     const sectionsUsingActivity = [];
@@ -730,14 +780,28 @@ function findSectionsUsingActivity(activityId) {
         // Crear un mapa de temas activos (que pertenecen a cursos activos)
         const activeTopicIds = new Set();
         const courseMap = {};
+        const topicMap = {};
 
+        // Crear un mapa de temas por curso para facilitar la búsqueda
+        const topicsByCourse = {};
+
+        // Primero, crear mapas para búsqueda rápida
         courses.forEach(course => {
             // Guardar referencia al curso para uso posterior
             courseMap[course.id] = course;
+            topicsByCourse[course.id] = [];
 
             if (course.topicIds && Array.isArray(course.topicIds)) {
-                course.topicIds.forEach(topicId => activeTopicIds.add(String(topicId)));
+                course.topicIds.forEach(topicId => {
+                    activeTopicIds.add(String(topicId));
+                    topicsByCourse[course.id].push(String(topicId));
+                });
             }
+        });
+
+        // Crear mapa de temas
+        topics.forEach(topic => {
+            topicMap[topic.id] = topic;
         });
 
         console.log(`Encontrados ${activeTopicIds.size} temas activos en los cursos`);
@@ -754,26 +818,40 @@ function findSectionsUsingActivity(activityId) {
                             // Determinar si el tema está activo
                             const isActive = activeTopicIds.has(String(topic.id));
 
-                            // Encontrar a qué curso pertenece (si está activo)
-                            let courseName = 'No asignado a ningún curso';
-                            if (isActive) {
-                                for (const courseId in courseMap) {
+                            // Encontrar a qué curso(s) pertenece este tema
+                            const relatedCourses = [];
+
+                            for (const courseId in topicsByCourse) {
+                                if (topicsByCourse[courseId].includes(String(topic.id))) {
                                     const course = courseMap[courseId];
-                                    if (course.topicIds && course.topicIds.includes(topic.id)) {
-                                        courseName = course.title || `Curso ID: ${courseId}`;
-                                        break;
+                                    if (course) {
+                                        relatedCourses.push({
+                                            id: courseId,
+                                            title: course.title || `Curso ID: ${courseId}`
+                                        });
                                     }
                                 }
                             }
 
+                            // Nombre del curso principal (para compatibilidad)
+                            let courseName = 'No asignado a ningún curso';
+                            if (relatedCourses.length > 0) {
+                                courseName = relatedCourses[0].title;
+                            }
+
                             console.log(`Encontrada sección "${section.title}" (ID: ${section.id}) en tema "${topic.title}" - ${isActive ? 'Activo' : 'Inactivo'}`);
+                            if (relatedCourses.length > 0) {
+                                console.log(`  Cursos relacionados: ${relatedCourses.map(c => c.title).join(', ')}`);
+                            }
+
                             sectionsUsingActivity.push({
                                 id: section.id,
                                 title: section.title || 'Sin título',
                                 topicId: topic.id,
                                 topicTitle: topic.title || 'Tema sin título',
                                 isActive: isActive,
-                                courseName: courseName
+                                courseName: courseName,
+                                relatedCourses: relatedCourses
                             });
                         }
                     }
@@ -868,11 +946,35 @@ function loadDirectActivitiesTable() {
 
     // Recopilar todas las claves de actividades del localStorage
     const activityKeys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('activity_') && !key.startsWith('activity_registry')) {
-            activityKeys.push(key);
+    try {
+        console.log('Buscando claves de actividades en localStorage...');
+        console.log('Total de elementos en localStorage:', localStorage.length);
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('activity_') && !key.startsWith('activity_registry')) {
+                console.log('Encontrada clave de actividad:', key);
+                activityKeys.push(key);
+            }
         }
+
+        // Verificar si hay actividades perdidas
+        if (typeof DataPersistence !== 'undefined' && typeof DataPersistence.recoverLostActivities === 'function') {
+            console.log('Intentando recuperar actividades perdidas...');
+            const recoveredActivities = DataPersistence.recoverLostActivities();
+            if (recoveredActivities && recoveredActivities.length > 0) {
+                console.log(`Se recuperaron ${recoveredActivities.length} actividades perdidas`);
+                // Actualizar la lista de claves
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('activity_') && !key.startsWith('activity_registry') && !activityKeys.includes(key)) {
+                        activityKeys.push(key);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error al buscar actividades en localStorage:', error);
     }
 
     console.log(`Se encontraron ${activityKeys.length} claves de actividades en localStorage`);
@@ -909,16 +1011,74 @@ function loadDirectActivitiesTable() {
         }
     });
 
-    // Crear un mapa de actividades en uso
+    // Crear un mapa de actividades en uso con información de ubicación
     const usedActivityIds = new Set();
+    const activityUsageInfo = {}; // Almacenará información sobre dónde se usa cada actividad
+
+    // Crear un mapa de temas por curso para facilitar la búsqueda
+    const topicsByCourse = {};
+    courses.forEach(course => {
+        if (course.topicIds && Array.isArray(course.topicIds)) {
+            course.topicIds.forEach(topicId => {
+                if (!topicsByCourse[topicId]) {
+                    topicsByCourse[topicId] = [];
+                }
+                topicsByCourse[topicId].push({
+                    id: course.id,
+                    title: course.title || `Curso ID: ${course.id}`
+                });
+            });
+        }
+    });
 
     // Buscar en temas activos primero
+    console.log('Temas activos IDs:', Array.from(activeTopicIds));
     const activeTopics = topics.filter(topic => activeTopicIds.has(String(topic.id)));
+    console.log(`Encontrados ${activeTopics.length} temas activos de ${topics.length} temas totales`);
+
     activeTopics.forEach(topic => {
         if (topic.sections) {
+            console.log(`Procesando tema activo: ${topic.title || 'Sin título'} (ID: ${topic.id}) con ${topic.sections.length} secciones`);
             topic.sections.forEach(section => {
                 if (section.type === 'activity') {
-                    usedActivityIds.add(String(section.content));
+                    const activityId = String(section.content);
+                    const normalizedActivityId = activityId.replace('activity_', '');
+
+                    console.log(`Encontrada actividad en uso: ${activityId} en sección ${section.title || 'Sin título'}`);
+
+                    // Agregar todas las posibles formas del ID
+                    usedActivityIds.add(activityId);
+                    usedActivityIds.add(normalizedActivityId);
+                    usedActivityIds.add(`activity_${normalizedActivityId}`);
+
+                    // Guardar información sobre dónde se usa esta actividad
+                    // Guardar la información con todas las posibles formas del ID
+                    if (!activityUsageInfo[activityId]) {
+                        activityUsageInfo[activityId] = [];
+                    }
+
+                    // También guardar la información con el ID normalizado
+                    if (!activityUsageInfo[normalizedActivityId]) {
+                        activityUsageInfo[normalizedActivityId] = activityUsageInfo[activityId];
+                    }
+
+                    // Y con el prefijo activity_
+                    const prefixedId = `activity_${normalizedActivityId}`;
+                    if (!activityUsageInfo[prefixedId]) {
+                        activityUsageInfo[prefixedId] = activityUsageInfo[activityId];
+                    }
+
+                    // Encontrar cursos relacionados con este tema
+                    const relatedCourses = topicsByCourse[topic.id] || [];
+
+                    activityUsageInfo[activityId].push({
+                        sectionId: section.id,
+                        sectionTitle: section.title || 'Sin título',
+                        topicId: topic.id,
+                        topicTitle: topic.title || 'Tema sin título',
+                        isActive: true,
+                        relatedCourses: relatedCourses
+                    });
                 }
             });
         }
@@ -927,30 +1087,158 @@ function loadDirectActivitiesTable() {
     // Como respaldo, verificar también en temas inactivos
     topics.forEach(topic => {
         if (!activeTopicIds.has(String(topic.id)) && topic.sections) {
+            console.log(`Procesando tema inactivo: ${topic.title || 'Sin título'} (ID: ${topic.id}) con ${topic.sections.length} secciones`);
             topic.sections.forEach(section => {
                 if (section.type === 'activity') {
-                    usedActivityIds.add(String(section.content));
+                    const activityId = String(section.content);
+                    const normalizedActivityId = activityId.replace('activity_', '');
+
+                    console.log(`Encontrada actividad en tema inactivo: ${activityId} en sección ${section.title || 'Sin título'}`);
+
+                    // Agregar todas las posibles formas del ID
+                    usedActivityIds.add(activityId);
+                    usedActivityIds.add(normalizedActivityId);
+                    usedActivityIds.add(`activity_${normalizedActivityId}`);
+
+                    // Guardar información sobre dónde se usa esta actividad
+                    // Guardar la información con todas las posibles formas del ID
+                    if (!activityUsageInfo[activityId]) {
+                        activityUsageInfo[activityId] = [];
+                    }
+
+                    // También guardar la información con el ID normalizado
+                    if (!activityUsageInfo[normalizedActivityId]) {
+                        activityUsageInfo[normalizedActivityId] = activityUsageInfo[activityId];
+                    }
+
+                    // Y con el prefijo activity_
+                    const prefixedId = `activity_${normalizedActivityId}`;
+                    if (!activityUsageInfo[prefixedId]) {
+                        activityUsageInfo[prefixedId] = activityUsageInfo[activityId];
+                    }
+
+                    // Encontrar cursos relacionados con este tema (probablemente ninguno si es inactivo)
+                    const relatedCourses = topicsByCourse[topic.id] || [];
+
+                    activityUsageInfo[activityId].push({
+                        sectionId: section.id,
+                        sectionTitle: section.title || 'Sin título',
+                        topicId: topic.id,
+                        topicTitle: topic.title || 'Tema sin título',
+                        isActive: false,
+                        relatedCourses: relatedCourses
+                    });
                 }
             });
         }
     });
 
     console.log(`Se encontraron ${usedActivityIds.size} actividades en uso`);
+    console.log('IDs de actividades en uso:', Array.from(usedActivityIds));
 
     // Generar filas de la tabla
     let tableRows = '';
 
-    activityKeys.forEach(key => {
+    // Procesar las actividades
+    const activities = [];
+    const processedInUseIds = new Set(); // Para evitar duplicados de actividades en uso
+
+    // Procesar todas las actividades
+    for (const key of activityKeys) {
         try {
-            const activityData = JSON.parse(localStorage.getItem(key));
-            const activityId = key.replace('activity_', '');
-            const isInUse = usedActivityIds.has(String(activityId));
+            const activityData = localStorage.getItem(key);
+            if (activityData) {
+                try {
+                    const activity = JSON.parse(activityData);
+                    if (activity && activity.id) {
+                        // Convertir ID a string para comparación consistente
+                        const activityIdStr = String(activity.id);
+
+                        // Verificar si la actividad está en uso
+                        const isInUse = usedActivityIds.has(activityIdStr);
+
+                        // Si está en uso y ya procesamos una con este ID, omitirla
+                        if (isInUse && processedInUseIds.has(activityIdStr)) {
+                            console.log(`Omitiendo actividad duplicada EN USO con ID ${activityIdStr} (clave: ${key})`);
+                            continue;
+                        }
+
+                        // Agregar la clave de localStorage como propiedad para mostrarla
+                        activity.storageKey = key;
+                        console.log(`Procesando actividad ${activity.id}: ${activity.title || 'Sin título'} (clave: ${key})`);
+                        activities.push(activity);
+
+                        // Si está en uso, marcarla como procesada para evitar duplicados
+                        if (isInUse) {
+                            processedInUseIds.add(activityIdStr);
+                        }
+                    } else {
+                        console.warn(`Actividad inválida en ${key}:`, activity);
+                        // Agregar incluso actividades inválidas para que puedan ser eliminadas
+                        activities.push({
+                            id: key.replace('activity_', ''),
+                            title: 'Actividad inválida',
+                            type: 'unknown',
+                            storageKey: key,
+                            isInvalid: true
+                        });
+                    }
+                } catch (parseError) {
+                    console.error(`Error al parsear JSON de actividad ${key}:`, parseError);
+                    // Agregar actividades con errores para que puedan ser eliminadas
+                    activities.push({
+                        id: key.replace('activity_', ''),
+                        title: 'Error: ' + parseError.message,
+                        type: 'unknown',
+                        storageKey: key,
+                        isInvalid: true
+                    });
+                }
+            } else {
+                console.warn(`Clave de actividad ${key} existe pero no tiene datos`);
+                // Agregar actividades sin datos para que puedan ser eliminadas
+                activities.push({
+                    id: key.replace('activity_', ''),
+                    title: 'Sin datos',
+                    type: 'unknown',
+                    storageKey: key,
+                    isInvalid: true
+                });
+            }
+        } catch (error) {
+            console.error(`Error al procesar actividad ${key}:`, error);
+        }
+    }
+
+    console.log(`Se procesaron ${activities.length} actividades de ${activityKeys.length} claves`);
+
+    // Generar filas de la tabla
+    activities.forEach(activityData => {
+        try {
+            const activityId = activityData.id;
+            // Convertir a string para comparación consistente
+            const activityIdStr = String(activityId);
+            const normalizedActivityId = activityIdStr.replace('activity_', '');
+
+            console.log(`Verificando si actividad ${activityIdStr} está en uso...`);
+
+            // Verificar todas las posibles formas del ID
+            const isInUse = usedActivityIds.has(activityIdStr) ||
+                           usedActivityIds.has(normalizedActivityId) ||
+                           usedActivityIds.has(`activity_${normalizedActivityId}`);
+
+            console.log(`Actividad ${activityIdStr}: ${isInUse ? 'EN USO' : 'Sin usar'}`);
+
+            // Verificar si hay información de uso para esta actividad
+            if (isInUse) {
+                console.log(`Información de uso para ${activityIdStr}:`, activityUsageInfo[activityIdStr]);
+            }
 
             // Determinar el tipo de actividad
             let typeLabel = 'Desconocido';
             let typeIcon = 'fas fa-question-circle';
 
-            if (activityData && activityData.type) {
+            if (activityData.type) {
                 switch (activityData.type) {
                     case 'multiple-choice':
                         typeLabel = 'Opción múltiple';
@@ -967,29 +1255,97 @@ function loadDirectActivitiesTable() {
                 }
             }
 
-            // Determinar el estado
-            const statusBadge = isInUse
-                ? '<span class="badge bg-success">En uso</span>'
-                : '<span class="badge bg-secondary">Sin usar</span>';
+            // Determinar el estado y obtener información de uso
+            let usageInfo = '';
+            let statusBadge = '<span class="badge bg-secondary">Sin usar</span>';
+
+            console.log(`Determinando estado para actividad ${activityIdStr}: isInUse=${isInUse}, tiene info=${Boolean(activityUsageInfo[activityIdStr])}`);
+
+            // Simplificar la condición: si está en uso, mostrar como "En uso"
+            if (isInUse) {
+                // Establecer el estado como "En uso" inmediatamente
+                statusBadge = `<span class="badge bg-success">En uso</span>`;
+
+                // Si además tenemos información detallada, mostrarla
+                if (activityUsageInfo[activityIdStr]) {
+                    const usageData = activityUsageInfo[activityIdStr];
+                    const activeUsages = usageData.filter(u => u.isActive);
+                    console.log(`Actividad ${activityIdStr}: ${usageData.length} usos totales, ${activeUsages.length} usos activos`);
+
+                    if (activeUsages.length > 0) {
+                        // Recopilar información de cursos y temas
+                        const uniqueTopics = new Set();
+                        const uniqueCourses = new Set();
+
+                        activeUsages.forEach(usage => {
+                            uniqueTopics.add(usage.topicTitle);
+                            usage.relatedCourses.forEach(course => {
+                                uniqueCourses.add(course.title);
+                            });
+                        });
+
+                        // Crear insignia con información
+                        const topicsCount = uniqueTopics.size;
+                        const coursesCount = uniqueCourses.size;
+
+                        // El statusBadge ya se estableció arriba
+
+                        if (coursesCount > 0 && topicsCount > 0) {
+                            usageInfo = `
+                                <div class="small mt-1">
+                                    <span class="badge bg-info text-dark" title="${Array.from(uniqueCourses).join(', ')}">
+                                        <i class="fas fa-graduation-cap me-1"></i> ${coursesCount} curso${coursesCount !== 1 ? 's' : ''}
+                                    </span>
+                                    <span class="badge bg-info text-dark ms-1" title="${Array.from(uniqueTopics).join(', ')}">
+                                        <i class="fas fa-book me-1"></i> ${topicsCount} tema${topicsCount !== 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            }
+
+            // Registrar el estado final
+            console.log(`Estado final de actividad ${activityIdStr}: ${isInUse ? 'EN USO' : 'Sin usar'}, Badge: ${statusBadge}`);
 
             // Generar fila
+            // Usar la clave de almacenamiento real si está disponible, o generarla si no
+            const storageKey = activityData.storageKey || `activity_${activityId}`;
+
+            // Determinar si es una posible duplicación (mismo ID pero diferente clave)
+            const isDuplicate = storageKey !== `activity_${activityId}` && !storageKey.includes(`activity_data_`);
+
+            // Determinar la clase CSS para la fila
+            let rowClass = '';
+            if (isInUse) {
+                rowClass = 'table-success'; // Verde para actividades en uso
+            } else if (isDuplicate) {
+                rowClass = 'table-warning'; // Amarillo para posibles duplicados
+            } else if (activityData.isInvalid) {
+                rowClass = 'table-danger'; // Rojo para actividades inválidas
+            }
+
             tableRows += `
-                <tr data-key="${key}" data-id="${activityId}" class="${isInUse ? 'table-success' : ''}">
+                <tr data-key="${storageKey}" data-id="${activityId}" class="${rowClass}">
                     <td>
                         <input type="checkbox" class="form-check-input table-checkbox"
                                ${isInUse ? 'disabled title="No se puede eliminar una actividad en uso"' : ''}>
                     </td>
-                    <td><code>${key}</code></td>
+                    <td><code>${storageKey}</code></td>
                     <td>${activityId}</td>
-                    <td>${activityData && activityData.title ? activityData.title : '<em>Sin título</em>'}</td>
+                    <td>${activityData.title ? activityData.title : '<em>Sin título</em>'}</td>
                     <td><i class="${typeIcon} me-1"></i> ${typeLabel}</td>
-                    <td>${statusBadge}</td>
+                    <td>
+                        ${statusBadge}
+                        ${usageInfo}
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-info view-details-btn" data-id="${activityId}">
                             <i class="fas fa-eye"></i>
                         </button>
                         ${!isInUse ? `
-                            <button class="btn btn-sm btn-danger delete-activity-btn" data-key="${key}">
+                            <button class="btn btn-sm btn-danger delete-activity-btn" data-key="${storageKey}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         ` : ''}
@@ -997,14 +1353,15 @@ function loadDirectActivitiesTable() {
                 </tr>
             `;
         } catch (error) {
-            console.error(`Error al procesar actividad ${key}:`, error);
+            console.error(`Error al procesar actividad ${activityData.id}:`, error);
+            const errorKey = `activity_${activityData.id}`;
             tableRows += `
-                <tr data-key="${key}" class="table-danger">
+                <tr data-key="${errorKey}" class="table-danger">
                     <td><input type="checkbox" class="form-check-input table-checkbox"></td>
-                    <td><code>${key}</code></td>
+                    <td><code>${errorKey}</code></td>
                     <td colspan="4"><em class="text-danger">Error al cargar datos: ${error.message}</em></td>
                     <td>
-                        <button class="btn btn-sm btn-danger delete-activity-btn" data-key="${key}">
+                        <button class="btn btn-sm btn-danger delete-activity-btn" data-key="${errorKey}">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -1035,6 +1392,45 @@ function loadDirectActivitiesTable() {
             updateSelectedCount();
         });
     });
+}
+
+/**
+ * Actualiza la tabla de actividades
+ */
+function refreshActivitiesTable() {
+    console.log('Actualizando tabla de actividades...');
+
+    // Limpiar selecciones actuales
+    selectedActivities.clear();
+    updateSelectedCount();
+
+    // Mostrar mensaje de carga
+    const tableBody = document.getElementById('activitiesTableBody');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Actualizando...</span>
+                </div>
+                <p class="mt-2">Actualizando actividades...</p>
+            </td>
+        </tr>
+    `;
+
+    // Recargar las actividades
+    setTimeout(() => {
+        loadDirectActivitiesTable();
+
+        // Mostrar mensaje de éxito
+        const alertHtml = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                Tabla de actividades actualizada correctamente.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHtml);
+    }, 500);
 }
 
 /**
@@ -1078,8 +1474,7 @@ function deleteActivityDirectly(key) {
         document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHtml);
 
         // Recargar la tabla
-        loadDirectActivitiesTable();
-        loadActivities(); // También actualizar la lista original
+        refreshActivitiesTable(); // Usar la nueva función para actualizar la tabla
     } catch (error) {
         console.error(`Error al eliminar actividad ${key}:`, error);
 

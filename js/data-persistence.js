@@ -476,9 +476,9 @@ const DataPersistence = {
         if (activitySections.length > 0) {
             console.log(`Encontradas ${activitySections.length} secciones de tipo Activity:`);
             activitySections.forEach(section => {
-                console.log(`- ${section.title} (ID: ${section.id}, Archivo: ${section.content})`);
-                // Verificar si el archivo existe
-                this._checkFileExists(`activities/templates/${section.content}`, 'Activity', section.id, section.title);
+                console.log(`- ${section.title} (ID: ${section.id}, Actividad ID: ${section.content})`);
+                // Verificar si la actividad existe en localStorage
+                this._checkActivityExists(section.content, section.id, section.title);
             });
         } else {
             console.log('No se encontraron secciones de tipo Activity');

@@ -614,8 +614,44 @@ function saveActivity() {
     const activityId = `activity_${timestamp}`;
     const filename = `${activityId}.json`;
 
-    // Guardar la actividad en localStorage para que pueda ser recuperada
+    // Asignar el ID a la actividad
+    currentActivity.id = activityId;
+
+    // Guardar la actividad en localStorage usando formatos consistentes
+    console.log(`Guardando actividad con ID: ${activityId}`);
+
+    // 1. Guardar con la clave principal (para compatibilidad con el visualizador)
     localStorage.setItem(activityId, JSON.stringify(currentActivity));
+
+    // 2. Guardar con el formato activity_data_ (para compatibilidad con el sistema de persistencia)
+    localStorage.setItem(`activity_data_${activityId}`, JSON.stringify(currentActivity));
+
+    // 3. Actualizar el registro de actividades
+    try {
+        let activityRegistry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+
+        // Verificar si la actividad ya está en el registro (evitar duplicados)
+        const existingIndex = activityRegistry.findIndex(entry => entry.id === activityId);
+
+        if (existingIndex === -1) {
+            // Agregar nueva entrada al registro
+            activityRegistry.push({
+                id: activityId,
+                title: currentActivity.title || 'Actividad sin título',
+                type: currentActivity.type || 'unknown',
+                created: timestamp,
+                updated: timestamp
+            });
+
+            // Guardar el registro actualizado
+            localStorage.setItem('activity_registry', JSON.stringify(activityRegistry));
+            console.log(`Actividad registrada en el registro de actividades (total: ${activityRegistry.length})`);
+        } else {
+            console.log(`La actividad ya existe en el registro, no se duplicará`);
+        }
+    } catch (error) {
+        console.error('Error al actualizar el registro de actividades:', error);
+    }
 
     // Registrar la acción en el log
     if (typeof Logger !== 'undefined') {
@@ -636,11 +672,14 @@ function saveActivity() {
 
     // Devolver el nombre del archivo a la página que llamó a esta
     if (window.opener && !window.opener.closed) {
+        console.log(`Enviando mensaje a la ventana principal con activityId: ${activityId}`);
         window.opener.postMessage({
             type: 'activity_created',
             filename: `activity-loader.html?id=${activityId}`,
             title: currentActivity.title,
-            activityId: activityId
+            activityId: activityId,
+            // Agregar el ID sin prefijo para facilitar su uso
+            rawActivityId: activityId
         }, '*');
         alert('Actividad guardada correctamente. Puede cerrar esta ventana.');
     } else {

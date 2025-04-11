@@ -605,20 +605,30 @@
                 case 'activity':
                     console.log('Renderizando actividad con ID:', section.content);
 
-                    // Limpiar el ID de la actividad (quitar prefijo si existe)
+                    // Intentar cargar la actividad con varias claves posibles
                     const activityId = section.content.replace('activity_', '');
-                    const activityKey = `activity_${activityId}`;
+                    const activityKey1 = `activity_${activityId}`;
+                    const activityKey2 = section.content; // Usar el ID tal como está
+                    const activityKey3 = `activity_data_${activityId}`;
 
                     // Crear un ID único para el contenedor
                     const containerId = `activity-container-${section.id}`;
 
-                    // Intentar cargar la actividad desde localStorage
+                    console.log(`Buscando actividad con claves: ${activityKey1}, ${activityKey2}, ${activityKey3}`);
+
+                    // Intentar cargar la actividad desde localStorage con todas las claves posibles
                     let activityData = null;
+                    let activityStr = localStorage.getItem(activityKey1) || localStorage.getItem(activityKey2) || localStorage.getItem(activityKey3);
+
                     try {
-                        activityData = JSON.parse(localStorage.getItem(activityKey));
-                        console.log('Actividad cargada desde localStorage:', activityData ? 'Sí' : 'No');
+                        if (activityStr) {
+                            activityData = JSON.parse(activityStr);
+                            console.log(`Actividad encontrada: ${activityData.title || 'Sin título'}`);
+                        } else {
+                            console.error(`No se encontró la actividad con ninguna de las claves`);
+                        }
                     } catch (e) {
-                        console.error('Error al cargar actividad desde localStorage:', e);
+                        console.error('Error al parsear actividad:', e);
                     }
 
                     if (activityData) {

@@ -488,11 +488,24 @@ function createSectionElement(section, index, isFirst, isLast, isInGroup = false
 
     const typeLabel = document.createElement('div');
     typeLabel.className = 'small text-muted';
-    typeLabel.innerHTML = `
-                    <span class="badge bg-light text-dark">
+
+    // Crear el HTML base para la etiqueta de tipo
+    let typeLabelHTML = `
+        <span class="badge bg-light text-dark">
             <i class="${iconData.class} ${iconData.icon} me-1"></i> ${section.type}
-                    </span>
+        </span>
     `;
+
+    // Si es una actividad, mostrar también el ID
+    if (section.type === 'activity' && section.content) {
+        typeLabelHTML += `
+            <span class="ms-2">
+                <i class="fas fa-link me-1"></i> ID: <code>${section.content}</code>
+            </span>
+        `;
+    }
+
+    typeLabel.innerHTML = typeLabelHTML;
     infoDiv.appendChild(typeLabel);
 
     contentContainer.appendChild(infoDiv);
@@ -892,9 +905,22 @@ function showContentFields() {
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <button type="button" class="btn btn-primary w-100" onclick="createNewActivity()">
+                        <i class="fas fa-plus"></i> Crear y Seleccionar Actividad
+                    </button>
+                </div>
+                <div class="mb-3 alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Primero cree una actividad con el botón de arriba, luego seleccionela y finalmente guarde la sección.
+                </div>
+
                 <div id="activityInfo" class="mt-3 d-none alert alert-info">
                     <span id="activityInfoText"></span>
-                    <div class="mt-2">
+                    <div class="mt-2 d-flex align-items-center">
+                        <div class="me-3">
+                            <strong>ID:</strong> <code id="activityIdDisplay"></code>
+                        </div>
                         <button type="button" id="viewActivityBtn" class="btn btn-sm btn-primary d-none">
                             <i class="fas fa-eye"></i> Ver/Editar Actividad
                         </button>
@@ -911,59 +937,77 @@ function showContentFields() {
     console.log(`Campos configurados para tipo: ${contentType}`);
 }
 
+// Variable global para el listener de mensajes
+let activityMessageListener = null;
+
 function createNewActivity() {
     // Registrar la acción en el log
-    if (typeof Logger !== 'undefined') {
-        Logger.info('Iniciando creación de actividad desde el editor de secciones');
-    } else {
-        console.log('Iniciando creación de actividad desde el editor de secciones');
+    console.log('Iniciando creación de actividad desde el editor de secciones');
+
+    // Eliminar cualquier listener anterior para evitar duplicados
+    if (activityMessageListener) {
+        console.log('Eliminando listener de mensajes anterior');
+        window.removeEventListener('message', activityMessageListener);
+        activityMessageListener = null;
     }
 
-    // Abrir el creador de actividades en una nueva ventana
-    window.open('activity-creator-simple.html', '_blank', 'width=1200,height=800');
-
-    // Escuchar el mensaje de la ventana del creador de actividades
-    window.addEventListener('message', function(event) {
+    // Crear un nuevo listener para recibir el mensaje de la actividad creada
+    activityMessageListener = function(event) {
+        // Verificar que el mensaje es del tipo esperado
         if (event.data && event.data.type === 'activity_created') {
-            // Actualizar el campo de actividad con el nombre del archivo
-            document.getElementById('activityId').value = event.data.filename;
+            console.log('Mensaje de actividad creada recibido:', event.data);
 
-            // Registrar la acción en el log
-            if (typeof Logger !== 'undefined') {
-                Logger.info('Actividad recibida en el editor de secciones', {
-                    filename: event.data.filename,
-                    title: event.data.title,
-                    activityId: event.data.activityId
-                });
-            } else {
-                console.log('Actividad recibida en el editor de secciones:', {
-                    filename: event.data.filename,
-                    title: event.data.title,
-                    activityId: event.data.activityId
-                });
+            // Guardar el ID de la actividad directamente, sin formato de URL
+            const activityId = event.data.activityId;
+            console.log(`ID de actividad recibido: ${activityId}`);
+
+            // Actualizar el campo de actividad con el ID directo
+            document.getElementById('activityId').value = activityId;
+
+            // Actualizar también el elemento de visualización del ID
+            const activityIdDisplay = document.getElementById('activityIdDisplay');
+            if (activityIdDisplay) {
+                activityIdDisplay.textContent = activityId;
             }
 
             // Mostrar la información de la actividad creada
             const activityInfo = document.getElementById('activityInfo');
             const activityInfoText = document.getElementById('activityInfoText');
+            const viewActivityBtn = document.getElementById('viewActivityBtn');
 
             if (activityInfo && activityInfoText) {
-                activityInfoText.textContent = `Actividad "${event.data.title}" creada correctamente.`;
+                activityInfoText.textContent = `Actividad "${event.data.title}" seleccionada correctamente.`;
                 activityInfo.classList.remove('d-none');
+
+                // Mostrar el botón para ver/editar la actividad
+                if (viewActivityBtn) {
+                    viewActivityBtn.classList.remove('d-none');
+                    viewActivityBtn.onclick = function() {
+                        window.open(`../admin/activity-loader.html?id=${activityId}`, '_blank');
+                    };
+                }
             } else {
                 // Fallback si no se encuentran los elementos
-                alert(`Actividad "${event.data.title}" creada correctamente.`);
+                alert(`Actividad "${event.data.title}" seleccionada correctamente.`);
             }
+
+            // Eliminar el listener después de procesar el mensaje para evitar duplicados
+            window.removeEventListener('message', activityMessageListener);
+            activityMessageListener = null;
         }
-    });
+    };
+
+    // Registrar el listener
+    window.addEventListener('message', activityMessageListener);
+
+    // Abrir la página de creación de actividades
+    const activityCreatorUrl = 'activity-creator-simple.html';
+    window.open(activityCreatorUrl, '_blank', 'width=1200,height=800');
 }
 
 function openActivitySelector() {
-    // Esta función ya no se usa, pero la mantenemos por compatibilidad
-
-    // Mostrar el modal
-    const activitySelectorModal = new bootstrap.Modal(document.getElementById('activitySelectorModal'));
-    activitySelectorModal.show();
+    // Esta función ya no se usa
+    alert('Esta funcionalidad no está disponible. Por favor, cree una nueva actividad.');
 }
 
 function getActivityIcon(type) {
@@ -1200,13 +1244,19 @@ function editSection(sectionId) {
             // Mostrar la información de la actividad
             const activityInfo = document.getElementById('activityInfo');
             const activityInfoText = document.getElementById('activityInfoText');
+            const activityIdDisplay = document.getElementById('activityIdDisplay');
             const viewActivityBtn = document.getElementById('viewActivityBtn');
 
             if (activityInfo && activityInfoText) {
                 // Extraer el nombre de la actividad del contenido
                 const activityId = section.content;
-                activityInfoText.textContent = `Actividad asignada con ID: ${activityId}`;
+                activityInfoText.textContent = `Actividad asignada correctamente`;
                 activityInfo.classList.remove('d-none');
+
+                // Mostrar el ID de la actividad
+                if (activityIdDisplay && activityId) {
+                    activityIdDisplay.textContent = activityId;
+                }
 
                 // Mostrar el botón para ver/editar la actividad
                 if (viewActivityBtn && activityId) {
@@ -1298,17 +1348,45 @@ function previewSection(sectionId) {
         case 'activity':
             // Cargar la actividad desde localStorage
             try {
-                // Limpiar el ID de la actividad (eliminar prefijo si existe)
+                // Intentar cargar la actividad con varias claves posibles
                 const cleanActivityId = section.content.replace('activity_', '');
-                const activityKey = `activity_${cleanActivityId}`;
-                console.log(`Buscando actividad con clave: ${activityKey}`);
+                const activityKey1 = `activity_${cleanActivityId}`;
+                const activityKey2 = section.content; // Usar el ID tal como está
+                const activityKey3 = `activity_data_${cleanActivityId}`;
 
-                // Intentar obtener la actividad
+                console.log(`Buscando actividad con claves: ${activityKey1}, ${activityKey2}, ${activityKey3}`);
+
+                // Intentar obtener la actividad con todas las claves posibles
                 let activityData = null;
+                let activityStr = localStorage.getItem(activityKey1) || localStorage.getItem(activityKey2) || localStorage.getItem(activityKey3);
+
                 try {
-                    activityData = JSON.parse(localStorage.getItem(activityKey));
+                    if (activityStr) {
+                        activityData = JSON.parse(activityStr);
+                        console.log(`Actividad encontrada: ${activityData.title || 'Sin título'}`);
+                    } else {
+                        console.error(`No se encontró la actividad con ninguna de las claves`);
+                        // Buscar en todas las claves de localStorage que empiecen con 'activity_'
+                        console.log('Buscando actividades en localStorage...');
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith('activity_')) {
+                                try {
+                                    const data = JSON.parse(localStorage.getItem(key));
+                                    if (data && data.id === section.content) {
+                                        console.log(`Actividad encontrada con clave alternativa: ${key}`);
+                                        activityData = data;
+                                        activityStr = localStorage.getItem(key);
+                                        break;
+                                    }
+                                } catch (e) {
+                                    // Ignorar errores de parseo
+                                }
+                            }
+                        }
+                    }
                 } catch (e) {
-                    console.error(`Error al parsear actividad con clave ${activityKey}:`, e);
+                    console.error(`Error al parsear actividad:`, e);
                 }
                 if (activityData) {
                     // Crear una vista previa de la actividad
@@ -1464,7 +1542,7 @@ function previewSection(sectionId) {
                                         }
                                     </script>
                                     <div class="activity-footer">
-                                        <a href="activity-loader.html?id=${cleanActivityId}" class="btn btn-outline-primary" target="_blank">
+                                        <a href="../admin/activity-loader.html?id=${section.content}" class="btn btn-outline-primary" target="_blank">
                                             <i class="fas fa-external-link-alt me-2"></i>
                                             Ver actividad completa
                                         </a>
@@ -1478,10 +1556,10 @@ function previewSection(sectionId) {
                         <div class="section-preview-content">
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                No se encontró la actividad con ID: ${cleanActivityId}
+                                No se encontró la actividad con ID: ${section.content}
                             </div>
                             <div class="text-center">
-                                <a href="activity-loader.html?id=${cleanActivityId}" class="btn btn-primary" target="_blank">
+                                <a href="../admin/activity-loader.html?id=${section.content}" class="btn btn-primary" target="_blank">
                                     <i class="fas fa-external-link-alt me-2"></i>
                                     Intentar cargar actividad
                                 </a>
@@ -1498,7 +1576,7 @@ function previewSection(sectionId) {
                             Error al cargar la actividad: ${error.message}
                         </div>
                         <div class="text-center">
-                            <a href="activity-loader.html?id=${cleanActivityId}" class="btn btn-primary" target="_blank">
+                            <a href="../admin/activity-loader.html?id=${section.content}" class="btn btn-primary" target="_blank">
                                 <i class="fas fa-external-link-alt me-2"></i>
                                 Ver actividad
                             </a>
@@ -3261,16 +3339,80 @@ function saveSection() {
             // Para actividades, obtenemos el ID de la actividad
             const activityId = document.getElementById('activityId');
             if (activityId && activityId.value) {
+                console.log(`Procesando ID de actividad: ${activityId.value}`);
+
                 // Extraer el ID de la actividad si viene en formato URL
+                let extractedId = '';
                 if (activityId.value.includes('?id=')) {
                     const urlParams = new URLSearchParams(activityId.value.split('?')[1]);
-                    sectionData.content = urlParams.get('id');
+                    extractedId = urlParams.get('id');
+                    console.log(`ID extraído de URL: ${extractedId}`);
                 } else {
-                    sectionData.content = activityId.value;
+                    extractedId = activityId.value;
+                    console.log(`ID tomado directamente: ${extractedId}`);
                 }
-                console.log(`ID de actividad extraído: ${sectionData.content}`);
+
+                // Limpiar el ID (eliminar prefijos si existen)
+                if (extractedId.startsWith('activity-loader.html?id=')) {
+                    extractedId = extractedId.replace('activity-loader.html?id=', '');
+                    console.log(`ID limpiado de prefijo loader: ${extractedId}`);
+                }
+
+                // Asegurar que tenga el prefijo 'activity_' para consistencia
+                if (!extractedId.startsWith('activity_')) {
+                    extractedId = `activity_${extractedId.replace('activity_', '')}`;
+                    console.log(`ID con prefijo añadido: ${extractedId}`);
+                }
+
+                sectionData.content = extractedId;
+                console.log(`ID de actividad normalizado final: ${sectionData.content}`);
+
+                // Verificar que la actividad existe en localStorage
+                const activityExists = localStorage.getItem(sectionData.content) ||
+                                      localStorage.getItem(`activity_data_${sectionData.content.replace('activity_', '')}`);
+
+                if (!activityExists) {
+                    console.warn(`Advertencia: La actividad ${sectionData.content} no se encuentra en localStorage`);
+
+                    // Intentar buscar la actividad con otras variantes del ID
+                    const idWithoutPrefix = sectionData.content.replace('activity_', '');
+                    const alternativeKeys = [
+                        `activity_${idWithoutPrefix}`,
+                        idWithoutPrefix,
+                        `activity_data_${idWithoutPrefix}`
+                    ];
+
+                    console.log(`Intentando buscar actividad con IDs alternativos: ${alternativeKeys.join(', ')}`);
+
+                    for (const key of alternativeKeys) {
+                        const altData = localStorage.getItem(key);
+                        if (altData) {
+                            console.log(`Actividad encontrada con clave alternativa: ${key}`);
+                            // Usar esta clave en su lugar
+                            sectionData.content = key;
+                            console.log(`Se usará la clave alternativa: ${key}`);
+                            break;
+                        }
+                    }
+
+                    // Verificar nuevamente si se encontró la actividad
+                    const finalCheck = localStorage.getItem(sectionData.content) ||
+                                      localStorage.getItem(`activity_data_${sectionData.content.replace('activity_', '')}`);
+
+                    if (!finalCheck) {
+                        // Advertir al usuario que la actividad no se encuentra
+                        const confirmContinue = confirm(`ADVERTENCIA: No se pudo encontrar la actividad con ID: ${sectionData.content}\n\nSi continúa, la sección se creará pero la actividad no se mostrará correctamente.\n\n¿Desea continuar de todos modos?`);
+
+                        if (!confirmContinue) {
+                            console.log('Usuario canceló la creación de la sección debido a actividad no encontrada');
+                            return false;
+                        }
+                    }
+                }
             } else {
                 console.warn('No se encontró un ID de actividad válido');
+                alert('Debe crear y seleccionar una actividad antes de guardar la sección.');
+                return false;
             }
         } else {
             // Para otros tipos, buscamos un campo con el nombre del tipo
@@ -3789,11 +3931,20 @@ function saveActivity() {
     const activityInfo = document.getElementById('activityInfo');
     const activityInfoText = document.getElementById('activityInfoText');
     const activityIdInput = document.getElementById('activityId');
+    const activityIdDisplay = document.getElementById('activityIdDisplay');
 
     if (activityInfo && activityInfoText && activityIdInput) {
         activityInfo.classList.remove('d-none');
         activityInfoText.textContent = `Actividad creada con éxito: ${activityData.title}`;
+
+        // Guardar el ID sin formato de URL para evitar problemas
         activityIdInput.value = activityId;
+        console.log(`ID de actividad guardado en el campo: ${activityId}`);
+
+        // Mostrar el ID en el elemento de visualización
+        if (activityIdDisplay) {
+            activityIdDisplay.textContent = activityId;
+        }
 
         // Agregar botón para ver/editar la actividad
         const viewActivityBtn = document.getElementById('viewActivityBtn');
@@ -3869,4 +4020,41 @@ function createNewActivity() {
 // Función para abrir el selector de actividades existentes
 function openActivitySelector() {
     alert('Esta funcionalidad está en desarrollo. Por favor, cree una nueva actividad.');
+}
+
+// Función para verificar el estado de las actividades en localStorage
+function debugActivities() {
+    console.log('=== DEPURACIÓN DE ACTIVIDADES ===');
+
+    // Recopilar todas las claves de actividades
+    const activityKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('activity_') && !key.startsWith('activity_registry')) {
+            activityKeys.push(key);
+        }
+    }
+
+    console.log(`Se encontraron ${activityKeys.length} claves de actividades en localStorage:`);
+    activityKeys.forEach(key => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            console.log(`- ${key}: ${data ? (data.title || 'Sin título') : 'Sin datos'} (ID: ${data ? data.id : 'N/A'})`);
+        } catch (e) {
+            console.log(`- ${key}: Error al parsear datos`);
+        }
+    });
+
+    // Verificar el registro de actividades
+    try {
+        const registry = JSON.parse(localStorage.getItem('activity_registry') || '[]');
+        console.log(`Registro de actividades: ${registry.length} entradas`);
+        registry.forEach(entry => {
+            console.log(`- Registro: ${entry.id} - ${entry.title || 'Sin título'}`);
+        });
+    } catch (e) {
+        console.log('Error al parsear el registro de actividades:', e);
+    }
+
+    console.log('=== FIN DE DEPURACIÓN ===');
 }
