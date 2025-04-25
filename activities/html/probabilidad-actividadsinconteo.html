@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividad Interactiva de Probabilidad</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .quiz-container {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .question-container {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .question-container:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .situation {
+            font-style: italic;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .question {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .options label:hover {
+            background-color: #e9e9e9;
+        }
+        .options input[type="radio"] {
+            margin-right: 10px;
+        }
+        .hint-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .hint-button:hover {
+            background-color: #0056b3;
+        }
+        .hint-text {
+            display: none; /* Oculto por defecto */
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            font-style: italic;
+            color: #666;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Actividad de Probabilidad</h1>
+    <p>Lee cada situación, elige la respuesta que consideres correcta y usa la pista si necesitas ayuda.</p>
+
+    <!-- Pregunta 1 -->
+    <div class="question-container">
+        <p class="situation"><b>Situación 1:</b> Una bolsa contiene 4 canicas rojas, 3 canicas azules y 5 canicas verdes. Todas son idénticas en forma y tamaño. Se saca una canica al azar.</p>
+        <p class="question">¿Cuál es la probabilidad de sacar una canica que <b>no</b> sea azul?</p>
+        <div class="options">
+            <label><input type="radio" name="q1" value="a"> a) 3/12 (ó 1/4)</label>
+            <label><input type="radio" name="q1" value="b"> b) 5/12</label>
+            <label><input type="radio" name="q1" value="c"> c) 9/12 (ó 3/4)</label>
+            <label><input type="radio" name="q1" value="d"> d) 4/12 (ó 1/3)</label>
+        </div>
+        <button class="hint-button" onclick="toggleHint('hint1')">Mostrar/Ocultar Pista</button>
+        <div class="hint-text" id="hint1">
+            Pista: Primero, cuenta cuántas canicas hay en total. Luego, piensa cuántas canicas cumplen la condición de "no ser azul" (o sea, ser rojas o verdes). La probabilidad es (canicas que no son azules) / (total de canicas).
+        </div>
+    </div>
+
+    <!-- Pregunta 2 -->
+    <div class="question-container">
+        <p class="situation"><b>Situación 2:</b> Una ruleta está dividida en 8 secciones iguales. 3 secciones son rojas, 2 son azules, 1 es verde y 2 son amarillas. Se gira la ruleta una vez.</p>
+        <p class="question">¿Cuál es la probabilidad de que la ruleta se detenga en una sección Roja <b>o</b> Verde?</p>
+        <div class="options">
+            <label><input type="radio" name="q2" value="a"> a) 3/8</label>
+            <label><input type="radio" name="q2" value="b"> b) 1/8</label>
+            <label><input type="radio" name="q2" value="c"> c) 4/8 (ó 1/2)</label>
+            <label><input type="radio" name="q2" value="d"> d) 5/8</label>
+        </div>
+        <button class="hint-button" onclick="toggleHint('hint2')">Mostrar/Ocultar Pista</button>
+        <div class="hint-text" id="hint2">
+            Pista: ¿Cuántas secciones son Rojas? ¿Cuántas secciones son Verdes? Suma esas cantidades para saber cuántas secciones cumplen la condición. ¿Cuántas secciones hay en total en la ruleta?
+        </div>
+    </div>
+
+    <!-- Pregunta 3 -->
+    <div class="question-container">
+        <p class="situation"><b>Situación 3:</b> Se lanzan dos monedas estándar al mismo tiempo. Los posibles resultados son: Cara-Cara (CC), Cara-Cruz (CX), Cruz-Cara (XC), Cruz-Cruz (XX).</p>
+        <p class="question">¿Cuál es la probabilidad de obtener exactamente una Cara?</p>
+        <div class="options">
+            <label><input type="radio" name="q3" value="a"> a) 1/4</label>
+            <label><input type="radio" name="q3" value="b"> b) 2/4 (ó 1/2)</label>
+            <label><input type="radio" name="q3" value="c"> c) 3/4</label>
+            <label><input type="radio" name="q3" value="d"> d) 1/2</label> <!-- Nota: Esta opción es igual a b, puedes cambiarla si prefieres d) 4/4 (o 1) -->
+        </div>
+        <button class="hint-button" onclick="toggleHint('hint3')">Mostrar/Ocultar Pista</button>
+        <div class="hint-text" id="hint3">
+            Pista: Mira la lista de todos los resultados posibles que se da en la situación (CC, CX, XC, XX). ¿Cuántos resultados hay en total? Ahora, cuenta en cuántos de ellos aparece la letra 'C' (Cara) una sola vez.
+        </div>
+    </div>
+
+    <!-- Pregunta 4 -->
+    <div class="question-container">
+        <p class="situation"><b>Situación 4:</b> Se tienen 10 tarjetas boca abajo, numeradas del 1 al 10. Se elige una tarjeta al azar.</p>
+        <p class="question">¿Cuál es la probabilidad de elegir una tarjeta con un número que sea Par <b>o</b> mayor que 7?</p>
+        <div class="options">
+            <label><input type="radio" name="q4" value="a"> a) 5/10 (ó 1/2)</label>
+            <label><input type="radio" name="q4" value="b"> b) 3/10</label>
+            <label><input type="radio" name="q4" value="c"> c) 8/10 (ó 4/5)</label>
+            <label><input type="radio" name="q4" value="d"> d) 7/10</label>
+        </div>
+        <button class="hint-button" onclick="toggleHint('hint4')">Mostrar/Ocultar Pista</button>
+        <div class="hint-text" id="hint4">
+            Pista: Escribe los números del 1 al 10. Marca los que son pares. Marca los que son mayores que 7. Ahora, cuenta cuántos números *diferentes* has marcado (¡no cuentes dos veces los que cumplen ambas condiciones!). ¿Cuántos números hay en total (del 1 al 10)?
+        </div>
+    </div>
+
+    <!-- Pregunta 5 -->
+    <div class="question-container">
+        <p class="situation"><b>Situación 5:</b> Se elige al azar un día de la semana (Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo).</p>
+        <p class="question">¿Cuál es la probabilidad de elegir un día que <b>no</b> sea fin de semana (considerando Sábado y Domingo como fin de semana)?</p>
+        <div class="options">
+            <label><input type="radio" name="q5" value="a"> a) 2/7</label>
+            <label><input type="radio" name="q5" value="b"> b) 5/7</label>
+            <label><input type="radio" name="q5" value="c"> c) 1/7</label>
+            <label><input type="radio" name="q5" value="d"> d) 7/7 (ó 1)</label>
+        </div>
+        <button class="hint-button" onclick="toggleHint('hint5')">Mostrar/Ocultar Pista</button>
+        <div class="hint-text" id="hint5">
+            Pista: ¿Cuántos días tiene la semana en total? ¿Cuántos de ellos SÍ son fin de semana? Entonces, ¿cuántos días quedan que NO son fin de semana? Usa esos números para calcular la probabilidad.
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleHint(hintId) {
+        const hintElement = document.getElementById(hintId);
+        if (hintElement.style.display === 'none' || hintElement.style.display === '') {
+            hintElement.style.display = 'block';
+        } else {
+            hintElement.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
